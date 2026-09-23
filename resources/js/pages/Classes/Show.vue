@@ -34,6 +34,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 type Membre = {
@@ -143,6 +150,12 @@ type Props = {
 
 const props = defineProps<Props>();
 
+const statutsEtudiant = [
+    { value: 'actif', label: 'Actif' },
+    { value: 'inactif', label: 'Inactif' },
+    { value: 'suspendu', label: 'Suspendu' },
+] as const;
+
 const page = usePage();
 
 /** Groupe auquel appartient l'étudiant authentifié (null si non trouvé). */
@@ -208,7 +221,7 @@ const addEtudiantForm = useForm({
     prenom: '',
     nom: '',
     no_da: '',
-    statut_cours: '',
+    statut_cours: 'actif',
     email: '',
 });
 
@@ -217,7 +230,7 @@ const editEtudiantForm = useForm({
     nom: '',
     email: '',
     no_da: '',
-    statut_cours: '',
+    statut_cours: 'actif',
 });
 
 const importEtudiantForm = useForm({
@@ -249,7 +262,8 @@ function openEditEtudiant(etudiant: Etudiant): void {
     editEtudiantForm.nom = etudiant.nom;
     editEtudiantForm.email = etudiant.email;
     editEtudiantForm.no_da = etudiant.no_da ?? '';
-    editEtudiantForm.statut_cours = etudiant.pivot?.statut_cours ?? '';
+    editEtudiantForm.statut_cours =
+        etudiant.pivot?.statut_cours ?? 'actif';
     showEditEtudiantDialog.value = true;
 }
 
@@ -751,7 +765,7 @@ function executeDeleteGroupe() {
                                     class="border-b last:border-0"
                                 >
                                     <td class="py-3 pr-4 font-mono text-xs">
-                                        {{ etudiant.no_da ?? '—' }}
+                                        {{ etudiant.no_da }}
                                     </td>
                                     <td class="py-3 pr-4 font-medium">
                                         {{ etudiant.nom }}
@@ -1117,10 +1131,20 @@ function executeDeleteGroupe() {
                         <Label for="add-statut">{{
                             $t('classes.show.modal_course_status')
                         }}</Label>
-                        <Input
-                            id="add-statut"
-                            v-model="addEtudiantForm.statut_cours"
-                        />
+                        <Select v-model="addEtudiantForm.statut_cours">
+                            <SelectTrigger id="add-statut">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="statut in statutsEtudiant"
+                                    :key="statut.value"
+                                    :value="statut.value"
+                                >
+                                    {{ statut.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                         <InputError
                             :message="addEtudiantForm.errors.statut_cours"
                         />
@@ -1195,7 +1219,20 @@ function executeDeleteGroupe() {
                         <Label>{{
                             $t('classes.show.modal_course_status')
                         }}</Label>
-                        <Input v-model="editEtudiantForm.statut_cours" />
+                        <Select v-model="editEtudiantForm.statut_cours">
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="statut in statutsEtudiant"
+                                    :key="statut.value"
+                                    :value="statut.value"
+                                >
+                                    {{ statut.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                         <InputError
                             :message="editEtudiantForm.errors.statut_cours"
                         />

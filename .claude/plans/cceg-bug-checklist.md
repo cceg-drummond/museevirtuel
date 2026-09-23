@@ -103,6 +103,11 @@ Checklist pour suivre l'avancement des correctifs. Cocher `- [x]` quand c'est co
 
 ---
 
+## Ajouter un étudiant dans une classe
+
+Je ne trouve pas très logique de pouvoir ajouter un étudiant dans une classe, si l'étudiant n'existe pas
+dans la BD.
+
 ## Statistiques
 
 | Section | Total | Fait |

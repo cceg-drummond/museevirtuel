@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateEtudiantAction;
 use App\Actions\ImportEtudiantsAction;
+use App\Enums\StatutEtudiantCours;
 use App\Models\Cours;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -27,11 +28,18 @@ class CoursEtudiantController extends Controller
     {
         $this->authorize('update', $cours);
 
+        $request->merge([
+            'statut_cours' => $request->input(
+                'statut_cours',
+                StatutEtudiantCours::Actif->value,
+            ),
+        ]);
+
         $validated = $request->validate([
             'prenom' => ['required', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
-            'no_da' => ['required', 'string', 'max:20'],
-            'statut_cours' => ['nullable', 'string', 'max:100'],
+            'no_da' => ['required', 'number', 'max:10'],
+            'statut_cours' => ['required', Rule::enum(StatutEtudiantCours::class)],
             'email' => ['nullable', 'string', 'email', 'max:255'],
         ]);
 
@@ -66,7 +74,7 @@ class CoursEtudiantController extends Controller
             'nom' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($etudiant->id)],
             'no_da' => ['required', 'string', 'max:20'],
-            'statut_cours' => ['nullable', 'string', 'max:100'],
+            'statut_cours' => ['required', Rule::enum(StatutEtudiantCours::class)],
         ]);
 
         $etudiant->update([
@@ -77,7 +85,7 @@ class CoursEtudiantController extends Controller
         ]);
 
         $cours->etudiants()->updateExistingPivot($etudiant->id, [
-            'statut_cours' => $validated['statut_cours'] ?? null,
+            'statut_cours' => $validated['statut_cours'],
         ]);
 
         return back()->with('success', __('etudiant.updated'));
