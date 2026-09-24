@@ -1993,7 +1993,7 @@ function formatSize(bytes: number): string {
                         </div>
                         <div
                             v-if="membresRetirer.length > 0"
-                            class="flex flex-wrap gap-2 mt-2"
+                            class="flex flex-wrap gap-2 mt-1"
                         >
                             <span
                                 v-for="id in membresRetirer"
