@@ -92,6 +92,7 @@ class ClasseController extends Controller
         return Inertia::render('Classes/Show', [
             'cours' => $cours->only('id', 'nom_cours', 'code', 'groupe'),
             'classe' => $classe,
+            'utilisateurConnecteId' => $user->id,
             'estEnseignant' => $estEnseignant,
             'typesProjets' => $typesProjets,
             'echeancierEtapes' => $echeancierEtapes,

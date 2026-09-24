@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     BookMarked,
@@ -140,6 +140,7 @@ type Reference = {
 type Props = {
     cours: Cours;
     classe: Classe;
+    utilisateurConnecteId: number;
     estEnseignant: boolean;
     typesProjets: TypeProjet[];
     echeancierEtapes: EcheancierEtape[];
@@ -156,13 +157,11 @@ const statutsEtudiant = [
     { value: 'suspendu', label: 'Suspendu' },
 ] as const;
 
-const page = usePage();
-
 /** Groupe auquel appartient l'étudiant authentifié (null si non trouvé). */
 const monGroupe = computed(
     () =>
         props.classe.groupes.find((g) =>
-            g.membres.some((m) => m.id === (page.props.auth as any).user.id),
+            g.membres.some((m) => m.id === props.utilisateurConnecteId),
         ) ?? null,
 );
 

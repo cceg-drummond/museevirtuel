@@ -108,6 +108,11 @@ Checklist pour suivre l'avancement des correctifs. Cocher `- [x]` quand c'est co
 Je ne trouve pas très logique de pouvoir ajouter un étudiant dans une classe, si l'étudiant n'existe pas
 dans la BD.
 
+## Authentification des étudiants
+
+Quand un étudiant a une clé api Zotero, la vérification de cette clé lors de l'authentification crée une erreur :
+"The MAC is invalid". Faire en sorte que seules les attributs nécessaires soient vérifiés lors de l'authentification.
+
 ## Statistiques
 
 | Section | Total | Fait |

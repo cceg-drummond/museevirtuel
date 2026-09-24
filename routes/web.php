@@ -424,6 +424,9 @@ Route::middleware(['auth', 'role:etudiant'])->group(function () {
         Route::get('/cours/{cours}/classes/{classe}/groupes', [GroupeController::class, 'index'])
             ->name('groupes.index');
 
+        Route::get('/cours/{cours}/classes/{classe}/groupes/create', [GroupeController::class, 'create'])
+            ->name('groupes.create');
+
         Route::post('/cours/{cours}/classes/{classe}/groupes', [GroupeController::class, 'store'])
             ->name('groupes.store');
 

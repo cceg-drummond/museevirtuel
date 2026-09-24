@@ -29,12 +29,22 @@ class GroupeController extends Controller
     use ValidatesGroupeChain;
 
     /**
-     * Redirige vers groupes.show si l'étudiant appartient déjà à un groupe,
-     * sinon affiche la page de création de groupe.
+     * Redirige vers la page de création de groupe.
      *
      * @throws HttpException si l'étudiant n'est pas inscrit à la classe
      */
     public function index(Cours $cours, Classe $classe): Response|RedirectResponse
+    {
+        return redirect()->route('groupes.create', [$cours, $classe]);
+    }
+
+    /**
+     * Affiche le formulaire de création d'un groupe ou redirige vers le groupe
+     * existant de l'étudiant.
+     *
+     * @throws HttpException si l'étudiant n'est pas inscrit à la classe
+     */
+    public function create(Cours $cours, Classe $classe): Response|RedirectResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
 
@@ -60,7 +70,7 @@ class GroupeController extends Controller
         $thematiques = $this->thematiquesVisibles($cours->enseignant)
             ->get(['id', 'nom', 'periode_historique']);
 
-        return Inertia::render('Classes/Groupes', [
+        return Inertia::render('Groupes/Create', [
             'cours' => $cours->only('id', 'nom_cours', 'code', 'groupe'),
             'classe' => $classe->only('id', 'code', 'cours_id'),
             'autresEtudiants' => $autresEtudiants,
@@ -92,7 +102,7 @@ class GroupeController extends Controller
         $validated = $request->validate([
             'membres' => ['array'],
             'membres.*' => ['integer', 'exists:users,id'],
-            'thematiques' => ['array', 'max:3'],
+            'thematiques' => ['required', 'array', 'min:1', 'max:3'],
             'thematiques.*' => ['integer', 'exists:thematiques,id'],
         ]);
 
@@ -108,6 +118,10 @@ class GroupeController extends Controller
         // Vérifier les contraintes de taille d'équipe du cours
         $totalMembres = count(array_unique(array_merge([(int) $user->id], $membresInscrits)));
 
+        if ($totalMembres < 2) {
+            return back()->withErrors(['membres' => 'Le groupe doit avoir au moins 2 membres.']);
+        }
+
         if ($cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min) {
             return back()->withErrors(['membres' => "Le groupe doit avoir au moins {$cours->taille_equipe_min} membre(s) (vous inclus)."]);
         }
@@ -121,6 +135,10 @@ class GroupeController extends Controller
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->toArray();
+
+        if (count($thematiquesValides) < 1) {
+            return back()->withErrors(['thematiques' => 'Le groupe doit avoir au moins 1 thématique valide.']);
+        }
 
         DB::transaction(function () use ($user, $classe, $membresInscrits, $thematiquesValides) {
             $groupe = Groupe::create([
@@ -328,15 +346,19 @@ class GroupeController extends Controller
             [(int) $user->id]
         ));
 
+        $membresCourants = $groupe->membres()->pluck('users.id')->map(fn ($id) => (int) $id)->toArray();
+        $nouveauxMembres = array_values(array_unique(array_diff(
+            array_merge($membresCourants, $aAjouter),
+            $aRetirer,
+        )));
+        $totalMembres = count($nouveauxMembres);
+
+        if ($totalMembres < 2) {
+            return back()->withErrors(['membres' => 'Le groupe doit avoir au moins 2 membres.']);
+        }
+
         // Vérifier les contraintes de taille d'équipe du cours
         if ($cours->taille_equipe_min !== null || $cours->taille_equipe_max !== null) {
-            $membresCourants = $groupe->membres()->pluck('users.id')->map(fn ($id) => (int) $id)->toArray();
-            $nouveauxMembres = array_values(array_unique(array_diff(
-                array_merge($membresCourants, $aAjouter),
-                $aRetirer,
-            )));
-            $totalMembres = count($nouveauxMembres);
-
             if ($cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min) {
                 return back()->withErrors(['membres' => "Le groupe doit avoir au moins {$cours->taille_equipe_min} membre(s)."]);
             }
@@ -380,6 +402,10 @@ class GroupeController extends Controller
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->toArray();
+
+        if (count($thematiquesValides) < 1) {
+            return back()->withErrors(['thematiques' => 'Le groupe doit avoir au moins 1 thématique valide.']);
+        }
 
         DB::transaction(function () use ($thematiquesValides, $groupe) {
             $groupe->thematiques()->sync($thematiquesValides);
