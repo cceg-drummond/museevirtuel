@@ -32,11 +32,10 @@ const handleLogout = () => {
 
 const switchLocale = (locale: string) => {
     router.patch(
-        LocaleController.update.url(),
+        LocaleController.update(),
         { locale },
         {
-            preserveScroll: true,
-            onSuccess: () => router.reload(),
+            onSuccess: () => window.location.reload(),
         },
     );
 };
@@ -66,7 +65,7 @@ const switchLocale = (locale: string) => {
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted'
             "
-            @click.stop="switchLocale('fr')"
+            @click="switchLocale('fr')"
         >
             🇫🇷 FR
         </button>
@@ -77,7 +76,7 @@ const switchLocale = (locale: string) => {
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted'
             "
-            @click.stop="switchLocale('en')"
+            @click="switchLocale('en')"
         >
             🇬🇧 EN
         </button>
