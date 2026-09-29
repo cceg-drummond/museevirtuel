@@ -9,11 +9,15 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
+import SessionController from '@/actions/App/Http/Controllers/SessionController';
 
 type Props = {
     user: User;
@@ -25,6 +29,7 @@ useI18n();
 
 const page = usePage();
 const currentLocale = computed(() => page.props.locale as string);
+const currentRole = computed(() => page.props.auth.user.role);
 
 const handleLogout = () => {
     router.flushAll();
@@ -39,6 +44,14 @@ const switchLocale = (locale: string) => {
         },
     );
 };
+
+const switchRole = (role: 'enseignant' | 'etudiant') => {
+    router.patch(
+        SessionController.changerRole(),
+        { role }
+    );
+};
+
 </script>
 
 <template>
@@ -46,6 +59,25 @@ const switchLocale = (locale: string) => {
         <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <UserInfo :user="user" :show-email="true" />
         </div>
+        <DropdownMenuSub>
+            <DropdownMenuSubTrigger class="w-auto shrink-0 px-2">
+                Changer de rôle
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+                <DropdownMenuItem
+                    :class="{ 'bg-accent': currentRole === 'enseignant' }"
+                    @click="switchRole('enseignant')"
+                >
+                    Enseignant
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    :class="{ 'bg-accent': currentRole === 'etudiant' }"
+                    @click="switchRole('etudiant')"
+                >
+                    Étudiant
+                </DropdownMenuItem>
+            </DropdownMenuSubContent>
+        </DropdownMenuSub>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
     <DropdownMenuGroup>

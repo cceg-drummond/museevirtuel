@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class SessionController extends Controller
 {
-    public function changerRole(string $role)
+    /**
+     * Change le rôle de l'utilisateur connecté pour les besoins de test.
+     */
+    public function changerRole(Request $request): RedirectResponse
     {
-        $user = Auth::user();
+        $validated = $request->validate([
+            'role' => ['required', 'string', 'in:etudiant,enseignant'],
+        ]);
 
-        if ($role === 'etudiant' && $user->isEnseignant()) {
-            $user->role = 'etudiant';
-        }elseif ($role === 'enseignant' && $user->isEtudiant()) {
-            $user->role = 'enseignant';
-        }
+        $request->user()->update(['role' => $validated['role']]);
 
-        return to_route('')
+        return to_route('auth/login');
     }
 }

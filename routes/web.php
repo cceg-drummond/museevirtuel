@@ -35,6 +35,7 @@ use App\Http\Controllers\ProjetRechercheController;
 use App\Http\Controllers\ProjetSchemaVisuelController;
 use App\Http\Controllers\ProjetSectionMediaController;
 use App\Http\Controllers\QuestionBanqueController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\ThematiqueController;
 use App\Http\Controllers\TransfererCoursController;
 use App\Http\Controllers\TypeProjetController;
@@ -47,6 +48,11 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
+
+// Route pour changer de role
+Route::patch('/login', [SessionController::class, 'changerRole'])
+    ->middleware('auth')
+    ->name('session.role.update');
 
 // ─── Musée virtuel — Pages publiques (sans authentification) ──────────────────
 Route::get('/musee', [MuseePublicController::class, 'accueil'])
