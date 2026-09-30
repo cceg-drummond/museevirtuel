@@ -174,7 +174,12 @@ class GroupeController extends Controller
         $user = auth()->user();
 
         $estMembre = $groupe->membres()->where('users.id', $user->id)->exists();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        /**
+         * Il faudra retiré la portion $estEnseignant = $user->isEnseignant()
+         * && en production.
+         */
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
         $estTemoin = $groupe->personne_agee_id === $user->id;
 
         $groupe->load([

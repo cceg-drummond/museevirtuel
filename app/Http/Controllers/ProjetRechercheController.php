@@ -78,7 +78,8 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         // Charger les TypeProjets du cours — pas de tous les cours de l'enseignant
         $query = TypeProjet::where('cours_id', $cours->id);
@@ -160,7 +161,8 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         // Guard accessibilité : si le type de projet n'est pas accessible, les étudiants ne peuvent pas accéder
         if (! $estEnseignant && $user->role !== 'admin') {
@@ -352,7 +354,8 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         $projet = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)
@@ -1333,8 +1336,12 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
+        /**
+         * Il faudra retirer la portion $user->isEnseignant()
+         * && en production.
+         */
         abort_unless(
-            $user->role === 'admin' || $cours->enseignant_id === $user->id,
+            $user->isAdmin() || ($user->isEnseignant() && $cours->enseignant_id === $user->id),
             403,
         );
 

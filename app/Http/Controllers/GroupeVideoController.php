@@ -37,7 +37,8 @@ class GroupeVideoController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         // Même logique de visibilité que GroupeController::show() :
         // publié pour tous, brouillons/archivés pour enseignant/admin,
@@ -124,7 +125,8 @@ class GroupeVideoController extends Controller
         $this->authorize('view', $video);
 
         $user = auth()->user();
-        $estEnseignant = $groupe->classe->cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $groupe->classe->cours->enseignant_id === $user->id;
 
         // Seules les vidéos visibles par l'utilisateur courant sont proposées au jumelage.
         // Un étudiant ne doit pas voir les brouillons de ses coéquipiers ici.
