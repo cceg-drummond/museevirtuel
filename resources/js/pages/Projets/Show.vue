@@ -122,6 +122,11 @@ type Developpement = {
     contenu: string | null;
 };
 
+type ContenuManquant = {
+    section: string;
+    raison: string;
+};
+
 type ConclusionMembre = {
     etudiant: Etudiant;
     contenu: string | null;
@@ -410,6 +415,121 @@ const sectionConclusionsLocales = reactive<
 const developpements = ref<Developpement[]>(
     props.developpements.map((d) => ({ ...d })),
 );
+
+const erreurVote = ref<string | null>(null);
+let erreurVoteTimer: ReturnType<typeof setTimeout> | null = null;
+
+const nombreMots = (contenu: string | null | undefined): number => {
+    const texte = (contenu ?? '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .trim();
+
+    return texte ? texte.split(/\s+/).length : 0;
+};
+
+const contenusTextuelsManquants = (): ContenuManquant[] => {
+    const manquants: ContenuManquant[] = [];
+    const ajouterSiInsuffisant = (
+        contenu: string | null | undefined,
+        minimum: number,
+        section: string,
+        raison: string,
+    ): void => {
+        if (nombreMots(contenu) < minimum) {
+            manquants.push({ section, raison });
+        }
+    };
+
+    for (const section of props.sections) {
+        const libelle = section.label || `Section ${section.id}`;
+
+        if (section.type === 'texte') {
+            ajouterSiInsuffisant(
+                sectionContenus[section.id],
+                1,
+                libelle,
+                'Le contenu textuel est vide.',
+            );
+        }
+
+        if (section.type === 'paragraphes') {
+            if (!sectionParagraphesLocaux[section.id]?.length) {
+                manquants.push({
+                    section: libelle,
+                    raison: 'Aucun paragraphe n’a été ajouté.',
+                });
+            }
+
+            for (const paragraphe of sectionParagraphesLocaux[section.id] ?? []) {
+                if (nombreMots(paragraphe.contenu) < 1) {
+                    manquants.push({
+                        section: `${libelle} — paragraphe ${paragraphe.ordre}`,
+                        raison: 'Le contenu est vide.',
+                    });
+                }
+            }
+        }
+
+        if (section.type === 'individuel') {
+            for (const membre of props.membres) {
+                const conclusion = sectionConclusionsLocales[section.id]?.[
+                    membre.id
+                ];
+
+                ajouterSiInsuffisant(
+                    conclusion,
+                    20,
+                    `${libelle} — conclusion de ${membre.prenom} ${membre.nom}`,
+                    'La conclusion doit avoir au moins 20 mots.',
+                );
+            }
+        }
+    }
+
+    if (props.sections.length === 0 && props.hasIntroduction) {
+        for (const [champ, libelle] of [
+            ['introduction_amener', 'Sujet amené'],
+            ['introduction_poser', 'Sujet posé'],
+            ['introduction_diviser', 'Sujet divisé'],
+        ] as const) {
+            ajouterSiInsuffisant(
+                form[champ],
+                20,
+                libelle,
+                "L'introduction doit avoir au moins 20 mots.",
+            );
+        }
+    }
+
+    if (props.sections.length === 0 && props.hasConclusionIndividuelle) {
+        for (const membre of props.membres) {
+            ajouterSiInsuffisant(
+                conclusionsLocales[membre.id],
+                20,
+                `Conclusion de ${membre.prenom} ${membre.nom}`,
+                'La conclusion doit avoir au moins 20 mots.',
+            );
+        }
+    }
+
+    for (const developpement of developpements.value) {
+        ajouterSiInsuffisant(
+            developpement.titre,
+            3,
+            `Paragraphe de développement ${developpement.ordre} — titre`,
+            'Le titre doit avoir au moins 3 mots.',
+        );
+        ajouterSiInsuffisant(
+            developpement.contenu,
+            50,
+            `Paragraphe de développement ${developpement.ordre} — contenu`,
+            'Le contenu doit avoir au moins 50 mots.',
+        );
+    }
+
+    return manquants;
+};
 
 // ─── Conclusions de tous les membres (éditables par n'importe quel membre) ────
 
@@ -1727,6 +1847,24 @@ async function voterRemise(): Promise<void> {
         return;
     }
 
+    const manquants = contenusTextuelsManquants();
+
+    if (manquants.length > 0) {
+        erreurVote.value = `Le projet doit contenir les textes requis avant de pouvoir voter.\n\n${manquants
+            .map((item) => `• ${item.section} : ${item.raison}`)
+            .join('\n')}`;
+
+        if (erreurVoteTimer) {
+            clearTimeout(erreurVoteTimer);
+        }
+
+        erreurVoteTimer = setTimeout(() => {
+            erreurVote.value = null;
+        }, 7000);
+
+        return;
+    }
+
     voteEnCours.value = true;
 
     try {
@@ -1747,6 +1885,21 @@ async function voterRemise(): Promise<void> {
         if (response.data.remis_le) {
             remisLe.value = response.data.remis_le;
         }
+    } catch (error) {
+        if (!axios.isAxiosError(error) || error.response?.status !== 422) {
+            throw error;
+        }
+
+        erreurVote.value =
+            error.response.data?.message ?? 'La remise ne peut pas être votée.';
+
+        if (erreurVoteTimer) {
+            clearTimeout(erreurVoteTimer);
+        }
+
+        erreurVoteTimer = setTimeout(() => {
+            erreurVote.value = null;
+        }, 7000);
     } finally {
         voteEnCours.value = false;
     }
@@ -5250,5 +5403,21 @@ async function supprimerCommentaireRenvoi(
                 </template>
             </DialogScrollContent>
         </Dialog>
+        <Transition
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="translate-y-2 opacity-0"
+            enter-to-class="translate-y-0 opacity-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="translate-y-0 opacity-100"
+            leave-to-class="translate-y-2 opacity-0"
+        >
+            <div
+                v-if="erreurVote"
+                class="fixed right-6 bottom-6 z-50 flex max-w-md items-start gap-3 rounded-lg bg-destructive px-4 py-3 text-destructive-foreground shadow-lg"
+            >
+                <XCircle class="mt-0.5 h-5 w-5 shrink-0" />
+                <span class="max-h-64 whitespace-pre-line overflow-y-auto text-sm font-medium">{{ erreurVote }}</span>
+            </div>
+        </Transition>
     </AppLayout>
 </template>

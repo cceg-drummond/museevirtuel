@@ -428,7 +428,7 @@ class ProjetRechercheController extends Controller
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
         $validated = $request->validate([
-            'contenu' => ['nullable', 'string'],
+            'contenu' => ['required', 'string', 'min:100'],
         ]);
 
         ProjetSectionContenu::updateOrCreate(
@@ -447,7 +447,7 @@ class ProjetRechercheController extends Controller
     }
 
     /**
-     * Met à jour le titre du projet et, optionnellement, le contenu manuel de la page titre
+     * Met à jour le titre du projet et, le contenu manuel de la page titre
      * et de la table des matières (utilisés quand les flags de génération sont désactivés).
      *
      * @throws HttpException
@@ -457,9 +457,9 @@ class ProjetRechercheController extends Controller
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
         $validated = $request->validate([
-            'titre_projet' => ['nullable', 'string', 'max:500'],
-            'page_titre_contenu' => ['nullable', 'string'],
-            'table_matieres_contenu' => ['nullable', 'string'],
+            'titre_projet' => ['required', 'string', 'min:100'],
+            'page_titre_contenu' => ['required', 'string', 'min:100'],
+            'table_matieres_contenu' => ['required', 'string', 'min:100'],
         ]);
 
         $existant = ProjetRecherche::where('groupe_id', $groupe->id)
@@ -535,8 +535,8 @@ class ProjetRechercheController extends Controller
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
         $validated = $request->validate([
-            'titre' => ['nullable', 'string', 'max:500'],
-            'contenu' => ['nullable', 'string'],
+            'titre' => ['required', 'string', 'max:500', 'min:100'],
+            'contenu' => ['required', 'string', 'min:500'],
         ]);
 
         $developpement->update($validated);
@@ -663,8 +663,8 @@ class ProjetRechercheController extends Controller
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
         $validated = $request->validate([
-            'titre' => ['nullable', 'string', 'max:500'],
-            'contenu' => ['nullable', 'string'],
+            'titre' => ['required', 'string', 'min:100'],
+            'contenu' => ['required', 'string', 'min:100'],
         ]);
 
         $paragraphe->update($validated);
@@ -767,7 +767,7 @@ class ProjetRechercheController extends Controller
         );
 
         $validated = $request->validate([
-            'contenu' => ['nullable', 'string'],
+            'contenu' => ['required', 'string', 'min:100'],
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'section_id' => ['nullable', 'integer', Rule::exists('type_projet_sections', 'id')->where('type_projet_id', $typeProjet->id)],
         ]);
