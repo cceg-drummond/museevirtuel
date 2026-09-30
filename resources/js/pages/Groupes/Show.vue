@@ -677,10 +677,10 @@ function formatSize(bytes: number): string {
             <div>
                 <Button variant="ghost" size="sm" as-child>
                     <Link
-                        :href="`/cours/${cours.id}/classes/${groupe.classe_id}/groupes`"
+                        :href="`/cours/${cours.id}/classes/${groupe.classe_id}`"
                     >
                         <ArrowLeft class="mr-2 h-4 w-4" />
-                        {{ $t('groupes.show.back') }}
+                        Retour aux détails du cours
                     </Link>
                 </Button>
             </div>
