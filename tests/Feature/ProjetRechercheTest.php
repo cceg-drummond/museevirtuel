@@ -9,6 +9,7 @@ use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 
@@ -87,6 +88,61 @@ test("un étudiant extérieur au groupe ne peut pas accéder à l'index", functi
     $this->actingAs($etranger)
         ->get("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets")
         ->assertForbidden();
+});
+
+test('le statut du projet dépend de la date limite et de la remise', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-30 12:00:00'));
+
+    ['typeProjet' => $typeProjet, 'classe' => $groupe] = creerScenario();
+
+    $typeProjet->update(['date_remise' => Carbon::parse('2026-10-01 12:00:00')]);
+    $projet = ProjetRecherche::create([
+        'groupe_id' => $groupe->id,
+        'type_projet_id' => $typeProjet->id,
+    ]);
+
+    expect($projet->load('typeProjet')->statutActuel()->value)->toBe('en_cours');
+
+    $typeProjet->update(['date_remise' => Carbon::parse('2026-09-29 12:00:00')]);
+    $projet->refresh()->load('typeProjet');
+    expect($projet->statutActuel()->value)->toBe('en_retard');
+
+    $projet->update(['remis_le' => Carbon::parse('2026-09-28 12:00:00')]);
+    $projet->refresh()->load('typeProjet');
+    expect($projet->statutActuel()->value)->toBe('remis');
+
+    $projet->update(['remis_le' => Carbon::parse('2026-09-30 13:00:00')]);
+    $projet->refresh()->load('typeProjet');
+    expect($projet->statutActuel()->value)->toBe('remis_en_retard');
+
+    Carbon::setTestNow();
+});
+
+test("l'index expose le statut à afficher à côté du type de projet", function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-30 12:00:00'));
+
+    [
+        'cours' => $cours,
+        'classeSection' => $cs,
+        'classe' => $groupe,
+        'etudiant1' => $etudiant,
+        'typeProjet' => $typeProjet,
+    ] = creerScenario();
+
+    $typeProjet->update(['cours_id' => $cours->id, 'date_remise' => Carbon::parse('2026-09-29 12:00:00')]);
+    ProjetRecherche::create([
+        'groupe_id' => $groupe->id,
+        'type_projet_id' => $typeProjet->id,
+    ]);
+
+    $this->actingAs($etudiant)
+        ->get("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets")
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('projets', fn ($projets): bool => $projets
+                ->contains(fn (array $projet): bool => $projet['statut'] === 'en_retard'))
+        );
+
+    Carbon::setTestNow();
 });
 
 // ─── Accès à la page show (projet partagé) ────────────────────────────────────

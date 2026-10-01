@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\ExportProjetPdf;
 use App\Actions\ExportProjetWord;
+use App\Enums\StatutProjetRecherche;
 use App\Helpers\HtmlHelper;
 use App\Http\Requests\UpsertProjetCommentaireRequest;
 use App\Models\Classe;
@@ -94,7 +95,7 @@ class ProjetRechercheController extends Controller
         // Précharger tous les projets de ce groupe en une seule requête — évite le N+1
         $projetsParType = ProjetRecherche::where('groupe_id', $groupe->id)
             ->whereIn('type_projet_id', $typesProjets->pluck('id'))
-            ->with(['conclusions', 'museePublication'])
+            ->with(['typeProjet', 'conclusions', 'museePublication'])
             ->get()
             ->keyBy('type_projet_id');
 
@@ -122,11 +123,14 @@ class ProjetRechercheController extends Controller
                         'id' => $projet->id,
                         'titre_projet' => $projet->titre_projet,
                         'completion' => $projet->completion(),
+                        'statut' => $projet->synchroniserStatut()->value,
                         'statut_publication' => $typeProjet->isMusee()
                             ? ($projet->museePublication?->statut ?? MuseePublication::STATUT_BROUILLON)
                             : null,
                     ]
                     : null,
+                'statut' => $projet?->statutActuel()->value
+                    ?? StatutProjetRecherche::fromDates($typeProjet->date_remise, null)->value,
                 'conclusions' => $conclusions,
             ];
         });
@@ -974,6 +978,7 @@ class ProjetRechercheController extends Controller
         }
 
         $projet->update(['remis_le' => now()]);
+        $projet->synchroniserStatut();
 
         return response()->json([
             'message' => 'remis',
@@ -1146,10 +1151,12 @@ class ProjetRechercheController extends Controller
         $this->autoriserEnseignant($cours, $classe, $groupe);
 
         $projet = $this->trouverProjet($groupe, $typeProjet);
+        $projet->setRelation('typeProjet', $typeProjet);
 
         DB::transaction(function () use ($projet): void {
             $projet->votes()->delete();
             $projet->update(['remis_le' => null]);
+            $projet->synchroniserStatut();
         });
 
         return response()->json(['message' => 'remise_annulee']);
@@ -1172,6 +1179,7 @@ class ProjetRechercheController extends Controller
         abort_unless($groupe->membres->contains('id', auth()->id()), 403);
 
         $projet = $this->trouverProjet($groupe, $typeProjet);
+        $projet->setRelation('typeProjet', $typeProjet);
 
         abort_unless($projet->peutEtreRemis(), 422, 'La remise n\'est plus possible.');
 
@@ -1196,6 +1204,7 @@ class ProjetRechercheController extends Controller
 
                 if ($projet->remis_le === null || $projet->remises_multiples) {
                     $projet->update(['remis_le' => now()]);
+                    $projet->synchroniserStatut();
                 }
             });
         }
