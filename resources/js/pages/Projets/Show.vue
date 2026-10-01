@@ -41,7 +41,6 @@ import type { GlobalSection } from '@/components/AntidoteGlobalModal.vue';
 import CommentaireEnseignant from '@/components/CommentaireEnseignant.vue';
 import ConfirmationModal from '@/components/ConfirmationModal.vue';
 import ConsentementVideo from '@/components/ConsentementVideo.vue';
-import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import CritereCorrection from '@/components/CritereCorrection.vue';
 import type {
     Critere as TypeProjetCritere,
@@ -69,6 +68,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { edit as editTypeProjet } from '@/routes/types-projets';
 import type { Auth } from '@/types/auth';
@@ -651,7 +651,9 @@ const notesParMembre = computed<Record<number, number>>(() => {
                 corrections.find((c) => c.user_id === null) ??
                 null;
 
-            if (corr === null) continue;
+            if (corr === null) {
+                continue;
+            }
 
             if (critere.type === 'positif') {
                 // Points positifs comptés seulement si le critère est vérifié (verifie = true)
@@ -738,8 +740,18 @@ async function saveShared() {
         return;
     }
 
+    const payload = {
+        titre_projet: form.titre_projet,
+        ...(props.genererPageTitre
+            ? {}
+            : { page_titre_contenu: form.page_titre_contenu }),
+        ...(props.genererTableMatieres
+            ? {}
+            : { table_matieres_contenu: form.table_matieres_contenu }),
+    };
+
     try {
-        await axios.put(baseUrl.value, form);
+        await axios.put(baseUrl.value, payload);
         saveStatus.value = 'saved';
         setTimeout(() => {
             saveStatus.value = 'idle';
@@ -847,19 +859,6 @@ async function saveDeveloppement(devId: number) {
     } catch {
         saveStatus.value = 'error';
     }
-}
-
-async function save() {
-    if (!props.peutEditer) {
-        return;
-    }
-
-    saveStatus.value = 'saving';
-    await Promise.all([
-        saveShared(),
-        saveConclusion(),
-        ...developpements.value.map((d) => saveDeveloppement(d.id)),
-    ]);
 }
 
 watch(form, scheduleSharedSave, { deep: true });

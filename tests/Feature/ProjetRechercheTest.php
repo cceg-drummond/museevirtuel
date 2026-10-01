@@ -404,6 +404,11 @@ test("l'enseignant voit toujours toutes les annotations, peu importe correction_
 test('un membre peut remettre son travail', function () {
     ['cours' => $cours, 'classeSection' => $cs, 'classe' => $classe, 'etudiant1' => $etudiant, 'typeProjet' => $typeProjet] = creerScenario();
 
+    $typeProjet->update([
+        'has_introduction' => false,
+        'has_conclusion_individuelle' => false,
+    ]);
+
     $this->actingAs($etudiant)
         ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/remettre")
         ->assertOk()
@@ -412,6 +417,31 @@ test('un membre peut remettre son travail', function () {
 
     $projet = ProjetRecherche::where('groupe_id', $classe->id)->first();
     expect($projet->remis_le)->not->toBeNull();
+});
+
+test('la remise directe est refusée si une section textuelle est vide', function () {
+    ['cours' => $cours, 'classeSection' => $cs, 'classe' => $classe, 'etudiant1' => $etudiant, 'typeProjet' => $typeProjet] = creerScenario();
+
+    TypeProjetSection::create([
+        'type_projet_id' => $typeProjet->id,
+        'label' => 'Introduction',
+        'type' => 'texte',
+        'ordre' => 1,
+    ]);
+
+    $projet = ProjetRecherche::create([
+        'groupe_id' => $classe->id,
+        'type_projet_id' => $typeProjet->id,
+        'titre_projet' => 'Un titre valide',
+    ]);
+
+    $this->actingAs($etudiant)
+        ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/remettre")
+        ->assertUnprocessable()
+        ->assertJsonPath('manquants.0.section', 'Introduction')
+        ->assertJsonPath('manquants.0.raison', 'Le contenu textuel est vide.');
+
+    expect($projet->fresh()->remis_le)->toBeNull();
 });
 
 test('un étudiant hors groupe ne peut pas remettre le travail', function () {
@@ -454,6 +484,10 @@ test('une deuxième remise est autorisée avec remises multiples (paramètre Typ
     ['cours' => $cours, 'classeSection' => $cs, 'classe' => $classe, 'etudiant1' => $etudiant, 'typeProjet' => $typeProjet] = creerScenario();
 
     $typeProjet->update(['remises_multiples' => true]);
+    $typeProjet->update([
+        'has_introduction' => false,
+        'has_conclusion_individuelle' => false,
+    ]);
 
     ProjetRecherche::create([
         'groupe_id' => $classe->id,
