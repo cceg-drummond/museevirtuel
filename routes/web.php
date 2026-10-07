@@ -3,7 +3,6 @@
 use App\Http\Controllers\AdministrationController;
 use App\Http\Controllers\ClasseController;
 use App\Http\Controllers\ClasseEtudiantController;
-use App\Http\Controllers\ConsentementVideoController;
 use App\Http\Controllers\CoursController;
 use App\Http\Controllers\CoursDocumentController;
 use App\Http\Controllers\CoursLienEntrevueController;
@@ -11,7 +10,6 @@ use App\Http\Controllers\CoursObjectifController;
 use App\Http\Controllers\CoursReferenceController;
 use App\Http\Controllers\EcheancierController;
 use App\Http\Controllers\EnseignantController;
-use App\Http\Controllers\EntrevueConceptController;
 use App\Http\Controllers\EtablissementController;
 use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\EtudiantReferenceController;
@@ -31,9 +29,23 @@ use App\Http\Controllers\MuseePublicController;
 use App\Http\Controllers\MuseeTemplateController;
 use App\Http\Controllers\MuseeVideoSegmentController;
 use App\Http\Controllers\PersonneAgeeController;
-use App\Http\Controllers\ProjetRechercheController;
-use App\Http\Controllers\ProjetSchemaVisuelController;
-use App\Http\Controllers\ProjetSectionMediaController;
+use App\Http\Controllers\Projet\ConsentementVideoController;
+use App\Http\Controllers\Projet\EntrevueConceptController;
+use App\Http\Controllers\Projet\ProjetAnnotationController;
+use App\Http\Controllers\Projet\ProjetCommentaireController;
+use App\Http\Controllers\Projet\ProjetCorrectionController;
+use App\Http\Controllers\Projet\ProjetCritereCocheController;
+use App\Http\Controllers\Projet\ProjetCritereCorrectionController;
+use App\Http\Controllers\Projet\ProjetDeveloppementController;
+use App\Http\Controllers\Projet\ProjetExportController;
+use App\Http\Controllers\Projet\ProjetMuseeController;
+use App\Http\Controllers\Projet\ProjetRechercheController;
+use App\Http\Controllers\Projet\ProjetRemiseController;
+use App\Http\Controllers\Projet\ProjetRenvoiCommentaireController;
+use App\Http\Controllers\Projet\ProjetRenvoiController;
+use App\Http\Controllers\Projet\ProjetSchemaVisuelController;
+use App\Http\Controllers\Projet\ProjetSectionMediaController;
+use App\Http\Controllers\Projet\ProjetSectionParagrapheController;
 use App\Http\Controllers\QuestionBanqueController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\ThematiqueController;
@@ -577,10 +589,10 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
         ->name('projets.conclusion.update');
 
     // Commentaires de l'enseignant par champ (enseignant uniquement — vérifié dans le controller)
-    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/commentaires', [ProjetRechercheController::class, 'upsertCommentaire'])
+    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/commentaires', [ProjetCommentaireController::class, 'upsert'])
         ->name('projets.commentaires.upsert');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/commentaires/{commentaire}', [ProjetRechercheController::class, 'destroyCommentaire'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/commentaires/{commentaire}', [ProjetCommentaireController::class, 'destroy'])
         ->name('projets.commentaires.destroy');
 
     // Sections dynamiques — contenu rédigé par les étudiants
@@ -588,97 +600,97 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
         ->name('projets.sections.update');
 
     // Paragraphes de section de type 'paragraphes' — CRUD + réordonnancement
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes', [ProjetRechercheController::class, 'storeSectionParagraphe'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes', [ProjetSectionParagrapheController::class, 'store'])
         ->name('projets.sections.paragraphes.store');
 
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes/reorder', [ProjetRechercheController::class, 'reorderSectionParagraphes'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes/reorder', [ProjetSectionParagrapheController::class, 'reorder'])
         ->name('projets.sections.paragraphes.reorder');
 
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes/{paragraphe}', [ProjetRechercheController::class, 'updateSectionParagraphe'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes/{paragraphe}', [ProjetSectionParagrapheController::class, 'update'])
         ->name('projets.sections.paragraphes.update');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes/{paragraphe}', [ProjetRechercheController::class, 'destroySectionParagraphe'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/sections/{section}/paragraphes/{paragraphe}', [ProjetSectionParagrapheController::class, 'destroy'])
         ->name('projets.sections.paragraphes.destroy');
 
     // Paragraphes de développement — CRUD + réordonnancement
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements', [ProjetRechercheController::class, 'storeDeveloppement'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements', [ProjetDeveloppementController::class, 'store'])
         ->name('projets.developpements.store');
 
-    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements/{developpement}', [ProjetRechercheController::class, 'updateDeveloppement'])
+    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements/{developpement}', [ProjetDeveloppementController::class, 'update'])
         ->name('projets.developpements.update');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements/{developpement}', [ProjetRechercheController::class, 'destroyDeveloppement'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements/{developpement}', [ProjetDeveloppementController::class, 'destroy'])
         ->name('projets.developpements.destroy');
 
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements/reorder', [ProjetRechercheController::class, 'reorderDeveloppements'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/developpements/reorder', [ProjetDeveloppementController::class, 'reorder'])
         ->name('projets.developpements.reorder');
 
     // Annotations inline de l'enseignant par champ (enseignant uniquement — vérifié dans le controller)
-    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/annotations', [ProjetRechercheController::class, 'upsertAnnotation'])
+    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/annotations', [ProjetAnnotationController::class, 'upsert'])
         ->name('projets.annotations.upsert');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/annotations/{annotation}', [ProjetRechercheController::class, 'destroyAnnotation'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/annotations/{annotation}', [ProjetAnnotationController::class, 'destroy'])
         ->name('projets.annotations.destroy');
 
     // Corrections de critères — enseignant uniquement (vérifié dans le controller)
-    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/criteres/{critere}/correction', [ProjetRechercheController::class, 'upsertCritereCorrection'])
+    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/criteres/{critere}/correction', [ProjetCritereCorrectionController::class, 'upsert'])
         ->name('projets.criteres.correction.upsert');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/critere-corrections/{correction}', [ProjetRechercheController::class, 'destroyCritereCorrection'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/critere-corrections/{correction}', [ProjetCritereCorrectionController::class, 'destroy'])
         ->name('projets.critere-corrections.destroy');
 
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/critere-corrections/{correction}/cloner', [ProjetRechercheController::class, 'clonerCritereCorrection'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/critere-corrections/{correction}/cloner', [ProjetCritereCorrectionController::class, 'cloner'])
         ->name('projets.critere-corrections.cloner');
 
     // Coche personnelle étudiant — membre du groupe uniquement (vérifié dans le controller)
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/criteres/{critere}/coche', [ProjetRechercheController::class, 'toggleCocheCritere'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/criteres/{critere}/coche', [ProjetCritereCocheController::class, 'toggle'])
         ->name('projets.criteres.coche.toggle');
 
     // Toggles prof — visibilité des corrections + verrouillage (enseignant uniquement — vérifié dans le controller)
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/correction-visible', [ProjetRechercheController::class, 'toggleCorrectionVisible'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/correction-visible', [ProjetCorrectionController::class, 'toggleVisible'])
         ->name('projets.correction-visible.toggle');
 
     Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/verrouille', [ProjetRechercheController::class, 'toggleVerrouille'])
         ->name('projets.verrouille.toggle');
 
     // Remise de travail
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/remettre', [ProjetRechercheController::class, 'remettreTravail'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/remettre', [ProjetRemiseController::class, 'store'])
         ->name('projets.remettre');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/annuler-remise', [ProjetRechercheController::class, 'annulerRemise'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/annuler-remise', [ProjetRemiseController::class, 'destroy'])
         ->name('projets.annulerRemise');
 
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/voter-remise', [ProjetRechercheController::class, 'voterRemise'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/voter-remise', [ProjetRemiseController::class, 'voter'])
         ->name('projets.voterRemise');
 
     // Renvois (endnotes) — accessibles aux membres du groupe
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois', [ProjetRechercheController::class, 'storeRenvoi'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois', [ProjetRenvoiController::class, 'store'])
         ->name('projets.renvois.store');
 
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}', [ProjetRechercheController::class, 'updateRenvoi'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}', [ProjetRenvoiController::class, 'update'])
         ->name('projets.renvois.update');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}', [ProjetRechercheController::class, 'destroyRenvoi'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}', [ProjetRenvoiController::class, 'destroy'])
         ->name('projets.renvois.destroy');
 
     // Commentaires d'enseignant sur les renvois (enseignant uniquement — vérifié dans le controller)
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}/commentaires', [ProjetRechercheController::class, 'storeRenvoiCommentaire'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}/commentaires', [ProjetRenvoiCommentaireController::class, 'store'])
         ->name('projets.renvois.commentaires.store');
 
-    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}/commentaires/{renvoiCommentaire}', [ProjetRechercheController::class, 'destroyRenvoiCommentaire'])
+    Route::delete('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/renvois/{renvoi}/commentaires/{renvoiCommentaire}', [ProjetRenvoiCommentaireController::class, 'destroy'])
         ->name('projets.renvois.commentaires.destroy');
 
     // Toggle mode édition enseignant (enseignant uniquement — vérifié dans le controller)
     Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/mode-edition-enseignant', [ProjetRechercheController::class, 'toggleModeEditionEnseignant'])
         ->name('projets.mode-edition-enseignant.toggle');
 
-    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/pdf', [ProjetRechercheController::class, 'exportPdf'])
+    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/pdf', [ProjetExportController::class, 'pdf'])
         ->name('projets.export.pdf');
 
-    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/word', [ProjetRechercheController::class, 'exportWord'])
+    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/word', [ProjetExportController::class, 'word'])
         ->name('projets.export.word');
 
-    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/apercu-notes', [ProjetRechercheController::class, 'apercuNotes'])
+    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/apercu-notes', [ProjetCorrectionController::class, 'apercuNotes'])
         ->name('projets.apercu.notes');
 
     // Concepts d'entrevue — CRUD + réordonnancement + lignes
@@ -812,7 +824,7 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
         ->name('types-projets.musee-approbation');
 
     // ─── Musée virtuel — Page de correction (enseignant) ─────────────────────
-    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/musee/correction', [ProjetRechercheController::class, 'museeCorrection'])
+    Route::get('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/musee/correction', [ProjetMuseeController::class, 'correction'])
         ->name('projets.musee-correction');
 
     // Visioconférences — création accessible à l'enseignant et aux membres d'un groupe (auth contrôlée dans le controller)

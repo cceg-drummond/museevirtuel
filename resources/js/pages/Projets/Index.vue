@@ -12,6 +12,7 @@ import {
     Settings2,
     XCircle,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ type TypeProjetResume = {
     nom: string;
     description: string | null;
     type: 'standard' | 'musee';
+    accessible: boolean;
 };
 
 type StatutPublication = 'brouillon' | 'soumis' | 'approuve' | 'rejete';
@@ -78,6 +80,12 @@ type Props = {
 
 const props = defineProps<Props>();
 
+const projetsVisibles = computed(() =>
+    props.estEnseignant
+        ? props.projets.filter((card) => card.typeProjet.accessible)
+        : props.projets,
+);
+
 function projetUrl(typeProjetId: number): string {
     return `/cours/${props.classe.cours_id}/classes/${props.groupe.classe_id}/groupes/${props.groupe.id}/projets/${typeProjetId}/edit`;
 }
@@ -112,10 +120,13 @@ function statutProjetLabel(statut: StatutProjet): string {
 
 function statutProjetClass(statut: StatutProjet): string {
     return {
-        en_cours: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        en_cours:
+            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
         remis: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-        en_retard: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-        remis_en_retard: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+        en_retard:
+            'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+        remis_en_retard:
+            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
     }[statut];
 }
 </script>
@@ -144,7 +155,7 @@ function statutProjetClass(statut: StatutProjet): string {
 
             <!-- Aucun projet disponible -->
             <div
-                v-if="projets.length === 0"
+                v-if="projetsVisibles.length === 0"
                 class="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center"
             >
                 <FolderOpen class="h-10 w-10 text-muted-foreground" />
@@ -162,13 +173,15 @@ function statutProjetClass(statut: StatutProjet): string {
                 class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
             >
                 <Card
-                    v-for="card in projets"
+                    v-for="card in projetsVisibles"
                     :key="card.typeProjet.id"
                     class="flex flex-col"
                 >
                     <CardHeader class="pb-3">
                         <div class="flex items-start justify-between gap-2">
-                            <div class="flex min-w-0 flex-wrap items-center gap-2">
+                            <div
+                                class="flex min-w-0 flex-wrap items-center gap-2"
+                            >
                                 <CardTitle class="text-base">
                                     {{ card.typeProjet.nom }}
                                 </CardTitle>
@@ -227,16 +240,30 @@ function statutProjetClass(statut: StatutProjet): string {
 
                         <!-- ── Musée : statut de publication ── -->
                         <div v-if="card.typeProjet.type === 'musee'">
-                            <p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            <p
+                                class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                            >
                                 Publication
                             </p>
-                            <div v-if="card.projet && card.projet.statut_publication" class="flex items-center gap-2">
+                            <div
+                                v-if="
+                                    card.projet &&
+                                    card.projet.statut_publication
+                                "
+                                class="flex items-center gap-2"
+                            >
                                 <CheckCircle2
-                                    v-if="card.projet.statut_publication === 'approuve'"
+                                    v-if="
+                                        card.projet.statut_publication ===
+                                        'approuve'
+                                    "
                                     class="h-4 w-4 shrink-0 text-emerald-500"
                                 />
                                 <Clock
-                                    v-else-if="card.projet.statut_publication === 'soumis'"
+                                    v-else-if="
+                                        card.projet.statut_publication ===
+                                        'soumis'
+                                    "
                                     class="h-4 w-4 shrink-0 text-amber-500"
                                 />
                                 <XCircle
@@ -246,13 +273,22 @@ function statutProjetClass(statut: StatutProjet): string {
                                 <span
                                     :class="[
                                         'rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                                        statutPublicationClass(card.projet.statut_publication),
+                                        statutPublicationClass(
+                                            card.projet.statut_publication,
+                                        ),
                                     ]"
                                 >
-                                    {{ statutPublicationLabel(card.projet.statut_publication) }}
+                                    {{
+                                        statutPublicationLabel(
+                                            card.projet.statut_publication,
+                                        )
+                                    }}
                                 </span>
                             </div>
-                            <p v-else class="text-xs text-muted-foreground italic">
+                            <p
+                                v-else
+                                class="text-xs text-muted-foreground italic"
+                            >
                                 Musée non démarré
                             </p>
                         </div>
@@ -298,7 +334,9 @@ function statutProjetClass(statut: StatutProjet): string {
                                 size="sm"
                                 :texte="
                                     !estEnseignant
-                                        ? (card.typeProjet.type === 'musee' ? 'Ouvrir l\'éditeur du musée' : 'Ouvrir et éditer votre projet')
+                                        ? card.typeProjet.type === 'musee'
+                                            ? 'Ouvrir l\'éditeur du musée'
+                                            : 'Ouvrir et éditer votre projet'
                                         : 'Consulter le projet du groupe'
                                 "
                                 :variant="
@@ -310,15 +348,22 @@ function statutProjetClass(statut: StatutProjet): string {
                                 <Link :href="projetUrl(card.typeProjet.id)">
                                     <component
                                         :is="
-                                            card.typeProjet.type === 'musee' ? Landmark
-                                            : !estEnseignant ? FileEdit : BookOpen
+                                            card.typeProjet.type === 'musee'
+                                                ? Landmark
+                                                : !estEnseignant
+                                                  ? FileEdit
+                                                  : BookOpen
                                         "
                                         class="mr-2 h-4 w-4"
                                     />
                                     {{
                                         card.typeProjet.type === 'musee'
-                                            ? (estEnseignant ? 'Voir le musée' : 'Mon musée')
-                                            : (!estEnseignant ? 'Ouvrir le projet' : 'Consulter')
+                                            ? estEnseignant
+                                                ? 'Voir le musée'
+                                                : 'Mon musée'
+                                            : !estEnseignant
+                                              ? 'Ouvrir le projet'
+                                              : 'Consulter'
                                     }}
                                     <ChevronRight class="ml-auto h-4 w-4" />
                                 </Link>

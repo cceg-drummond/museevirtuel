@@ -10,10 +10,10 @@ import {
 } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 import {
-    clonerCritereCorrection,
-    destroyCritereCorrection,
-    upsertCritereCorrection,
-} from '@/actions/App/Http/Controllers/ProjetRechercheController';
+    cloner as clonerCritereCorrection,
+    destroy as destroyCritereCorrection,
+    upsert as upsertCritereCorrection,
+} from '@/actions/App/Http/Controllers/Projet/ProjetCritereCorrectionController';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
