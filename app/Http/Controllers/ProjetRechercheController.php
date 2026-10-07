@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\ExportProjetPdf;
 use App\Actions\ExportProjetWord;
+use App\Enums\StatutProjetRecherche;
 use App\Helpers\HtmlHelper;
 use App\Http\Requests\UpsertProjetCommentaireRequest;
 use App\Models\Classe;
@@ -78,7 +79,8 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         // Charger les TypeProjets du cours — pas de tous les cours de l'enseignant
         $query = TypeProjet::where('cours_id', $cours->id);
@@ -93,7 +95,7 @@ class ProjetRechercheController extends Controller
         // Précharger tous les projets de ce groupe en une seule requête — évite le N+1
         $projetsParType = ProjetRecherche::where('groupe_id', $groupe->id)
             ->whereIn('type_projet_id', $typesProjets->pluck('id'))
-            ->with(['conclusions', 'museePublication'])
+            ->with(['typeProjet', 'conclusions', 'museePublication'])
             ->get()
             ->keyBy('type_projet_id');
 
@@ -121,11 +123,14 @@ class ProjetRechercheController extends Controller
                         'id' => $projet->id,
                         'titre_projet' => $projet->titre_projet,
                         'completion' => $projet->completion(),
+                        'statut' => $projet->synchroniserStatut()->value,
                         'statut_publication' => $typeProjet->isMusee()
                             ? ($projet->museePublication?->statut ?? MuseePublication::STATUT_BROUILLON)
                             : null,
                     ]
                     : null,
+                'statut' => $projet?->statutActuel()->value
+                    ?? StatutProjetRecherche::fromDates($typeProjet->date_remise, null)->value,
                 'conclusions' => $conclusions,
             ];
         });
@@ -160,7 +165,8 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         // Guard accessibilité : si le type de projet n'est pas accessible, les étudiants ne peuvent pas accéder
         if (! $estEnseignant && $user->role !== 'admin') {
@@ -352,7 +358,8 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         $projet = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)
@@ -444,7 +451,7 @@ class ProjetRechercheController extends Controller
     }
 
     /**
-     * Met à jour le titre du projet et, optionnellement, le contenu manuel de la page titre
+     * Met à jour le titre du projet et, le contenu manuel de la page titre
      * et de la table des matières (utilisés quand les flags de génération sont désactivés).
      *
      * @throws HttpException
@@ -454,9 +461,9 @@ class ProjetRechercheController extends Controller
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
         $validated = $request->validate([
-            'titre_projet' => ['nullable', 'string', 'max:500'],
-            'page_titre_contenu' => ['nullable', 'string'],
-            'table_matieres_contenu' => ['nullable', 'string'],
+            'titre_projet' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'page_titre_contenu' => ['sometimes', 'nullable', 'string', 'max:1500'],
+            'table_matieres_contenu' => ['sometimes', 'nullable', 'string', 'max:1500'],
         ]);
 
         $existant = ProjetRecherche::where('groupe_id', $groupe->id)
@@ -961,12 +968,176 @@ class ProjetRechercheController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_unless($projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis et les remises multiples ne sont pas autorisées.');
 
+        $contenusManquants = $this->contenusTextuelsManquants($projet, $groupe);
+
+        if ($contenusManquants !== []) {
+            return response()->json([
+                'message' => 'Le projet doit contenir les textes requis avant de pouvoir être remis.',
+                'manquants' => $contenusManquants,
+            ], 422);
+        }
+
         $projet->update(['remis_le' => now()]);
+        $projet->synchroniserStatut();
 
         return response()->json([
             'message' => 'remis',
             'remis_le' => $projet->remis_le->toIso8601String(),
         ]);
+    }
+
+    private function ajouterSiInsuffisant(array $manquants, string $contenu, int $minimum, string $section, string $raison): array
+    {
+        if ($this->nombreMots($contenu) < $minimum) {
+            $manquants[] = [
+                'section' => $section,
+                'raison' => $raison,
+            ];
+        }
+
+        return $manquants;
+    }
+
+    /**
+     * Retourne les contenus textuels vides ou trop courts avant une remise.
+     *
+     * Cette validation reprend les mêmes règles que l'éditeur frontend pour
+     * empêcher qu'une requête directe contourne les contrôles de l'interface.
+     *
+     * @return list<array{section: string, raison: string}>
+     */
+    private function contenusTextuelsManquants(ProjetRecherche $projet, Groupe $groupe): array
+    {
+        $projet->loadMissing([
+            'typeProjet.sections',
+            'sectionContenus',
+            'sectionParagraphes',
+            'conclusions',
+            'developpements',
+        ]);
+
+        $manquants = [];
+
+        $contenusParSection = $projet->sectionContenus->keyBy('section_id');
+        $paragraphesParSection = $projet->sectionParagraphes->groupBy('section_id');
+        $conclusionsParSection = $projet->conclusions
+            ->whereNotNull('section_id')
+            ->groupBy('section_id');
+
+        foreach ($projet->typeProjet->sections as $section) {
+            $libelle = $section->label ?: 'Section '.$section->id;
+
+            if ($section->type === 'texte') {
+                $manquants = $this->ajouterSiInsuffisant(
+                    $manquants,
+                    (string) $contenusParSection->get($section->id)?->contenu,
+                    1,
+                    $libelle,
+                    'Le contenu textuel est vide.',
+                );
+            }
+
+            if ($section->type === 'paragraphes') {
+                $paragraphes = $paragraphesParSection->get($section->id, collect());
+
+                if ($paragraphes->isEmpty()) {
+                    $manquants[] = [
+                        'section' => $libelle,
+                        'raison' => 'Aucun paragraphe n’a été ajouté.',
+                    ];
+                }
+
+                foreach ($paragraphes as $paragraphe) {
+                    if ($this->nombreMots($paragraphe->contenu) < 1) {
+                        $manquants[] = [
+                            'section' => "{$libelle} — paragraphe {$paragraphe->ordre}",
+                            'raison' => 'Le contenu est vide.',
+                        ];
+                    }
+                }
+            }
+
+            if ($section->type === 'individuel') {
+                $conclusions = $conclusionsParSection->get($section->id, collect());
+
+                foreach ($groupe->membres as $membre) {
+                    $conclusion = $conclusions->firstWhere('user_id', $membre->id);
+
+                    $manquants = $this->ajouterSiInsuffisant(
+                        $manquants,
+                        (string) $conclusion?->contenu,
+                        20,
+                        "{$libelle} — conclusion de {$membre->prenom} {$membre->nom}",
+                        'La conclusion doit avoir au moins 20 mots.',
+                    );
+                }
+            }
+        }
+
+        if ($projet->typeProjet->sections->isEmpty() && $projet->typeProjet->has_introduction) {
+            foreach ([
+                'introduction_amener' => 'Sujet amené',
+                'introduction_poser' => 'Sujet posé',
+                'introduction_diviser' => 'Sujet divisé',
+            ] as $champ => $libelle) {
+                $manquants = $this->ajouterSiInsuffisant(
+                    $manquants,
+                    (string) $projet->{$champ},
+                    20,
+                    $libelle,
+                    "L'introduction doit avoir au moins 20 mots.",
+                );
+            }
+        }
+
+        if ($projet->typeProjet->sections->isEmpty() && $projet->typeProjet->has_conclusion_individuelle) {
+            $conclusions = $projet->conclusions->whereNull('section_id');
+
+            foreach ($groupe->membres as $membre) {
+                $conclusion = $conclusions->firstWhere('user_id', $membre->id);
+
+                $manquants = $this->ajouterSiInsuffisant(
+                    $manquants,
+                    (string) $conclusion?->contenu,
+                    20,
+                    "Conclusion de {$membre->prenom} {$membre->nom}",
+                    'La conclusion doit avoir au moins 20 mots.',
+                );
+            }
+        }
+
+        foreach ($projet->developpements as $developpement) {
+            $manquants = $this->ajouterSiInsuffisant(
+                $manquants,
+                (string) $developpement->titre,
+                3,
+                "Paragraphe de développement {$developpement->ordre} — titre",
+                'Le titre doit avoir au moins 3 mots.',
+            );
+            $manquants = $this->ajouterSiInsuffisant(
+                $manquants,
+                (string) $developpement->contenu,
+                50,
+                "Paragraphe de développement {$developpement->ordre} — contenu",
+                'Le contenu doit avoir au moins 50 mots.',
+            );
+        }
+
+        return $manquants;
+    }
+
+    /**
+     * Compte les mots d'un contenu texte ou HTML après normalisation.
+     */
+    private function nombreMots(?string $contenu): int
+    {
+        $texte = trim(html_entity_decode(strip_tags((string) $contenu)));
+
+        if ($texte === '') {
+            return 0;
+        }
+
+        return count(preg_split('/\s+/u', $texte, -1, PREG_SPLIT_NO_EMPTY));
     }
 
     /**
@@ -980,10 +1151,12 @@ class ProjetRechercheController extends Controller
         $this->autoriserEnseignant($cours, $classe, $groupe);
 
         $projet = $this->trouverProjet($groupe, $typeProjet);
+        $projet->setRelation('typeProjet', $typeProjet);
 
         DB::transaction(function () use ($projet): void {
             $projet->votes()->delete();
             $projet->update(['remis_le' => null]);
+            $projet->synchroniserStatut();
         });
 
         return response()->json(['message' => 'remise_annulee']);
@@ -1006,6 +1179,7 @@ class ProjetRechercheController extends Controller
         abort_unless($groupe->membres->contains('id', auth()->id()), 403);
 
         $projet = $this->trouverProjet($groupe, $typeProjet);
+        $projet->setRelation('typeProjet', $typeProjet);
 
         abort_unless($projet->peutEtreRemis(), 422, 'La remise n\'est plus possible.');
 
@@ -1030,6 +1204,7 @@ class ProjetRechercheController extends Controller
 
                 if ($projet->remis_le === null || $projet->remises_multiples) {
                     $projet->update(['remis_le' => now()]);
+                    $projet->synchroniserStatut();
                 }
             });
         }
@@ -1333,8 +1508,12 @@ class ProjetRechercheController extends Controller
         $this->authorize('view', $groupe);
 
         $user = auth()->user();
+        /**
+         * Il faudra retirer la portion $user->isEnseignant()
+         * && en production.
+         */
         abort_unless(
-            $user->role === 'admin' || $cours->enseignant_id === $user->id,
+            $user->isAdmin() || ($user->isEnseignant() && $cours->enseignant_id === $user->id),
             403,
         );
 

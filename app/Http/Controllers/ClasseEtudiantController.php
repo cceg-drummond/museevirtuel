@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateEtudiantAction;
 use App\Actions\ImportEtudiantsAction;
+use App\Enums\StatutEtudiantCours;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\User;
@@ -34,11 +35,18 @@ class ClasseEtudiantController extends Controller
         $this->assertClasseAppartientAuCours($classe, $cours);
         $this->authorize('update', $cours);
 
+        $request->merge([
+            'statut_cours' => $request->input(
+                'statut_cours',
+                StatutEtudiantCours::Actif->value,
+            ),
+        ]);
+
         $validated = $request->validate([
             'prenom' => ['required', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
-            'no_da' => ['required', 'string', 'max:20'],
-            'statut_cours' => ['nullable', 'string', 'max:100'],
+            'no_da' => ['required', 'integer'],
+            'statut_cours' => ['required', Rule::enum(StatutEtudiantCours::class)],
             'email' => ['nullable', 'string', 'email', 'max:255'],
         ]);
 
@@ -55,7 +63,7 @@ class ClasseEtudiantController extends Controller
 
         $classe->etudiants()->attach($etudiant->id, [
             'no_da' => $validated['no_da'],
-            'statut_cours' => $validated['statut_cours'] ?? null,
+            'statut_cours' => $validated['statut_cours'],
         ]);
 
         return back()->with('success', __('etudiant.added'));
@@ -73,8 +81,8 @@ class ClasseEtudiantController extends Controller
             'prenom' => ['required', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($etudiant->id)],
-            'no_da' => ['required', 'string', 'max:20'],
-            'statut_cours' => ['nullable', 'string', 'max:100'],
+            'no_da' => ['required', 'integer'],
+            'statut_cours' => ['required', Rule::enum(StatutEtudiantCours::class)],
         ]);
 
         $etudiant->update([
@@ -85,7 +93,7 @@ class ClasseEtudiantController extends Controller
         ]);
 
         $classe->etudiants()->updateExistingPivot($etudiant->id, [
-            'statut_cours' => $validated['statut_cours'] ?? null,
+            'statut_cours' => $validated['statut_cours'],
         ]);
 
         return back()->with('success', __('etudiant.updated'));

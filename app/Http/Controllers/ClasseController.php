@@ -32,7 +32,12 @@ class ClasseController extends Controller
         $this->authorize('view', $classe);
 
         $user = auth()->user();
-        $estEnseignant = $cours->enseignant_id === $user->id;
+        /**
+         * Il faudra retiré la portion $estEnseignant = $user->isEnseignant()
+         * && en production.
+         */
+        $estEnseignant = $user->isEnseignant()
+            && $cours->enseignant_id === $user->id;
 
         $classe->load([
             'groupes.membres',
@@ -92,6 +97,7 @@ class ClasseController extends Controller
         return Inertia::render('Classes/Show', [
             'cours' => $cours->only('id', 'nom_cours', 'code', 'groupe'),
             'classe' => $classe,
+            'utilisateurConnecteId' => $user->id,
             'estEnseignant' => $estEnseignant,
             'typesProjets' => $typesProjets,
             'echeancierEtapes' => $echeancierEtapes,
@@ -355,7 +361,7 @@ class ClasseController extends Controller
 
         $user = auth()->user();
         abort_unless(
-            $user->role === 'admin' || $cours->enseignant_id === $user->id,
+            $user->isAdmin() || ($user->isEnseignant() && $cours->enseignant_id === $user->id),
             403,
         );
     }

@@ -3,12 +3,16 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import { LogOut, Settings } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import SessionController from '@/actions/App/Http/Controllers/SessionController';
 import LocaleController from '@/actions/App/Http/Controllers/Settings/LocaleController';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
 import { logout } from '@/routes';
@@ -25,6 +29,7 @@ useI18n();
 
 const page = usePage();
 const currentLocale = computed(() => page.props.locale as string);
+const currentRole = computed(() => page.props.auth.user.role);
 
 const handleLogout = () => {
     router.flushAll();
@@ -32,14 +37,21 @@ const handleLogout = () => {
 
 const switchLocale = (locale: string) => {
     router.patch(
-        LocaleController.update.url(),
+        LocaleController.update(),
         { locale },
         {
-            preserveScroll: true,
-            onSuccess: () => router.reload(),
+            onSuccess: () => window.location.reload(),
         },
     );
 };
+
+const switchRole = (role: 'enseignant' | 'etudiant') => {
+    router.patch(
+        SessionController.changerRole(),
+        { role }
+    );
+};
+
 </script>
 
 <template>
@@ -47,6 +59,25 @@ const switchLocale = (locale: string) => {
         <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <UserInfo :user="user" :show-email="true" />
         </div>
+        <DropdownMenuSub>
+            <DropdownMenuSubTrigger class="w-auto shrink-0 px-2">
+                Changer de rôle
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+                <DropdownMenuItem
+                    :class="{ 'bg-accent': currentRole === 'enseignant' }"
+                    @click="switchRole('enseignant')"
+                >
+                    Enseignant
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    :class="{ 'bg-accent': currentRole === 'etudiant' }"
+                    @click="switchRole('etudiant')"
+                >
+                    Étudiant
+                </DropdownMenuItem>
+            </DropdownMenuSubContent>
+        </DropdownMenuSub>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
@@ -66,7 +97,7 @@ const switchLocale = (locale: string) => {
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted'
             "
-            @click.stop="switchLocale('fr')"
+            @click="switchLocale('fr')"
         >
             🇫🇷 FR
         </button>
@@ -77,7 +108,7 @@ const switchLocale = (locale: string) => {
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted'
             "
-            @click.stop="switchLocale('en')"
+            @click="switchLocale('en')"
         >
             🇬🇧 EN
         </button>

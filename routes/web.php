@@ -35,6 +35,7 @@ use App\Http\Controllers\ProjetRechercheController;
 use App\Http\Controllers\ProjetSchemaVisuelController;
 use App\Http\Controllers\ProjetSectionMediaController;
 use App\Http\Controllers\QuestionBanqueController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\ThematiqueController;
 use App\Http\Controllers\TransfererCoursController;
 use App\Http\Controllers\TypeProjetController;
@@ -47,6 +48,11 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
+
+// Route pour changer de role
+Route::patch('/login', [SessionController::class, 'changerRole'])
+    ->middleware('auth')
+    ->name('session.role.update');
 
 // ─── Musée virtuel — Pages publiques (sans authentification) ──────────────────
 Route::get('/musee', [MuseePublicController::class, 'accueil'])
@@ -423,6 +429,9 @@ Route::middleware(['auth', 'role:etudiant'])->group(function () {
         // Groupes dans une classe (section) — l'étudiant crée et consulte son groupe
         Route::get('/cours/{cours}/classes/{classe}/groupes', [GroupeController::class, 'index'])
             ->name('groupes.index');
+
+        Route::get('/cours/{cours}/classes/{classe}/groupes/create', [GroupeController::class, 'create'])
+            ->name('groupes.create');
 
         Route::post('/cours/{cours}/classes/{classe}/groupes', [GroupeController::class, 'store'])
             ->name('groupes.store');

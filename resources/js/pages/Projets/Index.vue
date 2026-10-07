@@ -43,12 +43,16 @@ type ProjetResume = {
     id: number;
     titre_projet: string | null;
     completion: number;
+    statut: StatutProjet;
     statut_publication: StatutPublication | null;
 } | null;
+
+type StatutProjet = 'en_cours' | 'remis' | 'en_retard' | 'remis_en_retard';
 
 type ProjetCard = {
     typeProjet: TypeProjetResume;
     projet: ProjetResume;
+    statut: StatutProjet;
     conclusions: ConclusionResume[];
 };
 
@@ -94,6 +98,24 @@ function statutPublicationClass(statut: StatutPublication): string {
         soumis: 'bg-amber-100 text-amber-800',
         approuve: 'bg-emerald-100 text-emerald-800',
         rejete: 'bg-red-100 text-red-800',
+    }[statut];
+}
+
+function statutProjetLabel(statut: StatutProjet): string {
+    return {
+        en_cours: 'En cours',
+        remis: 'Remis',
+        en_retard: 'En retard',
+        remis_en_retard: 'Remis en retard',
+    }[statut];
+}
+
+function statutProjetClass(statut: StatutProjet): string {
+    return {
+        en_cours: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        remis: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+        en_retard: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+        remis_en_retard: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
     }[statut];
 }
 </script>
@@ -146,9 +168,19 @@ function statutPublicationClass(statut: StatutPublication): string {
                 >
                     <CardHeader class="pb-3">
                         <div class="flex items-start justify-between gap-2">
-                            <CardTitle class="text-base">
-                                {{ card.typeProjet.nom }}
-                            </CardTitle>
+                            <div class="flex min-w-0 flex-wrap items-center gap-2">
+                                <CardTitle class="text-base">
+                                    {{ card.typeProjet.nom }}
+                                </CardTitle>
+                                <span
+                                    :class="[
+                                        'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                                        statutProjetClass(card.statut),
+                                    ]"
+                                >
+                                    {{ statutProjetLabel(card.statut) }}
+                                </span>
+                            </div>
                             <!-- Badge type musée -->
                             <span
                                 v-if="card.typeProjet.type === 'musee'"
