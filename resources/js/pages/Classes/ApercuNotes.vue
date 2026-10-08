@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Copy } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import Heading from '@/components/Heading.vue';
+import Heading from '@/components/shared/Heading.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 

@@ -2,8 +2,8 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, FolderOpen } from 'lucide-vue-next';
 import { computed } from 'vue';
-import Heading from '@/components/Heading.vue';
-import ProjetCard from '@/components/ProjetCard.vue';
+import Heading from '@/components/shared/Heading.vue';
+import ProjetCard from '@/components/projets/ProjetCard.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 

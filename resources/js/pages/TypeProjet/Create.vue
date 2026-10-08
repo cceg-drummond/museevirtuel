@@ -3,8 +3,8 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, GripVertical, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
+import Heading from '@/components/shared/Heading.vue';
+import InputError from '@/components/shared/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -135,12 +135,12 @@ function creer() {
     <AppLayout>
         <Head :title="$t('types_projet.create.page_title')" />
 
-        <div class="mx-auto flex max-w-2xl flex-col gap-6 p-6">
+        <div class="mx-auto flex max-w-2xl flex-col gap-6 mt-2">
             <!-- En-tête -->
             <div>
                 <Link
                     :href="typesProjets.index.url(cours.id)"
-                    class="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                    class="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft class="h-3.5 w-3.5" />
                     {{ $t('types_projet.create.back') }}
@@ -150,7 +150,7 @@ function creer() {
 
             <!-- Informations générales -->
             <Card>
-                <CardContent class="grid gap-4 pt-6">
+                <CardContent class="grid gap-1">
                     <div class="grid gap-2">
                         <Label for="nom"
                             >{{ $t('types_projet.edit.label_name') }}
@@ -546,7 +546,7 @@ function creer() {
             </div>
 
             <!-- Bouton créer -->
-            <div class="flex justify-end">
+            <div class="flex justify-end mb-2">
                 <Button :disabled="form.processing" @click="creer">
                     {{
                         form.processing

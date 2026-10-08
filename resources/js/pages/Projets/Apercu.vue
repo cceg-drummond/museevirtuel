@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Download, Eye } from 'lucide-vue-next';
-import Heading from '@/components/Heading.vue';
-import ApercuSection from '@/components/Projets/ApercuSection.vue';
+import Heading from '@/components/shared/Heading.vue';
+import ApercuSection from '@/components/projets/ApercuSection.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';

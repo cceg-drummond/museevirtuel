@@ -31,30 +31,30 @@ import {
     watch,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import AntidoteGlobalModal from '@/components/AntidoteGlobalModal.vue';
-import type { GlobalSection } from '@/components/AntidoteGlobalModal.vue';
-import CommentaireEnseignant from '@/components/CommentaireEnseignant.vue';
-import ConfirmationModal from '@/components/ConfirmationModal.vue';
-import CritereCorrection from '@/components/CritereCorrection.vue';
+import AntidoteGlobalModal from '@/components/projets/AntidoteGlobalModal.vue';
+import type { GlobalSection } from '@/components/projets/AntidoteGlobalModal.vue';
+import CommentaireEnseignant from '@/components/projets/CommentaireEnseignant.vue';
+import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
+import CritereCorrection from '@/components/projets/CritereCorrection.vue';
 import type {
     Critere as TypeProjetCritere,
     CorrectionLocale,
-} from '@/components/CritereCorrection.vue';
-import CritereEtudiant from '@/components/CritereEtudiant.vue';
-import Heading from '@/components/Heading.vue';
-import ProjetActionsEnseignant from '@/components/Projets/ProjetActionsEnseignant.vue';
-import ProjetCollapsibleCard from '@/components/Projets/ProjetCollapsibleCard.vue';
-import ProjetConsultationExports from '@/components/Projets/ProjetConsultationExports.vue';
-import ProjetOutilsActions from '@/components/Projets/ProjetOutilsActions.vue';
-import ProjetSauvegardeIndicateur from '@/components/Projets/ProjetSauvegardeIndicateur.vue';
-import ReferenceApaModal from '@/components/ReferenceApaModal.vue';
-import RichEditor from '@/components/RichEditor.vue';
-import SectionAudio from '@/components/SectionAudio.vue';
-import SectionChoixQuestions from '@/components/SectionChoixQuestions.vue';
-import SectionEntrevueCC from '@/components/SectionEntrevueCC.vue';
-import SectionSchemaVisuel from '@/components/SectionSchemaVisuel.vue';
-import SectionTache from '@/components/SectionTache.vue';
-import SectionVideo from '@/components/SectionVideo.vue';
+} from '@/components/projets/CritereCorrection.vue';
+import CritereEtudiant from '@/components/projets/CritereEtudiant.vue';
+import Heading from '@/components/shared/Heading.vue';
+import ProjetActionsEnseignant from '@/components/projets/ProjetActionsEnseignant.vue';
+import ProjetCollapsibleCard from '@/components/projets/ProjetCollapsibleCard.vue';
+import ProjetConsultationExports from '@/components/projets/ProjetConsultationExports.vue';
+import ProjetOutilsActions from '@/components/projets/ProjetOutilsActions.vue';
+import ProjetSauvegardeIndicateur from '@/components/projets/ProjetSauvegardeIndicateur.vue';
+import ReferenceApaModal from '@/components/projets/ReferenceApaModal.vue';
+import RichEditor from '@/components/projets/RichEditor.vue';
+import SectionAudio from '@/components/projets/SectionAudio.vue';
+import SectionChoixQuestions from '@/components/projets/SectionChoixQuestions.vue';
+import SectionEntrevueCC from '@/components/projets/SectionEntrevueCC.vue';
+import SectionSchemaVisuel from '@/components/projets/SectionSchemaVisuel.vue';
+import SectionTache from '@/components/projets/SectionTache.vue';
+import SectionVideo from '@/components/projets/SectionVideo.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

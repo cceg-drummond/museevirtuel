@@ -21,11 +21,11 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ConfirmationModal from '@/components/ConfirmationModal.vue';
-import CoursObjectifs from '@/components/CoursObjectifs.vue';
-import CoursReferences from '@/components/CoursReferences.vue';
-import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
+import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
+import CoursObjectifs from '@/components/cours/CoursObjectifs.vue';
+import CoursReferences from '@/components/cours/CoursReferences.vue';
+import Heading from '@/components/shared/Heading.vue';
+import InputError from '@/components/shared/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import VisioSession from '@/components/VisioSession.vue';
+import VisioSession from '@/components/classes/VisioSession.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import typesProjetsRoutes from '@/routes/types-projets';
 

@@ -50,7 +50,8 @@ use App\Http\Controllers\QuestionBanqueController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\ThematiqueController;
 use App\Http\Controllers\TransfererCoursController;
-use App\Http\Controllers\TypeProjetController;
+use App\Http\Controllers\TypeProjet\SectionController;
+use App\Http\Controllers\TypeProjet\TypeProjetController;
 use App\Http\Controllers\TypeProjetCritereController;
 use App\Http\Controllers\TypeProjetTacheController;
 use App\Http\Controllers\VisioConferenceController;
@@ -282,16 +283,16 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
         ->name('types-projets.destroy');
 
     // Sections du type de projet (définies par le professeur)
-    Route::post('/cours/{cours}/types-projets/{typeProjet}/sections', [TypeProjetController::class, 'storeSection'])
+    Route::post('/cours/{cours}/types-projets/{typeProjet}/sections', [SectionController::class, 'store'])
         ->name('types-projets.sections.store');
 
-    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/reorder', [TypeProjetController::class, 'reorderSections'])
+    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/reorder', [SectionController::class, 'reorder'])
         ->name('types-projets.sections.reorder');
 
-    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [TypeProjetController::class, 'updateSection'])
+    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [SectionController::class, 'update'])
         ->name('types-projets.sections.update');
 
-    Route::delete('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [TypeProjetController::class, 'destroySection'])
+    Route::delete('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [SectionController::class, 'destroy'])
         ->name('types-projets.sections.destroy');
 
     // Banque de questions (sections de type choix_questions) — gérées par l'enseignant
