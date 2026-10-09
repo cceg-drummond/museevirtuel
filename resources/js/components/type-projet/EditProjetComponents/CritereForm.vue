@@ -155,7 +155,10 @@ function submit() {
             >
                 {{ t('criteres.type_negatif') }}
             </button>
-            <InfoTooltip :texte="t('criteres.tooltip_positif_negatif')" content-class="max-w-60" />
+            <InfoTooltip
+                :texte="t('criteres.tooltip_positif_negatif')"
+                content-class="max-w-60"
+            />
         </div>
 
         <!-- ─── Pointage + mode de saisie ────────────────────────────────── -->
@@ -218,7 +221,9 @@ function submit() {
                 >
                     {{ t('criteres.label_visible_etudiants_badge') }}
                 </span>
-                <span v-else class="opacity-60">{{ t('criteres.label_visible') }}</span>
+                <span v-else class="opacity-60">{{
+                    t('criteres.label_visible')
+                }}</span>
             </label>
             <InfoTooltip :texte="t('criteres.tooltip_visible')" />
         </div>
