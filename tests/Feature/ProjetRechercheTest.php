@@ -784,3 +784,52 @@ test('destroyAnnotation ne supprime pas les autres annotations du même champ', 
     $this->assertDatabaseMissing('projet_annotations', ['commentaire_id' => $uuidA]);
     $this->assertDatabaseHas('projet_annotations', ['commentaire_id' => $uuidB]);
 });
+
+// ─── B2 — Vote de remise : paramètres lus depuis TypeProjet ───────────────────
+
+test('le vote unanime re-remet un projet quand le TypeProjet permet les remises multiples', function () {
+    ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe, 'etudiant1' => $e1, 'etudiant2' => $e2] = creerScenario();
+    $tp->update(['remises_multiples' => true]);
+
+    // La colonne héritée du projet dit l'inverse : seule la valeur du TypeProjet doit compter
+    $premiereRemise = now()->subDay();
+    $projet = ProjetRecherche::create([
+        'groupe_id' => $groupe->id,
+        'type_projet_id' => $tp->id,
+        'remis_le' => $premiereRemise,
+        'remises_multiples' => false,
+    ]);
+
+    $url = "/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/voter-remise";
+    $this->actingAs($e1)->postJson($url, ['vote' => true])->assertOk();
+    $this->actingAs($e2)->postJson($url, ['vote' => true])->assertOk();
+
+    expect($projet->fresh()->remis_le->gt($premiereRemise))->toBeTrue();
+});
+
+// ─── B10 — Pas de création de projet avant autorisation ───────────────────────
+
+test("un étudiant hors du groupe n'entraîne pas la création du projet", function (string $suffixe) {
+    ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe] = creerScenario();
+    $intrus = User::factory()->create(['role' => 'etudiant']);
+
+    $this->actingAs($intrus)
+        ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/{$suffixe}", [])
+        ->assertForbidden();
+
+    expect(ProjetRecherche::where('groupe_id', $groupe->id)->exists())->toBeFalse();
+})->with(['developpements', 'renvois']);
+
+test('updateConclusion refuse un intrus sans créer le projet', function () {
+    ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe, 'etudiant1' => $e1] = creerScenario();
+    $intrus = User::factory()->create(['role' => 'etudiant']);
+
+    $this->actingAs($intrus)
+        ->putJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/conclusion", [
+            'contenu' => 'x',
+            'user_id' => $e1->id,
+        ])
+        ->assertForbidden();
+
+    expect(ProjetRecherche::where('groupe_id', $groupe->id)->exists())->toBeFalse();
+});

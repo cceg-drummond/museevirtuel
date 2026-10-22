@@ -495,10 +495,7 @@ class ProjetRechercheController extends Controller
 
         // Vérifier l'autorisation avant la validation pour retourner 403 plutôt que 422
         // aux utilisateurs qui ne font pas partie du groupe et ne sont pas l'enseignant.
-        abort_unless(
-            $groupe->membres->contains('id', auth()->id()) || $cours->enseignant_id === auth()->id(),
-            403,
-        );
+        $this->autoriserMembreOuEnseignant($cours, $classe, $groupe);
 
         $validated = $request->validate([
             'contenu' => ['nullable', 'string'],

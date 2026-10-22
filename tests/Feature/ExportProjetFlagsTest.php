@@ -37,6 +37,7 @@ function creerScenarioExport(array $flags = []): array
         'groupe' => '0001',
         'enseignant_id' => $enseignant->id,
     ]);
+    $typeProjet->update(['cours_id' => $cours->id]);
 
     $etudiant = User::factory()->create(['role' => 'etudiant']);
 

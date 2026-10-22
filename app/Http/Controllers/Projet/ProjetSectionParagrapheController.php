@@ -32,6 +32,8 @@ class ProjetSectionParagrapheController extends Controller
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
 
+        $this->autoriserMembreOuEnseignant($cours, $classe, $groupe);
+
         $projet = ProjetRecherche::firstOrCreate([
             'groupe_id' => $groupe->id,
             'type_projet_id' => $typeProjet->id,

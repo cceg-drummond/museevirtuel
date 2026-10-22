@@ -34,6 +34,8 @@ class ProjetRenvoiController extends Controller
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
+        $this->autoriserMembreOuEnseignant($cours, $classe, $groupe);
+
         $projet = ProjetRecherche::firstOrCreate([
             'groupe_id' => $groupe->id,
             'type_projet_id' => $typeProjet->id,

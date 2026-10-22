@@ -81,16 +81,21 @@ class EtudiantReferenceController extends Controller
         }
 
         $maxOrdre = $user->etudiantReferences()->max('ordre') ?? 0;
+        $existantes = $user->etudiantReferences()
+            ->whereNotNull('zotero_item_key')
+            ->get()
+            ->keyBy('zotero_item_key');
 
         foreach ($items as $item) {
             if (! $item['zotero_item_key']) {
                 continue;
             }
 
-            $user->etudiantReferences()->updateOrCreate(
-                ['zotero_item_key' => $item['zotero_item_key']],
-                array_merge($item, ['ordre' => ++$maxOrdre]),
-            );
+            if ($reference = $existantes->get($item['zotero_item_key'])) {
+                $reference->update($item);
+            } else {
+                $user->etudiantReferences()->create(array_merge($item, ['ordre' => ++$maxOrdre]));
+            }
         }
 
         $credential->update(['synchronise_le' => now()]);

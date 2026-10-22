@@ -122,7 +122,7 @@ class GroupeVideoController extends Controller
     public function show(Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): Response
     {
         $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('auteur:id,name', 'groupe.classe.cours');
+        $video->load('auteur:id,prenom,nom', 'groupe.classe.cours');
         $this->authorize('view', $video);
 
         $user = auth()->user();

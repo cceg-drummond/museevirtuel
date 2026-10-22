@@ -338,3 +338,17 @@ test("un type de projet d'un autre cours du même enseignant est refusé (404)",
         ->postJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section), ['label' => 'IDOR'])
         ->assertNotFound();
 });
+
+// ─── B3 — Les paramètres de remise viennent du TypeProjet ─────────────────────
+
+test('la mise à jour suit les remises multiples du TypeProjet et non la colonne héritée', function () {
+    ['etudiant' => $etudiant, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $classe, 'typeProjet' => $typeProjet, 'section' => $section, 'projet' => $projet] = creerScenarioEntrevue();
+    $typeProjet->update(['remises_multiples' => true]);
+    $projet->update(['remis_le' => now()->subDay(), 'remises_multiples' => false]);
+
+    $concept = EntrevueConcept::create(['projet_id' => $projet->id, 'section_id' => $section->id, 'label' => 'Ancien', 'ordre' => 1]);
+
+    $this->actingAs($etudiant)
+        ->patchJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section)."/{$concept->id}", ['label' => 'Nouveau'])
+        ->assertOk();
+});

@@ -35,6 +35,7 @@ function creerScenarioAideRef(array $typeProjetOverrides = []): array
         'groupe' => '01',
         'enseignant_id' => $enseignant->id,
     ]);
+    $typeProjet->update(['cours_id' => $cours->id]);
 
     $etudiant = User::factory()->create(['role' => 'etudiant']);
     $cs = Classe::create(['cours_id' => $cours->id]);

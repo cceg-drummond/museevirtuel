@@ -80,6 +80,26 @@ trait AutoriseProjetRecherche
     }
 
     /**
+     * Vérifie la chaîne Cours → Classe → Groupe et que l'utilisateur est membre
+     * du groupe ou enseignant du cours.
+     *
+     * À appeler avant tout firstOrCreate du projet : sinon une requête non autorisée
+     * crée quand même un ProjetRecherche avant d'être refusée.
+     *
+     * @throws HttpException
+     */
+    private function autoriserMembreOuEnseignant(Cours $cours, Classe $classe, Groupe $groupe): void
+    {
+        abort_if($classe->cours_id !== $cours->id, 404);
+        abort_if($groupe->classe_id !== $classe->id, 404);
+        abort_unless(
+            $cours->enseignant_id === auth()->id()
+                || $groupe->membres()->where('users.id', auth()->id())->exists(),
+            403,
+        );
+    }
+
+    /**
      * Lève une exception si la classe/groupe n'appartiennent pas au cours
      * ou si l'utilisateur authentifié n'est pas l'enseignant de ce cours.
      *

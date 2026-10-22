@@ -124,10 +124,10 @@ class ProjetRemiseController extends Controller
             && $votes->every(fn (ProjetVoteRemise $v) => $v->vote);
 
         if ($tousOntVote) {
-            DB::transaction(function () use ($projet): void {
+            DB::transaction(function () use ($projet, $typeProjet): void {
                 $projet->refresh();
 
-                if ($projet->remis_le === null || $projet->remises_multiples) {
+                if ($projet->remis_le === null || $typeProjet->remises_multiples) {
                     $projet->update(['remis_le' => now()]);
                     $projet->synchroniserStatut();
                 }

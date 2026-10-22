@@ -16,7 +16,6 @@ use App\Models\TypeProjet;
 use App\Models\User;
 use App\Models\VisioConference;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +67,7 @@ class GroupeController extends Controller
             ->whereNotIn('users.id', $dejaGroupes)
             ->get(['users.id', 'prenom', 'nom']);
 
-        $thematiques = $this->thematiquesVisibles($cours->enseignant)
+        $thematiques = Thematique::visiblesPar($cours->enseignant)
             ->get(['id', 'nom', 'periode_historique']);
 
         return Inertia::render('Groupes/Create', [
@@ -131,7 +130,7 @@ class GroupeController extends Controller
             return back()->withErrors(['membres' => "Le groupe ne peut pas avoir plus de {$cours->taille_equipe_max} membre(s)."]);
         }
 
-        $thematiquesValides = $this->thematiquesVisibles($cours->enseignant)
+        $thematiquesValides = Thematique::visiblesPar($cours->enseignant)
             ->whereIn('id', $validated['thematiques'] ?? [])
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
@@ -193,7 +192,7 @@ class GroupeController extends Controller
             'temoin',
         ]);
 
-        $thematiquesDispo = $this->thematiquesVisibles($cours->enseignant)
+        $thematiquesDispo = Thematique::visiblesPar($cours->enseignant)
             ->get(['id', 'nom', 'periode_historique']);
 
         $membreIds = $groupe->membres->pluck('id');
@@ -403,7 +402,7 @@ class GroupeController extends Controller
             'thematiques.*' => ['integer', 'exists:thematiques,id'],
         ]);
 
-        $thematiquesValides = $this->thematiquesVisibles($cours->enseignant)
+        $thematiquesValides = Thematique::visiblesPar($cours->enseignant)
             ->whereIn('id', $validated['thematiques'] ?? [])
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
@@ -545,23 +544,6 @@ class GroupeController extends Controller
         $groupe->delete();
 
         return redirect()->route('groupes.index', [$cours, $classe])->with('success', __('groupe.deleted'));
-    }
-
-    /**
-     * Retourne un query builder pour les thématiques visibles par un enseignant :
-     * les siennes + celles de son établissement (si applicable).
-     *
-     * Le distinct() évite les doublons quand une thématique satisfait les deux
-     * conditions (enseignant_id et etablissement_id tous deux définis).
-     */
-    private function thematiquesVisibles(User $enseignant): Builder
-    {
-        return Thematique::distinct()->where(function ($q) use ($enseignant) {
-            $q->where('enseignant_id', $enseignant->id);
-            if ($enseignant->etablissement_id) {
-                $q->orWhere('etablissement_id', $enseignant->etablissement_id);
-            }
-        });
     }
 
     /**

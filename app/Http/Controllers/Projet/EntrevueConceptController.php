@@ -251,9 +251,12 @@ class EntrevueConceptController extends Controller
      */
     private function trouverProjet(Groupe $groupe, TypeProjet $typeProjet): ProjetRecherche
     {
-        return ProjetRecherche::where('groupe_id', $groupe->id)
+        $projet = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)
             ->firstOrFail();
+
+        // Sans la relation, peutEtreRemis() retombe sur les anciennes colonnes du projet
+        return $projet->setRelation('typeProjet', $typeProjet);
     }
 
     /**
