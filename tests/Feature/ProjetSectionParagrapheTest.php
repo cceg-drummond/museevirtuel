@@ -38,6 +38,7 @@ function creerScenarioParagraphe(): array
 
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => 'Type paragraphes',
         'accessible' => true,
     ]);
@@ -383,6 +384,7 @@ test('le show retourne les conclusionsParMembre dans les sections de type indivi
 
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => 'Type individuel',
         'accessible' => true,
     ]);

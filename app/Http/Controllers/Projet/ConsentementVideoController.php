@@ -26,6 +26,8 @@ class ConsentementVideoController extends Controller
         Groupe $groupe,
         TypeProjet $typeProjet,
     ): RedirectResponse {
+        abort_if($typeProjet->cours_id !== $cours->id, 404);
+
         /** @var ProjetRecherche $projet */
         $projet = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)

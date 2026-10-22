@@ -225,7 +225,7 @@ class EntrevueConceptController extends Controller
      *
      * - Classe appartient au cours
      * - Groupe appartient à la classe
-     * - TypeProjet appartient à l'enseignant du cours (anti-IDOR)
+     * - TypeProjet appartient au cours (anti-IDOR)
      * - Section appartient au TypeProjet
      * - Section est de type 'entrevue'
      * - L'utilisateur est membre du groupe ou enseignant
@@ -236,7 +236,7 @@ class EntrevueConceptController extends Controller
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
-        abort_if($typeProjet->enseignant_id !== $cours->enseignant_id, 404);
+        abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($section->type !== 'entrevue', 422, 'Cette section n\'est pas de type entrevue.');
 

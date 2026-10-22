@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Cours;
 
-use App\Http\Controllers\Controller;
 use App\Actions\StoreUploadedFile;
+use App\Http\Controllers\Controller;
 use App\Models\Cours;
 use App\Models\CoursDocument;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -84,6 +84,7 @@ class CoursDocumentController extends Controller
      */
     public function destroy(Cours $cours, CoursDocument $document): RedirectResponse
     {
+        abort_if($document->cours_id !== $cours->id, 404);
         $this->authorize('update', $cours);
 
         $document->deleteWithFile();

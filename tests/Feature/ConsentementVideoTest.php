@@ -36,6 +36,7 @@ function creerScenarioConsentement(): array
 
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => 'Entrevue filmée',
         'accessible' => true,
     ]);
@@ -155,4 +156,19 @@ test('signed_at est rempli quand accepte est vrai, null sinon', function () {
 
     $consentement->refresh();
     expect($consentement->signed_at)->toBeNull();
+});
+
+test("un TypeProjet d'un autre cours est refusé (404)", function () {
+    $s = creerScenarioConsentement();
+    $autreCours = Cours::create([
+        'nom_cours' => 'Autre cours',
+        'code' => '330-AUT',
+        'groupe' => '00002',
+        'enseignant_id' => $s['enseignant']->id,
+    ]);
+    $s['typeProjet']->update(['cours_id' => $autreCours->id]);
+
+    $this->actingAs($s['etudiant'])
+        ->post(urlConsentement($s['cours'], $s['groupe'], $s['typeProjet']), ['accepte' => true])
+        ->assertNotFound();
 });

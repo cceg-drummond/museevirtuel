@@ -78,6 +78,8 @@ class ClasseEtudiantController extends Controller
         $this->assertClasseAppartientAuCours($classe, $cours);
         $this->authorize('update', $cours);
 
+        abort_unless($classe->etudiants()->whereKey($etudiant->id)->exists(), 404);
+
         $validated = $request->validate([
             'prenom' => ['required', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],

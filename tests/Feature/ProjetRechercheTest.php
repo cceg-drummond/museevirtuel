@@ -39,6 +39,7 @@ function creerScenario(): array
         'groupe' => '0001',
         'enseignant_id' => $enseignant->id,
     ]);
+    $typeProjet->update(['cours_id' => $cours->id]);
 
     $etudiant1 = User::factory()->create(['role' => 'etudiant']);
     $etudiant2 = User::factory()->create(['role' => 'etudiant']);

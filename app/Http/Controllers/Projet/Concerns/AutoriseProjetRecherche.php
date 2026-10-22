@@ -46,15 +46,13 @@ trait AutoriseProjetRecherche
     }
 
     /**
-     * Vérifie que le TypeProjet appartient à l'enseignant du cours.
-     *
-     * Empêche l'accès à un TypeProjet d'un autre enseignant via manipulation d'URL.
+     * Vérifie que le TypeProjet appartient au cours.
      *
      * @throws HttpException
      */
     private function verifierTypeProjetAppartientCours(TypeProjet $typeProjet, Cours $cours): void
     {
-        abort_if($typeProjet->enseignant_id !== $cours->enseignant_id, 404);
+        abort_if($typeProjet->cours_id !== $cours->id, 404);
     }
 
     /**

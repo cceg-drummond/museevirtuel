@@ -42,6 +42,7 @@ function creerContexteProjet(): array
 
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => 'Projet test',
         'accessible' => true,
     ]);

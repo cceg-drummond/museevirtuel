@@ -35,6 +35,7 @@ function creerScenarioSection(): array
 
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => 'Type test',
         'accessible' => true,
     ]);
@@ -174,6 +175,7 @@ test("le show retourne un tableau sections vide si le type de projet n'a aucune 
     // TypeProjet sans aucune section
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => 'Type sans sections',
         'accessible' => true,
     ]);

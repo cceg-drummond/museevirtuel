@@ -11,9 +11,11 @@ use App\Models\ProjetRecherche;
 use App\Models\ProjetSchemaVisuel;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ProjetSchemaVisuelController extends Controller
 {
@@ -41,23 +43,7 @@ class ProjetSchemaVisuelController extends Controller
         TypeProjet $typeProjet,
         TypeProjetSection $section,
     ): RedirectResponse {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        abort_if($groupe->classe_id !== $classe->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
-        abort_if($section->type !== 'schema_visuel', 422);
-
-        $user = $request->user();
-        $estMembre = $groupe->membres()->where('user_id', $user->id)->exists();
-        $estEnseignant = in_array($user->role, ['enseignant', 'admin']);
-
-        abort_unless($estMembre || $estEnseignant, 403);
-
-        /** @var ProjetRecherche $projet */
-        $projet = ProjetRecherche::where('groupe_id', $groupe->id)
-            ->where('type_projet_id', $typeProjet->id)
-            ->firstOrFail();
-
-        abort_if((bool) $projet->verrouille, 403);
+        $projet = $this->autoriserEtTrouverProjet($cours, $classe, $groupe, $typeProjet, $section);
 
         $validated = $request->validate([
             'contenu' => ['required', 'array'],
@@ -99,23 +85,7 @@ class ProjetSchemaVisuelController extends Controller
         TypeProjet $typeProjet,
         TypeProjetSection $section,
     ): JsonResponse {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        abort_if($groupe->classe_id !== $classe->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
-        abort_if($section->type !== 'schema_visuel', 422);
-
-        $user = $request->user();
-        $estMembre = $groupe->membres()->where('user_id', $user->id)->exists();
-        $estEnseignant = in_array($user->role, ['enseignant', 'admin']);
-
-        abort_unless($estMembre || $estEnseignant, 403);
-
-        /** @var ProjetRecherche $projet */
-        $projet = ProjetRecherche::where('groupe_id', $groupe->id)
-            ->where('type_projet_id', $typeProjet->id)
-            ->firstOrFail();
-
-        abort_if((bool) $projet->verrouille, 403);
+        $projet = $this->autoriserEtTrouverProjet($cours, $classe, $groupe, $typeProjet, $section);
 
         $request->validate([
             'image' => ['required', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
@@ -127,5 +97,41 @@ class ProjetSchemaVisuelController extends Controller
         );
 
         return response()->json(['url' => '/'.$meta['file_path']]);
+    }
+
+    /**
+     * Vérifie la chaîne Cours → Classe → Groupe → TypeProjet → Section,
+     * autorise l'utilisateur et retourne le projet non verrouillé du groupe.
+     *
+     * Seuls les membres du groupe, l'enseignant du cours et les admins passent :
+     * un simple contrôle de rôle laisserait n'importe quel enseignant modifier le projet.
+     *
+     * @throws HttpException
+     * @throws AuthorizationException
+     */
+    private function autoriserEtTrouverProjet(
+        Cours $cours,
+        Classe $classe,
+        Groupe $groupe,
+        TypeProjet $typeProjet,
+        TypeProjetSection $section,
+    ): ProjetRecherche {
+        abort_if($classe->cours_id !== $cours->id, 404);
+        abort_if($groupe->classe_id !== $classe->id, 404);
+        abort_if($typeProjet->cours_id !== $cours->id, 404);
+        abort_if($section->type_projet_id !== $typeProjet->id, 404);
+        abort_if($section->type !== 'schema_visuel', 422);
+
+        $groupe->loadMissing('classe.cours');
+        $this->authorize('editerMedia', $groupe);
+
+        /** @var ProjetRecherche $projet */
+        $projet = ProjetRecherche::where('groupe_id', $groupe->id)
+            ->where('type_projet_id', $typeProjet->id)
+            ->firstOrFail();
+
+        abort_if((bool) $projet->verrouille, 403);
+
+        return $projet;
     }
 }

@@ -39,6 +39,7 @@ function creerScenarioEntrevue(): array
 
     $typeProjet = TypeProjet::create([
         'enseignant_id' => $enseignant->id,
+        'cours_id' => $cours->id,
         'nom' => "Schéma d'entrevue",
         'accessible' => true,
     ]);
@@ -320,5 +321,20 @@ test("un type de projet d'un autre enseignant est refusé (404)", function () {
             "/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$autreTypeProjet->id}/sections/{$section->id}/concepts",
             ['label' => 'IDOR']
         )
+        ->assertNotFound();
+});
+
+test("un type de projet d'un autre cours du même enseignant est refusé (404)", function () {
+    ['enseignant' => $enseignant, 'etudiant' => $etudiant, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $classe, 'typeProjet' => $typeProjet, 'section' => $section] = creerScenarioEntrevue();
+    $autreCours = Cours::create([
+        'nom_cours' => 'Autre cours',
+        'code' => '330-AUT',
+        'groupe' => '00002',
+        'enseignant_id' => $enseignant->id,
+    ]);
+    $typeProjet->update(['cours_id' => $autreCours->id]);
+
+    $this->actingAs($etudiant)
+        ->postJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section), ['label' => 'IDOR'])
         ->assertNotFound();
 });

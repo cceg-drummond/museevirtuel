@@ -86,7 +86,7 @@ class ProjetSectionMediaController extends Controller
     /**
      * Supprime un média de section.
      *
-     * Seul l'auteur du média ou un enseignant/admin peut supprimer.
+     * Seul l'auteur du média, l'enseignant du cours ou un admin peut supprimer.
      */
     public function destroy(
         Cours $cours,
@@ -98,16 +98,18 @@ class ProjetSectionMediaController extends Controller
     ): RedirectResponse {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
+        abort_if($typeProjet->cours_id !== $cours->id, 404);
+        abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($media->section_id !== $section->id, 404);
 
-        $user = auth()->user();
+        // Le média doit appartenir au projet de ce groupe, sinon on pourrait viser celui d'un autre groupe
+        $projet = $media->projet;
+        abort_if($projet->groupe_id !== $groupe->id || $projet->type_projet_id !== $typeProjet->id, 404);
 
         // L'auteur peut toujours supprimer son propre média
-        if ($media->user_id !== $user->id) {
-            abort_unless(
-                in_array($user->role, ['enseignant', 'admin']),
-                403
-            );
+        if ($media->user_id !== auth()->id()) {
+            $groupe->loadMissing('classe.cours');
+            $this->authorize('deleteMedia', $groupe);
         }
 
         if ($media->source_type === 'upload') {

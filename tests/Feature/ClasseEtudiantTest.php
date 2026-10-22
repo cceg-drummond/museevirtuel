@@ -230,3 +230,20 @@ test('store retourne 403 pour un utilisateur non autorise', function () {
 
     $this->assertDatabaseMissing('users', ['no_da' => '1234567']);
 });
+
+test("update refuse un étudiant qui n'est pas inscrit dans la classe", function () {
+    ['enseignant' => $enseignant, 'cours' => $cours, 'classe' => $classe] = creerContexteClasseEtudiant();
+    $autre = User::factory()->create(['role' => 'etudiant', 'prenom' => 'Intact']);
+
+    $this->actingAs($enseignant)
+        ->put("/cours/{$cours->id}/classes/{$classe->id}/etudiants/{$autre->id}", [
+            'prenom' => 'Pirate',
+            'nom' => 'Lavoie',
+            'email' => 'pirate@example.com',
+            'no_da' => '1234567',
+            'statut_cours' => 'actif',
+        ])
+        ->assertNotFound();
+
+    expect($autre->fresh()->prenom)->toBe('Intact');
+});
