@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Projet\Concerns\AutoriseEntrevue;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\EntrevueConcept;
-use App\Models\EntrevueLigne;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
@@ -17,6 +17,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class EntrevueConceptController extends Controller
 {
+    use AutoriseEntrevue;
+
     /**
      * Crée un nouveau concept dans une section de type 'entrevue'.
      *
@@ -134,130 +136,7 @@ class EntrevueConceptController extends Controller
         return response()->json(['message' => 'reordered']);
     }
 
-    /**
-     * Ajoute une nouvelle ligne (dimension/indicateur/questions) à un concept.
-     *
-     * @throws HttpException
-     */
-    public function storeLigne(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept): JsonResponse
-    {
-        $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
-
-        $projet = $this->trouverProjet($groupe, $typeProjet);
-
-        abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
-
-        $ordre = ($concept->lignes()->max('ordre') ?? 0) + 1;
-
-        $ligne = EntrevueLigne::create([
-            'concept_id' => $concept->id,
-            'dimension' => null,
-            'indicateur' => null,
-            'questions' => [],
-            'ordre' => $ordre,
-        ]);
-
-        return response()->json([
-            'message' => 'created',
-            'ligne' => $ligne->only('id', 'ordre', 'dimension', 'indicateur', 'questions'),
-        ], 201);
-    }
-
-    /**
-     * Met à jour les champs d'une ligne d'entrevue.
-     *
-     * @throws HttpException
-     */
-    public function updateLigne(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, EntrevueLigne $ligne): JsonResponse
-    {
-        $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
-
-        $projet = $this->trouverProjet($groupe, $typeProjet);
-
-        abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
-        abort_if($ligne->concept_id !== $concept->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
-
-        $validated = $request->validate([
-            'dimension' => ['nullable', 'string'],
-            'indicateur' => ['nullable', 'string'],
-            'questions' => ['nullable', 'array'],
-            'questions.*' => ['string'],
-        ]);
-
-        $ligne->update($validated);
-
-        return response()->json(['message' => 'saved']);
-    }
-
-    /**
-     * Supprime une ligne d'entrevue et réordonne les suivantes.
-     *
-     * @throws HttpException
-     */
-    public function destroyLigne(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, EntrevueLigne $ligne): JsonResponse
-    {
-        $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
-
-        $projet = $this->trouverProjet($groupe, $typeProjet);
-
-        abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
-        abort_if($ligne->concept_id !== $concept->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
-
-        $ligne->delete();
-
-        $concept->lignes()->orderBy('ordre')->each(function (EntrevueLigne $l, int $index): void {
-            $l->update(['ordre' => $index + 1]);
-        });
-
-        return response()->json(['message' => 'deleted']);
-    }
-
     // ─── Méthodes privées ─────────────────────────────────────────────────────
-
-    /**
-     * Vérifie les autorisations et la cohérence des paramètres d'URL.
-     *
-     * - Classe appartient au cours
-     * - Groupe appartient à la classe
-     * - TypeProjet appartient au cours (anti-IDOR)
-     * - Section appartient au TypeProjet
-     * - Section est de type 'entrevue'
-     * - L'utilisateur est membre du groupe ou enseignant
-     *
-     * @throws HttpException
-     */
-    private function autoriserEtVerifier(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): void
-    {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        abort_if($groupe->classe_id !== $classe->id, 404);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
-        abort_if($section->type !== 'entrevue', 422, 'Cette section n\'est pas de type entrevue.');
-
-        $groupe->loadMissing('classe.cours');
-        $this->authorize('manageThematiques', $groupe);
-    }
-
-    /**
-     * Retourne le ProjetRecherche ou lève une 404.
-     *
-     * @throws HttpException
-     */
-    private function trouverProjet(Groupe $groupe, TypeProjet $typeProjet): ProjetRecherche
-    {
-        $projet = ProjetRecherche::where('groupe_id', $groupe->id)
-            ->where('type_projet_id', $typeProjet->id)
-            ->firstOrFail();
-
-        // Sans la relation, peutEtreRemis() retombe sur les anciennes colonnes du projet
-        return $projet->setRelation('typeProjet', $typeProjet);
-    }
 
     /**
      * Formate un concept avec ses lignes pour la réponse JSON.

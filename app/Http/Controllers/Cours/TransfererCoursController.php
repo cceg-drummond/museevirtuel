@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Cours;
 
-use App\Http\Controllers\Controller;
 use App\Actions\TransfererCoursAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\TransfererCoursRequest;
 use App\Models\Cours;
 use Illuminate\Http\RedirectResponse;

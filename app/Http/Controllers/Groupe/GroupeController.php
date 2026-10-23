@@ -7,8 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
-use App\Models\GroupeNote;
-use App\Models\GroupeNoteCorrection;
 use App\Models\GroupeVideo;
 use App\Models\ProjetRecherche;
 use App\Models\Thematique;
@@ -19,7 +17,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -60,7 +57,7 @@ class GroupeController extends Controller
             return redirect()->route('groupes.show', [$cours, $classe, $monGroupe]);
         }
 
-        $dejaGroupes = $this->membresDejaGroupes($classe);
+        $dejaGroupes = $classe->etudiantsDejaGroupes();
 
         $autresEtudiants = $classe->etudiants()
             ->where('users.id', '!=', $user->id)
@@ -113,7 +110,7 @@ class GroupeController extends Controller
             ->toArray();
 
         // Exclure les membres déjà dans un autre groupe de la même classe
-        $membresInscrits = array_diff($membresInscrits, $this->membresDejaGroupes($classe));
+        $membresInscrits = array_diff($membresInscrits, $classe->etudiantsDejaGroupes());
 
         // Vérifier les contraintes de taille d'équipe du cours
         $totalMembres = count(array_unique(array_merge([(int) $user->id], $membresInscrits)));
@@ -199,7 +196,7 @@ class GroupeController extends Controller
 
         $etudiantsDispo = $classe->etudiants()
             ->whereNotIn('users.id', $membreIds)
-            ->whereNotIn('users.id', $this->membresDejaGroupes($classe, $groupe->id))
+            ->whereNotIn('users.id', $classe->etudiantsDejaGroupes($groupe->id))
             ->get(['users.id', 'prenom', 'nom']);
 
         $groupeThematiqueIds = $groupe->thematiques->pluck('id');
@@ -314,223 +311,6 @@ class GroupeController extends Controller
     }
 
     /**
-     * Ajoute ou retire des membres du groupe (créateur uniquement).
-     *
-     * @throws AuthorizationException
-     */
-    public function updateMembres(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe);
-        $groupe->load('classe.cours');
-        $this->authorize('manageMembers', $groupe);
-
-        $validated = $request->validate([
-            'ajouter' => ['array'],
-            'ajouter.*' => ['integer', 'exists:users,id'],
-            'retirer' => ['array'],
-            'retirer.*' => ['integer', 'exists:users,id'],
-        ]);
-
-        $user = auth()->user();
-
-        // Pré-calculer les changements avant transaction pour pouvoir valider la taille
-        $aAjouter = [];
-        if (! empty($validated['ajouter'])) {
-            $aAjouter = $classe->etudiants()
-                ->whereIn('users.id', $validated['ajouter'])
-                ->pluck('users.id')
-                ->map(fn ($id) => (int) $id)
-                ->toArray();
-
-            // Exclure les étudiants déjà dans un autre groupe de la même classe
-            $aAjouter = array_values(array_diff($aAjouter, $this->membresDejaGroupes($classe, $groupe->id)));
-        }
-
-        $aRetirer = array_values(array_diff(
-            array_map('intval', $validated['retirer'] ?? []),
-            [(int) $user->id]
-        ));
-
-        $membresCourants = $groupe->membres()->pluck('users.id')->map(fn ($id) => (int) $id)->toArray();
-        $nouveauxMembres = array_values(array_unique(array_diff(
-            array_merge($membresCourants, $aAjouter),
-            $aRetirer,
-        )));
-        $totalMembres = count($nouveauxMembres);
-
-        if ($totalMembres < 2) {
-            return back()->withErrors(['membres' => 'Le groupe doit avoir au moins 2 membres.']);
-        }
-
-        // Vérifier les contraintes de taille d'équipe du cours
-        if ($cours->taille_equipe_min !== null || $cours->taille_equipe_max !== null) {
-            if ($cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min) {
-                return back()->withErrors(['membres' => "Le groupe doit avoir au moins {$cours->taille_equipe_min} membre(s)."]);
-            }
-
-            if ($cours->taille_equipe_max !== null && $totalMembres > $cours->taille_equipe_max) {
-                return back()->withErrors(['membres' => "Le groupe ne peut pas avoir plus de {$cours->taille_equipe_max} membre(s)."]);
-            }
-        }
-
-        DB::transaction(function () use ($aAjouter, $aRetirer, $groupe) {
-            if (! empty($aAjouter)) {
-                $groupe->membres()->syncWithoutDetaching($aAjouter);
-            }
-
-            if (! empty($aRetirer)) {
-                $groupe->membres()->detach($aRetirer);
-            }
-        });
-
-        return back()->with('success', __('groupe.members_updated'));
-    }
-
-    /**
-     * Remplace complètement les thématiques du groupe (sync).
-     *
-     * @throws AuthorizationException
-     */
-    public function updateThematiques(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe);
-        $groupe->load('classe.cours');
-        $this->authorize('manageThematiques', $groupe);
-
-        $validated = $request->validate([
-            'thematiques' => ['array', 'max:3'],
-            'thematiques.*' => ['integer', 'exists:thematiques,id'],
-        ]);
-
-        $thematiquesValides = Thematique::visiblesPar($cours->enseignant)
-            ->whereIn('id', $validated['thematiques'] ?? [])
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->toArray();
-
-        if (count($thematiquesValides) < 1) {
-            return back()->withErrors(['thematiques' => 'Le groupe doit avoir au moins 1 thématique valide.']);
-        }
-
-        DB::transaction(function () use ($thematiquesValides, $groupe) {
-            $groupe->thematiques()->sync($thematiquesValides);
-        });
-
-        return back()->with('success', __('groupe.thematiques_updated'));
-    }
-
-    /**
-     * Ajoute une note collaborative au groupe.
-     *
-     * @throws AuthorizationException
-     */
-    public function storeNote(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe);
-        $groupe->load('classe.cours');
-        $this->authorize('addNote', $groupe);
-
-        $validated = $request->validate([
-            'contenu' => ['required', 'string', 'max:2000'],
-        ]);
-
-        GroupeNote::create([
-            'groupe_id' => $groupe->id,
-            'user_id' => auth()->id(),
-            'contenu' => $validated['contenu'],
-        ]);
-
-        return back()->with('success', __('groupe.note_created'));
-    }
-
-    /**
-     * Supprime une note du groupe.
-     *
-     * @throws HttpException si l'utilisateur n'est pas l'auteur
-     */
-    public function destroyNote(Cours $cours, Classe $classe, Groupe $groupe, GroupeNote $note): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe, $note);
-        abort_if($note->user_id !== auth()->id(), 403);
-
-        $note->delete();
-
-        return back()->with('success', __('groupe.note_deleted'));
-    }
-
-    /**
-     * Crée ou met à jour une correction inline sur une note (enseignant uniquement).
-     *
-     * @throws HttpException si l'utilisateur n'est pas l'enseignant du cours
-     */
-    public function upsertNoteCorrection(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeNote $note): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe);
-        $this->autoriserCorrectionNote($cours, $groupe, $note);
-
-        $validated = $request->validate([
-            'commentaire_id' => ['required', 'string', 'max:36'],
-            'contenu' => ['required', 'string', 'max:1000'],
-            'note_html' => ['required', 'string'],
-        ]);
-
-        $note->update(['contenu' => $validated['note_html']]);
-
-        GroupeNoteCorrection::updateOrCreate(
-            ['note_id' => $note->id, 'commentaire_id' => $validated['commentaire_id']],
-            ['contenu' => $validated['contenu'], 'user_id' => auth()->id()]
-        );
-
-        return back()->with('success', 'Correction enregistrée.');
-    }
-
-    /**
-     * Supprime une correction inline et met à jour le HTML de la note.
-     *
-     * @throws HttpException
-     */
-    public function destroyNoteCorrection(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeNote $note, GroupeNoteCorrection $correction): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe);
-        $this->autoriserCorrectionNote($cours, $groupe, $note);
-
-        abort_if($correction->note_id !== $note->id, 404);
-
-        $validated = $request->validate([
-            'note_html' => ['required', 'string'],
-        ]);
-
-        $note->update(['contenu' => $validated['note_html']]);
-        $correction->delete();
-
-        return back()->with('success', 'Correction supprimée.');
-    }
-
-    /**
-     * Assigne ou désassigne un témoin (personne âgée) au groupe.
-     *
-     * @throws AuthorizationException
-     */
-    public function assignerTemoin(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe);
-        $groupe->load('classe.cours');
-        $this->authorize('assignerTemoin', $groupe);
-
-        $validated = $request->validate([
-            'personne_agee_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'id')->where('role', 'personne_agee')->where('statut', 'actif'),
-            ],
-        ]);
-
-        $groupe->update(['personne_agee_id' => $validated['personne_agee_id']]);
-
-        return back()->with('success', 'Témoin mis à jour.');
-    }
-
-    /**
      * Supprime un groupe entier.
      *
      * @throws AuthorizationException
@@ -544,41 +324,5 @@ class GroupeController extends Controller
         $groupe->delete();
 
         return redirect()->route('groupes.index', [$cours, $classe])->with('success', __('groupe.deleted'));
-    }
-
-    /**
-     * Retourne les IDs (int) des étudiants déjà dans un groupe de la classe.
-     * Exclut optionnellement le groupe courant (utile pour show/updateMembres).
-     *
-     * @return array<int>
-     */
-    private function membresDejaGroupes(Classe $classe, ?int $excludeGroupeId = null): array
-    {
-        $query = $classe->groupes()->with('membres:id');
-
-        if ($excludeGroupeId !== null) {
-            $query->where('id', '!=', $excludeGroupeId);
-        }
-
-        return $query->get()
-            ->flatMap(fn ($g) => $g->membres->pluck('id'))
-            ->unique()
-            ->map(fn ($id) => (int) $id)
-            ->toArray();
-    }
-
-    /**
-     * Vérifie que l'utilisateur courant peut corriger les notes de ce groupe.
-     *
-     * @throws HttpException
-     */
-    private function autoriserCorrectionNote(Cours $cours, Groupe $groupe, GroupeNote $note): void
-    {
-        abort_unless(
-            $cours->enseignant_id === auth()->id() || auth()->user()->role === 'admin',
-            403
-        );
-
-        abort_if($note->groupe_id !== $groupe->id, 404);
     }
 }

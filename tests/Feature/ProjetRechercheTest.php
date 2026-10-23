@@ -833,3 +833,71 @@ test('updateConclusion refuse un intrus sans créer le projet', function () {
 
     expect(ProjetRecherche::where('groupe_id', $groupe->id)->exists())->toBeFalse();
 });
+
+// ─── Lot 6 — Ordre des développements (service OrdreElements) ─────────────────
+
+test('les développements sont ajoutés en fin, renumérotés après suppression et réordonnés', function () {
+    ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe, 'etudiant1' => $etudiant] = creerScenario();
+    $url = "/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/developpements";
+
+    foreach (range(1, 3) as $i) {
+        $this->actingAs($etudiant)->postJson($url)->assertCreated();
+    }
+
+    $projet = ProjetRecherche::where('groupe_id', $groupe->id)->firstOrFail();
+    [$d1, $d2, $d3] = $projet->developpements()->orderBy('ordre')->get()->all();
+    expect([$d1->ordre, $d2->ordre, $d3->ordre])->toBe([1, 2, 3]);
+
+    $this->actingAs($etudiant)->deleteJson("{$url}/{$d2->id}")->assertOk();
+    expect($d3->fresh()->ordre)->toBe(2);
+
+    $this->actingAs($etudiant)->patchJson("{$url}/reorder", ['ordre' => [$d3->id, $d1->id]])->assertOk();
+    expect($d3->fresh()->ordre)->toBe(1)
+        ->and($d1->fresh()->ordre)->toBe(2);
+});
+
+test("le réordonnancement ignore un développement d'un autre projet", function () {
+    ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe, 'etudiant1' => $etudiant] = creerScenario();
+    $url = "/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/developpements";
+    $this->actingAs($etudiant)->postJson($url)->assertCreated();
+
+    $autreType = TypeProjet::create(['enseignant_id' => $tp->enseignant_id, 'cours_id' => $cours->id, 'nom' => 'Autre', 'accessible' => true]);
+    $autreProjet = ProjetRecherche::create(['groupe_id' => $groupe->id, 'type_projet_id' => $autreType->id]);
+    $etranger = $autreProjet->developpements()->create(['ordre' => 5, 'titre' => 'x', 'contenu' => 'x']);
+
+    $this->actingAs($etudiant)->patchJson("{$url}/reorder", ['ordre' => [$etranger->id]])->assertOk();
+
+    expect($etranger->fresh()->ordre)->toBe(5);
+});
+
+// ─── Lot 6 — Seuils de complétude configurables ───────────────────────────────
+
+test('la remise applique le seuil de mots défini dans config/projet.php', function () {
+    ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe, 'etudiant1' => $etudiant] = creerScenario();
+    config(['projet.mots_minimum.developpement_contenu' => 2]);
+
+    $projet = ProjetRecherche::create(['groupe_id' => $groupe->id, 'type_projet_id' => $tp->id, 'titre_projet' => 'Un titre']);
+    $projet->developpements()->create(['ordre' => 1, 'titre' => 'Un titre correct', 'contenu' => 'Seul']);
+
+    $this->actingAs($etudiant)
+        ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/remettre")
+        ->assertUnprocessable()
+        ->assertJsonFragment(['raison' => 'Le contenu doit avoir au moins 2 mots.']);
+});
+
+// ─── Lot 6 — Aperçus de notes (ClasseNotesApercuController) ───────────────────
+
+test("l'enseignant du cours voit les aperçus de notes, un autre enseignant non", function () {
+    ['enseignant' => $enseignant, 'typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs] = creerScenario();
+    $autre = User::factory()->create(['role' => 'enseignant']);
+
+    $urls = [
+        "/cours/{$cours->id}/classes/{$cs->id}/types-projets/{$tp->id}/apercu-notes",
+        "/cours/{$cours->id}/classes/{$cs->id}/apercu-notes-accumulees",
+    ];
+
+    foreach ($urls as $url) {
+        $this->actingAs($enseignant)->get($url)->assertOk();
+        $this->actingAs($autre)->get($url)->assertForbidden();
+    }
+});

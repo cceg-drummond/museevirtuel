@@ -8,32 +8,12 @@ use App\Models\Thematique;
 use App\Models\User;
 use App\Models\VisioConference;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class EnseignantController extends Controller
 {
-    /**
-     * Affiche le formulaire de création d'un cours.
-     */
-    public function createCours(): Response
-    {
-        return Inertia::render('Enseignant/CoursEdition/Create');
-    }
-
-    /**
-     * Affiche le formulaire de modification d'un cours appartenant à l'enseignant.
-     */
-    public function editCours(Cours $cours): Response
-    {
-        abort_unless($cours->enseignant_id === auth()->id(), 403);
-
-        return Inertia::render('Enseignant/CoursEdition/Edit', ['cours' => $cours]);
-    }
-
     /**
      * Affiche le tableau de bord de l'enseignant avec ses classes, thématiques,
      * les travaux récemment remis et les témoins en attente liés à ses thématiques.
@@ -131,116 +111,6 @@ class EnseignantController extends Controller
             'temoinsApprouves' => $temoinsApprouves,
             'prochainesVisios' => $prochainesVisios,
         ]);
-    }
-
-    /**
-     * Affiche la fiche détaillée d'un témoin lié aux thématiques de l'enseignant connecté.
-     *
-     * @throws HttpException si le témoin n'est pas une personne âgée ou n'est pas lié à cet enseignant
-     */
-    public function showTemoin(User $user): Response
-    {
-        abort_if($user->role !== 'personne_agee', 403);
-
-        $thematiqueIds = Thematique::visiblesPar(auth()->user())->pluck('id');
-
-        abort_if(
-            $user->thematiquesChoisies()->whereIn('thematiques.id', $thematiqueIds)->doesntExist(),
-            403
-        );
-
-        $user->load(['thematiquesChoisies:id,nom', 'etablissementsChoisis']);
-
-        return Inertia::render('Enseignant/TemoinShow', [
-            'temoin' => [
-                'id' => $user->id,
-                'prenom' => $user->prenom,
-                'nom' => $user->nom,
-                'email' => $user->email,
-                'description' => $user->description,
-                'provenance' => $user->provenance,
-                'theme_libre' => $user->themeLibre(),
-                'statut' => $user->statut,
-                'created_at' => $user->created_at->toIso8601String(),
-                'thematiques_choisies' => $user->thematiquesChoisies->map->only('id', 'nom')->values(),
-                'engagements_acceptes_le' => $user->engagements_acceptes_le?->toIso8601String(),
-                'signature_electronique' => $user->signature_electronique,
-            ],
-        ]);
-    }
-
-    /**
-     * Approuve l'inscription d'un témoin lié aux thématiques de l'enseignant connecté.
-     *
-     * Vérifie que le témoin est bien associé à une thématique de l'enseignant
-     * avant d'activer le compte.
-     *
-     * @throws HttpException si le témoin n'est pas lié à cet enseignant ou n'est pas en attente
-     */
-    public function approuverTemoin(User $user): RedirectResponse
-    {
-        $this->autoriserActionTemoin($user);
-
-        $user->statut = 'actif';
-        $user->approuve_par_id = auth()->id();
-        $user->email_verified_at = now();
-        $user->save();
-
-        return back()->with('success', __('Le compte de '.$user->prenom.' '.$user->nom.' a été approuvé.'));
-    }
-
-    /**
-     * Refuse l'inscription d'un témoin lié aux thématiques de l'enseignant connecté.
-     *
-     * @throws HttpException si le témoin n'est pas lié à cet enseignant ou n'est pas en attente
-     */
-    public function declinerTemoin(User $user): RedirectResponse
-    {
-        $this->autoriserActionTemoin($user);
-
-        $user->statut = 'refuse';
-        $user->save();
-
-        return back()->with('success', __('La demande de '.$user->prenom.' '.$user->nom.' a été déclinée.'));
-    }
-
-    /**
-     * Révoque l'approbation d'un témoin actif lié aux thématiques de l'enseignant connecté.
-     *
-     * Remet le statut à « en_attente » et retire la vérification de l'email.
-     *
-     * @throws HttpException si le témoin n'est pas actif ou n'est pas lié à cet enseignant
-     */
-    public function desapprouverTemoin(User $user): RedirectResponse
-    {
-        abort_if(
-            $user->role !== 'personne_agee' || $user->statut !== 'actif' || $user->approuve_par_id !== auth()->id(),
-            403
-        );
-
-        $user->statut = 'en_attente';
-        $user->approuve_par_id = null;
-        $user->email_verified_at = null;
-        $user->save();
-
-        return back()->with('success', __('Le compte de '.$user->prenom.' '.$user->nom.' a été remis en attente.'));
-    }
-
-    /**
-     * Vérifie que l'enseignant connecté est autorisé à agir sur ce témoin.
-     *
-     * @throws HttpException si le témoin n'est pas une PA en attente ou sans thématique commune
-     */
-    private function autoriserActionTemoin(User $user): void
-    {
-        abort_if($user->role !== 'personne_agee' || ! $user->estEnAttente(), 403);
-
-        $thematiqueIds = Thematique::visiblesPar(auth()->user())->pluck('id');
-
-        abort_if(
-            $user->thematiquesChoisies()->whereIn('thematiques.id', $thematiqueIds)->doesntExist(),
-            403
-        );
     }
 
     /**

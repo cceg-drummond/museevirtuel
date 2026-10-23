@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\VisioConference;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class VisioConferenceController extends Controller
 {
@@ -95,133 +91,5 @@ class VisioConferenceController extends Controller
         $visio->delete();
 
         return back()->with('success', __('visio.deleted'));
-    }
-
-    /**
-     * Démarre une visioconférence en enregistrant l'heure de début.
-     *
-     * Accessible à l'enseignant du cours et aux membres de ses groupes,
-     * car l'étudiant peut aussi initier la rencontre.
-     *
-     * @throws HttpException si non autorisé
-     */
-    public function startSession(Cours $cours, VisioConference $visio): RedirectResponse
-    {
-        abort_if($visio->cours_id !== $cours->id, 404);
-        abort_if($visio->started_at !== null, 422);
-
-        $user = auth()->user();
-
-        $estAutorise = ($user->isEnseignant() && $cours->enseignant_id === $user->id)
-            || $user->isAdmin()
-            || Classe::where('cours_id', $cours->id)
-                ->whereHas('groupes', fn ($q) => $q
-                    ->whereHas('membres', fn ($q2) => $q2->where('users.id', $user->id))
-                )
-                ->exists();
-
-        abort_unless($estAutorise, 403);
-
-        $visio->update(['started_at' => now()]);
-
-        return back()->with('success', __('visio.started'));
-    }
-
-    /**
-     * Termine une visioconférence en enregistrant l'heure de fin.
-     *
-     * Accessible à l'enseignant du cours et aux membres de ses groupes.
-     *
-     * @throws HttpException si non autorisé
-     */
-    public function endSession(Cours $cours, VisioConference $visio): RedirectResponse
-    {
-        abort_if($visio->cours_id !== $cours->id, 404);
-        abort_if($visio->ended_at !== null, 422);
-
-        $user = auth()->user();
-
-        $estAutorise = ($user->isEnseignant() && $cours->enseignant_id === $user->id)
-            || $user->isAdmin()
-            || Classe::where('cours_id', $cours->id)
-                ->whereHas('groupes', fn ($q) => $q
-                    ->whereHas('membres', fn ($q2) => $q2->where('users.id', $user->id))
-                )
-                ->exists();
-
-        abort_unless($estAutorise, 403);
-
-        $visio->update(['ended_at' => now()]);
-
-        return back()->with('success', __('visio.ended'));
-    }
-
-    /**
-     * Enregistre le fichier vidéo d'une rencontre terminée.
-     *
-     * Remplace l'ancien fichier s'il en existe déjà un.
-     * Accessible uniquement à l'enseignant du cours.
-     *
-     * @throws HttpException si la visio n'appartient pas au cours
-     */
-    public function storeRecording(Request $request, Cours $cours, VisioConference $visio): RedirectResponse
-    {
-        $this->authorize('update', $cours);
-        abort_if($visio->cours_id !== $cours->id, 404);
-
-        $request->validate([
-            'recording' => ['required', 'file', 'mimes:mp4,mov,webm,avi', 'max:1048576'],
-        ]);
-
-        // Supprimer l'ancien fichier avant de le remplacer
-        if ($visio->recording_path) {
-            Storage::delete($visio->recording_path);
-        }
-
-        $extension = $request->file('recording')->getClientOriginalExtension();
-        $path = $request->file('recording')->storeAs(
-            "visio-recordings/{$visio->id}",
-            "recording.{$extension}"
-        );
-
-        $visio->update(['recording_path' => $path]);
-
-        return back()->with('success', __('visio.recording_saved'));
-    }
-
-    /**
-     * Diffuse le fichier d'enregistrement en streaming sécurisé.
-     *
-     * Supporte les range requests pour permettre la navigation dans la vidéo.
-     * Accessible à l'enseignant du cours et aux membres de ses groupes.
-     *
-     * @throws HttpException si non autorisé ou fichier introuvable
-     */
-    public function streamRecording(Cours $cours, VisioConference $visio): BinaryFileResponse
-    {
-        abort_if($visio->cours_id !== $cours->id, 404);
-        abort_if(! $visio->recording_path, 404);
-
-        $user = auth()->user();
-
-        // Autoriser l'enseignant, les admins, et les membres de n'importe quel groupe du cours
-        /**
-         * Il faudra retirer la portion $user->isEnseignant()
-         * && en production.
-         */
-        $estAutorise = ($user->isEnseignant() && $cours->enseignant_id === $user->id)
-            || $user->isAdmin()
-            || Classe::where('cours_id', $cours->id)
-                ->whereHas('groupes', fn ($q) => $q
-                    ->whereHas('membres', fn ($q2) => $q2->where('users.id', $user->id))
-                )
-                ->exists();
-
-        abort_unless($estAutorise, 403);
-
-        $filePath = Storage::path($visio->recording_path);
-        abort_if(! file_exists($filePath), 404);
-
-        return response()->file($filePath);
     }
 }

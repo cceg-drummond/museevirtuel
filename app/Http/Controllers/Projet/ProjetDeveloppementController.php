@@ -10,6 +10,7 @@ use App\Models\Groupe;
 use App\Models\ProjetDeveloppement;
 use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
+use App\Services\OrdreElements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -26,7 +27,7 @@ class ProjetDeveloppementController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
@@ -38,7 +39,7 @@ class ProjetDeveloppementController extends Controller
         ]);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $ordre = ($projet->developpements()->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($projet->developpements());
 
         $dev = ProjetDeveloppement::create([
             'projet_id' => $projet->id,
@@ -96,7 +97,7 @@ class ProjetDeveloppementController extends Controller
      *
      * @throws HttpException
      */
-    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, ProjetDeveloppement $developpement): JsonResponse
+    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, ProjetDeveloppement $developpement, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
@@ -106,13 +107,7 @@ class ProjetDeveloppementController extends Controller
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
         abort_if($projet->developpements()->count() <= 1, 422, 'Le projet doit conserver au moins un paragraphe.');
 
-        $developpement->delete();
-
-        $projet->developpements()->orderBy('ordre')->each(
-            function (ProjetDeveloppement $dev, int $index): void {
-                $dev->update(['ordre' => $index + 1]);
-            }
-        );
+        $ordres->supprimer($developpement, $projet->developpements());
 
         return response()->json([
             'message' => 'deleted',
@@ -125,7 +120,7 @@ class ProjetDeveloppementController extends Controller
      *
      * @throws HttpException
      */
-    public function reorder(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function reorder(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
@@ -138,11 +133,7 @@ class ProjetDeveloppementController extends Controller
             'ordre.*' => ['required', 'integer', 'exists:projet_developpements,id'],
         ]);
 
-        foreach ($validated['ordre'] as $index => $id) {
-            ProjetDeveloppement::where('id', $id)
-                ->where('projet_id', $projet->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($projet->developpements(), $validated['ordre']);
 
         return response()->json(['message' => 'reordered']);
     }

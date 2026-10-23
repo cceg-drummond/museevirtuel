@@ -11,6 +11,8 @@ use App\Models\ProjetRecherche;
 use App\Models\ProjetSectionParagraphe;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
+use App\Services\OrdreElements;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -27,7 +29,7 @@ class ProjetSectionParagrapheController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): JsonResponse
+    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
@@ -40,9 +42,7 @@ class ProjetSectionParagrapheController extends Controller
         ]);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $ordre = (ProjetSectionParagraphe::where('projet_id', $projet->id)
-            ->where('section_id', $section->id)
-            ->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($this->portee($projet, $section));
 
         $paragraphe = ProjetSectionParagraphe::create([
             'projet_id' => $projet->id,
@@ -98,7 +98,7 @@ class ProjetSectionParagrapheController extends Controller
      *
      * @throws HttpException
      */
-    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, ProjetSectionParagraphe $paragraphe): JsonResponse
+    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, ProjetSectionParagraphe $paragraphe, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
@@ -108,20 +108,9 @@ class ProjetSectionParagrapheController extends Controller
         abort_if($paragraphe->projet_id !== $projet->id || $paragraphe->section_id !== $section->id, 404);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $count = ProjetSectionParagraphe::where('projet_id', $projet->id)
-            ->where('section_id', $section->id)
-            ->count();
+        abort_if($this->portee($projet, $section)->count() <= 1, 422, 'La section doit conserver au moins un paragraphe.');
 
-        abort_if($count <= 1, 422, 'La section doit conserver au moins un paragraphe.');
-
-        $paragraphe->delete();
-
-        ProjetSectionParagraphe::where('projet_id', $projet->id)
-            ->where('section_id', $section->id)
-            ->orderBy('ordre')
-            ->each(function (ProjetSectionParagraphe $p, int $index): void {
-                $p->update(['ordre' => $index + 1]);
-            });
+        $ordres->supprimer($paragraphe, $this->portee($projet, $section));
 
         return response()->json(['message' => 'deleted']);
     }
@@ -131,7 +120,7 @@ class ProjetSectionParagrapheController extends Controller
      *
      * @throws HttpException
      */
-    public function reorder(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): JsonResponse
+    public function reorder(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
@@ -145,13 +134,19 @@ class ProjetSectionParagrapheController extends Controller
             'ordre.*' => ['required', 'integer', 'exists:projet_section_paragraphes,id'],
         ]);
 
-        foreach ($validated['ordre'] as $index => $id) {
-            ProjetSectionParagraphe::where('id', $id)
-                ->where('projet_id', $projet->id)
-                ->where('section_id', $section->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($this->portee($projet, $section), $validated['ordre']);
 
         return response()->json(['message' => 'reordered']);
+    }
+
+    /**
+     * Paragraphes d'une section donnée dans ce projet : la liste sur laquelle porte l'ordre.
+     *
+     * @return Builder<ProjetSectionParagraphe>
+     */
+    private function portee(ProjetRecherche $projet, TypeProjetSection $section): Builder
+    {
+        return ProjetSectionParagraphe::where('projet_id', $projet->id)
+            ->where('section_id', $section->id);
     }
 }

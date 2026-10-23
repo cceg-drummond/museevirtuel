@@ -4,14 +4,11 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
-use App\Jobs\ProcessVideoEdit;
-use App\Jobs\ProcessVideoMerge;
 use App\Jobs\TranscrireVideo;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\GroupeVideo;
-use App\Services\ImportTranscriptionService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +17,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GroupeVideoController extends Controller
 {
@@ -198,215 +194,6 @@ class GroupeVideoController extends Controller
         $video->deleteWithFileAndThumbnail();
 
         return back()->with('success', __('video.deleted'));
-    }
-
-    /**
-     * Passe la vidéo du statut brouillon à publié.
-     *
-     * @throws AuthorizationException
-     */
-    public function publier(Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('groupe.classe.cours');
-        $this->authorize('publier', $video);
-
-        $video->update(['statut' => 'publié']);
-
-        return back()->with('success', __('video.published'));
-    }
-
-    /**
-     * Dispatche un Job de traitement FFmpeg pour appliquer les coupes soumises.
-     *
-     * @throws AuthorizationException
-     */
-    public function editer(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('groupe.classe.cours');
-        $this->authorize('editer', $video);
-
-        $validated = $request->validate([
-            'debut' => ['required', 'numeric', 'min:0'],
-            'fin' => ['required', 'numeric', 'gt:debut'],
-            'coupes' => ['nullable', 'array'],
-            'coupes.*.debut' => ['required', 'numeric', 'min:0'],
-            'coupes.*.fin' => ['required', 'numeric', 'gt:coupes.*.debut'],
-        ]);
-
-        // Le statut est mis à jour avant le dispatch pour éviter une fenêtre
-        // où le job commence à s'exécuter avant que la DB reflète l'état en_attente.
-        $video->update(['traitement_statut' => GroupeVideo::TRAITEMENT_EN_ATTENTE]);
-
-        ProcessVideoEdit::dispatchSync(
-            $video,
-            (float) $validated['debut'],
-            (float) $validated['fin'],
-            $validated['coupes'] ?? [],
-        );
-
-        return back()->with('success', __('video.processing'));
-    }
-
-    /**
-     * Dispatche un Job FFmpeg pour insérer une autre vidéo à une position donnée.
-     *
-     * La vidéo insérée est extraite en entier, puis le résultat remplace la vidéo de base.
-     *
-     * @throws AuthorizationException
-     */
-    public function jumeler(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('groupe.classe.cours');
-        $this->authorize('jumeler', $video);
-
-        $validated = $request->validate([
-            'video_a_inserer_id' => ['required', 'integer', 'exists:groupe_videos,id'],
-            'position' => ['required', 'numeric', 'min:0'],
-        ]);
-
-        $videoInsert = GroupeVideo::findOrFail($validated['video_a_inserer_id']);
-
-        // La vidéo à insérer doit appartenir au même groupe.
-        abort_if($videoInsert->groupe_id !== $groupe->id, 403);
-
-        // On ne peut pas jumeler une vidéo avec elle-même.
-        abort_if($videoInsert->id === $video->id, 422);
-
-        // On ne peut pas utiliser une vidéo déjà en cours de traitement.
-        abort_if($videoInsert->isBeingProcessed(), 422);
-
-        $video->update(['traitement_statut' => GroupeVideo::TRAITEMENT_EN_ATTENTE]);
-        ProcessVideoMerge::dispatchSync($video, $videoInsert->id, (float) $validated['position']);
-
-        return back()->with('success', __('video.merged'));
-    }
-
-    /**
-     * Dispatche un Job de transcription Whisper pour la vidéo.
-     *
-     * Ne redispatche pas si une transcription est déjà en cours ou en attente,
-     * pour éviter les doubles soumissions accidentelles.
-     *
-     * @throws AuthorizationException
-     */
-    public function transcrire(Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
-    {
-        $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('groupe.classe.cours');
-        $this->authorize('transcrire', $video);
-
-        // On ne redémarre pas une transcription déjà en cours.
-        if ($video->isBeingTranscribed()) {
-            return back()->with('info', __('video.transcription_already_running'));
-        }
-
-        // La re-génération écrase les corrections manuelles — réinitialiser le flag.
-        $video->update([
-            'transcription_statut' => GroupeVideo::TRANSCRIPTION_EN_ATTENTE,
-            'transcription_modifiee' => false,
-        ]);
-        TranscrireVideo::dispatch($video);
-
-        return back()->with('success', __('video.transcription_started'));
-    }
-
-    /**
-     * Diffuse le fichier vidéo privé après vérification d'autorisation.
-     *
-     * Les vidéos sont stockées hors webroot (storage/app/private/).
-     * BinaryFileResponse gère les requêtes HTTP Range, indispensables
-     * pour la navigation dans la vidéo côté navigateur.
-     *
-     * @throws AuthorizationException
-     */
-    public function stream(GroupeVideo $video): BinaryFileResponse
-    {
-        $video->load('groupe.classe.cours');
-        $this->authorize('view', $video);
-
-        $path = $video->absolutePath();
-
-        abort_unless(file_exists($path), 404);
-
-        return response()->file($path);
-    }
-
-    /**
-     * Sauvegarde les segments de transcription édités manuellement.
-     *
-     * Reconstruit le texte plat à partir des segments modifiés et pose
-     * le flag transcription_modifiee = true pour avertir avant une re-génération Whisper.
-     *
-     * @throws AuthorizationException
-     */
-    public function modifierTranscription(
-        Request $request,
-        Cours $cours,
-        Classe $classe,
-        Groupe $groupe,
-        GroupeVideo $video,
-    ): RedirectResponse {
-        $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('groupe.classe.cours');
-        $this->authorize('modifierTranscription', $video);
-
-        $validated = $request->validate([
-            // max:500 évite le dépassement de la colonne TEXT (65 535 octets) en production MySQL.
-            'segments' => ['required', 'array', 'min:1', 'max:500'],
-            'segments.*.start' => ['required', 'numeric', 'min:0'],
-            'segments.*.end' => ['required', 'numeric', 'gt:segments.*.start'],
-            'segments.*.text' => ['required', 'string', 'max:2000'],
-        ]);
-
-        // Reconstruit le texte plat à partir des segments modifiés.
-        $transcription = implode(' ', array_column($validated['segments'], 'text'));
-
-        $video->update([
-            'transcription' => $transcription,
-            'transcription_segments' => $validated['segments'],
-            'transcription_modifiee' => true,
-        ]);
-
-        return back()->with('success', 'Transcription mise à jour.');
-    }
-
-    /**
-     * Importe une transcription depuis un fichier .txt, .srt ou .vtt.
-     *
-     * Délègue le parsing à ImportTranscriptionService, puis écrase
-     * la transcription existante. Pose transcription_modifiee = true.
-     *
-     * @throws AuthorizationException
-     */
-    public function importerTranscription(
-        Request $request,
-        Cours $cours,
-        Classe $classe,
-        Groupe $groupe,
-        GroupeVideo $video,
-        ImportTranscriptionService $service,
-    ): RedirectResponse {
-        $this->verifierChaine($cours, $classe, $groupe, $video);
-        $video->load('groupe.classe.cours');
-        $this->authorize('modifierTranscription', $video);
-
-        $request->validate([
-            'fichier' => ['required', 'file', 'max:2048', 'mimes:txt,srt,vtt'],
-        ]);
-
-        $resultat = $service->importer($request->file('fichier'));
-
-        $video->update([
-            'transcription' => $resultat['transcription'],
-            'transcription_segments' => $resultat['segments'],
-            'transcription_statut' => GroupeVideo::TRANSCRIPTION_TERMINEE,
-            'transcription_modifiee' => true,
-        ]);
-
-        return back()->with('success', 'Transcription importée avec succès.');
     }
 
     /**
