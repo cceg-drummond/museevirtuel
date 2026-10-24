@@ -234,7 +234,7 @@ class GroupeController extends Controller
             ->pipe(fn ($visios) => VisioConferenceResource::collection($visios)->resolve());
 
         $videos = GroupeVideo::where('groupe_id', $groupe->id)
-            ->scopeVisiblesPour($user, $estEnseignant)
+            ->VisiblesPour($user, $estEnseignant)
             ->with('auteur:id,prenom,nom')
             ->orderByDesc('created_at')
             ->get();

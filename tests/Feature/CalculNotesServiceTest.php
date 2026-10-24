@@ -79,3 +79,10 @@ test('le pourcentage se calcule sur le maximum positif et vaut null sans critèr
     expect($service->pourcentage(collect([critereNote(1, 'positif', 4)]), $corrections, collect(), 7))->toBe(75.0)
         ->and($service->pourcentage(collect([critereNote(1, 'negatif', 4)]), $corrections, collect(), 7))->toBeNull();
 });
+
+test('un critère sans correction ne rapporte ni ne retire de points', function () {
+    $criteres = collect([critereNote(1, 'positif', 10), critereNote(2, 'negatif', 3), critereNote(3, 'positif', 5)]);
+    $corrections = collect([correctionNote(3, null, 4)]);
+
+    expect(app(CalculNotesService::class)->points($criteres, $corrections, collect(), 7))->toBe(4.0);
+});

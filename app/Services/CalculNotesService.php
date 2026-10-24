@@ -28,28 +28,42 @@ class CalculNotesService
         Collection $annotations, int $userId): float
     {
         $correctionsParCritere = $corrections->groupBy('critere_id');
-        $obtenu = 0.0;
 
-        foreach ($criteres as $critere) {
-            $candidates = $correctionsParCritere->get($critere->id, collect());
-            $correction = $candidates->first(fn (ProjetCritereCorrection $c) => $c->user_id === $userId)
-                ?? $candidates->first(fn (ProjetCritereCorrection $c) => $c->user_id === null);
+        $obtenu = $criteres->sum(
+            function (TypeProjetCritere $critere) use ($correctionsParCritere, $userId): float {
+                $candidates = $correctionsParCritere->get($critere->id, collect());
+                $correction = $candidates->first(fn (ProjetCritereCorrection $c) => $c->user_id === $userId)
+                    ?? $candidates->first(fn (ProjetCritereCorrection $c) => $c->user_id === null);
 
-            $points = $correction->points !== null ? (float) $correction->points : (float) $critere->pointage;
-
-            if ($critere->type === 'positif') {
-                $obtenu += $correction->verifie ? $points : 0.0;
-            } else {
-                $obtenu -= $points;
-            }
-        }
+                return $this->pointsCritere($critere, $correction);
+            });
 
         $malus = $annotations
             ->filter(fn (ProjetAnnotation $a) => $a->points_malus !== null
                 && ($a->cible_user_id === null || $a->cible_user_id === $userId))
             ->sum(fn (ProjetAnnotation $a) => (float) $a->points_malus);
 
-        return $obtenu - $malus;
+        return (float) $obtenu - $malus;
+    }
+
+    /**
+     * Retourne la contribution d'un critère : positive si vérifié, négative pour un critère négatif.
+     *
+     * Un critère pas encore corrigé ne rapporte ni ne retire rien.
+     */
+    private function pointsCritere(TypeProjetCritere $critere, ?ProjetCritereCorrection $correction): float
+    {
+        if ($correction === null) {
+            return 0.0;
+        }
+
+        $points = $correction->points !== null ? (float) $correction->points : (float) $critere->pointage;
+
+        if ($critere->type === 'negatif') {
+            return -$points;
+        }
+
+        return $correction->verifie ? $points : 0.0;
     }
 
     /**
