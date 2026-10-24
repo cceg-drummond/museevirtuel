@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReorderRequest;
 use App\Models\Cours;
 use App\Models\CoursObjectif;
+use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +18,7 @@ class CoursObjectifController extends Controller
      *
      * Réservé à l'enseignant du cours et aux admins.
      */
-    public function store(Request $request, Cours $cours): RedirectResponse
+    public function store(Request $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
         Gate::authorize('update', $cours);
 
@@ -24,7 +26,7 @@ class CoursObjectifController extends Controller
             'contenu' => ['required', 'string', 'max:1000'],
         ]);
 
-        $ordre = ($cours->objectifs()->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($cours->objectifs());
 
         $cours->objectifs()->create([
             'contenu' => $validated['contenu'],
@@ -58,19 +60,12 @@ class CoursObjectifController extends Controller
      *
      * Réservé à l'enseignant du cours et aux admins.
      */
-    public function destroy(Cours $cours, CoursObjectif $objectif): RedirectResponse
+    public function destroy(Cours $cours, CoursObjectif $objectif, OrdreElements $ordres): RedirectResponse
     {
         Gate::authorize('update', $cours);
         abort_if($objectif->cours_id !== $cours->id, 404);
 
-        $objectif->delete();
-
-        // Renuméroter pour éviter les trous
-        $cours->objectifs()->orderBy('ordre')->each(
-            function (CoursObjectif $o, int $index): void {
-                $o->update(['ordre' => $index + 1]);
-            }
-        );
+        $ordres->supprimer($objectif, $cours->objectifs());
 
         return back()->with('success', 'Objectif supprimé.');
     }
@@ -80,20 +75,11 @@ class CoursObjectifController extends Controller
      *
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
-    public function reorder(Request $request, Cours $cours): RedirectResponse
+    public function reorder(ReorderRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
         Gate::authorize('update', $cours);
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer'],
-        ]);
-
-        foreach ($validated['ordre'] as $index => $objectifId) {
-            CoursObjectif::where('id', $objectifId)
-                ->where('cours_id', $cours->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($cours->objectifs(), $request->ids());
 
         return back();
     }

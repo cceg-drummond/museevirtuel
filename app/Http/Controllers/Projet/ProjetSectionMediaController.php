@@ -29,6 +29,7 @@ class ProjetSectionMediaController extends Controller
         Groupe $groupe,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
+        StoreUploadedFile $fichiers,
     ): RedirectResponse {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
@@ -71,7 +72,7 @@ class ProjetSectionMediaController extends Controller
             $mediaMeta['url'] = $validated['url'];
         } else {
             $file = $request->file('fichier');
-            $fileMeta = (new StoreUploadedFile)->execute(
+            $fileMeta = $fichiers->execute(
                 $file,
                 "medias/projets/{$projet->id}/sections/{$section->id}"
             );

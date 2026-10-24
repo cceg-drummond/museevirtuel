@@ -9,6 +9,7 @@ use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\GroupeVideo;
 use App\Models\GroupeVideoChapitre;
+use App\Services\OrdreElements;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,7 @@ class GroupeVideoChapitreController extends Controller
         Classe $classe,
         Groupe $groupe,
         GroupeVideo $video,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->verifierChaine($cours, $classe, $groupe, $video);
         $video->load('groupe.classe.cours');
@@ -42,13 +44,13 @@ class GroupeVideoChapitreController extends Controller
             'fin' => ['nullable', 'numeric', 'gt:debut'],
         ]);
 
-        $ordre = $video->chapitres()->max('ordre') ?? 0;
+        $ordre = $ordres->prochain($video->chapitres());
 
         $video->chapitres()->create([
             'label' => $validated['label'],
             'debut' => (float) $validated['debut'],
             'fin' => isset($validated['fin']) ? (float) $validated['fin'] : null,
-            'ordre' => $ordre + 1,
+            'ordre' => $ordre,
         ]);
 
         return back()->with('success', 'Chapitre ajouté.');

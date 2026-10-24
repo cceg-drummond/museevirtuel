@@ -11,6 +11,7 @@ use App\Models\EntrevueLigne;
 use App\Models\Groupe;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
+use App\Services\OrdreElements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -27,7 +28,7 @@ class EntrevueLigneController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept): JsonResponse
+    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, OrdreElements $ordres): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -37,7 +38,7 @@ class EntrevueLigneController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
 
-        $ordre = ($concept->lignes()->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($concept->lignes());
 
         $ligne = EntrevueLigne::create([
             'concept_id' => $concept->id,
@@ -86,7 +87,7 @@ class EntrevueLigneController extends Controller
      *
      * @throws HttpException
      */
-    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, EntrevueLigne $ligne): JsonResponse
+    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, EntrevueLigne $ligne, OrdreElements $ordres): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -97,11 +98,7 @@ class EntrevueLigneController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
 
-        $ligne->delete();
-
-        $concept->lignes()->orderBy('ordre')->each(function (EntrevueLigne $l, int $index): void {
-            $l->update(['ordre' => $index + 1]);
-        });
+        $ordres->supprimer($ligne, $concept->lignes());
 
         return response()->json(['message' => 'deleted']);
     }

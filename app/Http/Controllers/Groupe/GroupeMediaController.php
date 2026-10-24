@@ -30,7 +30,7 @@ class GroupeMediaController extends Controller
      *
      * @throws AuthorizationException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
+    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, StoreUploadedFile $fichiers): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe);
         $groupe->load('classe.cours');
@@ -54,7 +54,7 @@ class GroupeMediaController extends Controller
             default => 'document',
         };
 
-        $meta = (new StoreUploadedFile)->execute(
+        $meta = $fichiers->execute(
             $file,
             "images/groupes/{$groupe->id}"
         );

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\TypeProjet;
+use App\Services\CalculNotesService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,7 +27,7 @@ class ClasseNotesApercuController extends Controller
      * @throws AuthorizationException
      * @throws HttpException
      */
-    public function show(Cours $cours, Classe $classe, TypeProjet $typeProjet): Response
+    public function show(Cours $cours, Classe $classe, TypeProjet $typeProjet, CalculNotesService $notes): Response
     {
         $this->autoriserEnseignantOuAdmin($cours, $classe);
 
@@ -37,12 +38,8 @@ class ClasseNotesApercuController extends Controller
             'groupes.membres',
             'groupes.projets' => fn ($q) => $q->where('type_projet_id', $typeProjet->id),
             'groupes.projets.critereCorrections',
+            'groupes.projets.annotations',
         ]);
-
-        // Maximum de points positifs — diviseur pour le calcul en pourcentage
-        $totalMax = $typeProjet->criteres
-            ->where('type', 'positif')
-            ->sum(fn ($c) => (float) $c->pointage);
 
         $lignes = collect();
 
@@ -51,37 +48,10 @@ class ClasseNotesApercuController extends Controller
             $projet = $groupe->projets->first();
 
             foreach ($groupe->membres as $membre) {
-                $note = null;
-
-                if ($projet !== null && $totalMax > 0) {
-                    $corrections = $projet->critereCorrections;
-                    $totalPoints = 0.0;
-
-                    foreach ($typeProjet->criteres as $critere) {
-                        // La correction individuelle prime sur la correction de groupe (user_id null)
-                        $individuelle = $corrections->first(
-                            fn ($cor) => $cor->critere_id === $critere->id && $cor->user_id === $membre->id
-                        );
-                        $groupeCorrection = $corrections->first(
-                            fn ($cor) => $cor->critere_id === $critere->id && $cor->user_id === null
-                        );
-                        $correction = $individuelle ?? $groupeCorrection;
-
-                        if ($correction === null) {
-                            continue;
-                        }
-
-                        if ($critere->type === 'positif' && $correction->verifie) {
-                            $totalPoints += $correction->points !== null
-                                ? (float) $correction->points
-                                : (float) $critere->pointage;
-                        } elseif ($critere->type === 'negatif') {
-                            $totalPoints -= (float) ($correction->points ?? $critere->pointage);
-                        }
-                    }
-
-                    $note = round($totalPoints / $totalMax * 100, 2);
-                }
+                $note = $projet !== null
+                    ? $notes->pourcentage($typeProjet->criteres,
+                        $projet->critereCorrections, $projet->annotations, $membre->id)
+                    : null;
 
                 $lignes->push([
                     'da' => preg_replace('/\D/', '', (string) $membre->no_da),
@@ -110,7 +80,7 @@ class ClasseNotesApercuController extends Controller
      * @throws AuthorizationException
      * @throws HttpException
      */
-    public function accumulees(Cours $cours, Classe $classe): Response
+    public function accumulees(Cours $cours, Classe $classe, CalculNotesService $notes): Response
     {
         $this->autoriserEnseignantOuAdmin($cours, $classe);
 
@@ -129,6 +99,7 @@ class ClasseNotesApercuController extends Controller
             'groupes.membres',
             'groupes.projets' => fn ($q) => $q->whereIn('type_projet_id', $typeProjetIds),
             'groupes.projets.critereCorrections',
+            'groupes.projets.annotations',
         ]);
 
         $lignes = collect();
@@ -150,30 +121,7 @@ class ClasseNotesApercuController extends Controller
                         continue;
                     }
 
-                    $corrections = $projet->critereCorrections;
-                    $totalMax = $tp->criteres->where('type', 'positif')->sum(fn ($c) => (float) $c->pointage);
-                    $totalPoints = 0.0;
-
-                    foreach ($tp->criteres as $critere) {
-                        // La correction individuelle prime sur la correction de groupe (user_id null)
-                        $individuelle = $corrections->first(fn ($cor) => $cor->critere_id === $critere->id && $cor->user_id === $membre->id);
-                        $groupeCorrection = $corrections->first(fn ($cor) => $cor->critere_id === $critere->id && $cor->user_id === null);
-                        $correction = $individuelle ?? $groupeCorrection;
-
-                        if ($correction === null) {
-                            continue;
-                        }
-
-                        if ($critere->type === 'positif' && $correction->verifie) {
-                            $totalPoints += $correction->points !== null
-                                ? (float) $correction->points
-                                : (float) $critere->pointage;
-                        } elseif ($critere->type === 'negatif') {
-                            $totalPoints -= (float) ($correction->points ?? $critere->pointage);
-                        }
-                    }
-
-                    $note = $totalMax > 0 ? round($totalPoints / $totalMax * 100, 2) : null;
+                    $note = $notes->pourcentage($tp->criteres, $projet->critereCorrections, $projet->annotations, $membre->id);
                     $notesParType[$tp->id] = $note;
 
                     if ($note !== null) {

@@ -21,7 +21,7 @@ class CoursDocumentController extends Controller
      *
      * @throws AuthorizationException
      */
-    public function store(Request $request, Cours $cours): RedirectResponse
+    public function store(Request $request, Cours $cours, StoreUploadedFile $fichiers): RedirectResponse
     {
         $this->authorize('update', $cours);
 
@@ -32,7 +32,7 @@ class CoursDocumentController extends Controller
             $this->messagesValidationDocument(),
         );
 
-        $meta = (new StoreUploadedFile)->execute(
+        $meta = $fichiers->execute(
             $request->file('document'),
             "images/cours/{$cours->id}"
         );

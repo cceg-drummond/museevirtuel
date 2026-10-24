@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EtudiantReference;
+use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,7 @@ class EtudiantReferenceController extends Controller
      *
      * L'ordre est calculé automatiquement (max existant + 1).
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, OrdreElements $ordres): RedirectResponse
     {
         $validated = $request->validate([
             'titre' => ['required', 'string', 'max:500'],
@@ -22,7 +23,7 @@ class EtudiantReferenceController extends Controller
 
         $user = auth()->user();
 
-        $ordre = $user->etudiantReferences()->max('ordre') + 1;
+        $ordre = $ordres->prochain($user->etudiantReferences());
 
         $user->etudiantReferences()->create([
             'titre' => $validated['titre'],

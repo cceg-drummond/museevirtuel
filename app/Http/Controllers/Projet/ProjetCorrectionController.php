@@ -9,6 +9,7 @@ use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
+use App\Services\CalculNotesService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
@@ -50,13 +51,12 @@ class ProjetCorrectionController extends Controller
      *
      * Accessible aux enseignants et admins uniquement.
      * Chaque ligne affiche le numéro DA de l'étudiant suivi de sa note calculée
-     * (somme des critères positifs/négatifs corrigés, moins les malus d'annotations).
-     * La logique de calcul est identique à celle du panneau notesParMembre dans Show.vue.
      *
      * @throws HttpException
      * @throws AuthorizationException
      */
-    public function apercuNotes(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): Response
+    public function apercuNotes(Cours $cours, Classe $classe, Groupe $groupe,
+        TypeProjet $typeProjet, CalculNotesService $notes): Response
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
@@ -80,44 +80,12 @@ class ProjetCorrectionController extends Controller
         $typeProjet->load('criteres');
         $projet->load(['critereCorrections', 'annotations']);
 
-        // Index des corrections par critère_id pour éviter des boucles N+1
-        $correctionsByCritere = $projet->critereCorrections->groupBy('critere_id');
-
-        $lignes = $groupe->membres->map(function ($membre) use ($typeProjet, $correctionsByCritere, $projet) {
-            $obtenu = 0.0;
-
-            foreach ($typeProjet->criteres as $critere) {
-                $corrections = $correctionsByCritere->get($critere->id, collect());
-
-                // Correction individuelle prime sur la correction de groupe (même logique que Show.vue)
-                $correction = $corrections->first(fn ($c) => $c->user_id === $membre->id)
-                    ?? $corrections->first(fn ($c) => $c->user_id === null);
-
-                if ($correction === null) {
-                    continue;
-                }
-
-                $pts = (float) ($correction->points ?? 0);
-                if ($critere->type === 'positif') {
-                    $obtenu += $pts;
-                } else {
-                    $obtenu -= $pts;
-                }
-            }
-
-            // Malus d'annotation : s'applique si cible_user_id = null (tous) ou = cet étudiant
-            $malus = $projet->annotations
-                ->filter(fn ($a) => $a->points_malus !== null
-                    && ($a->cible_user_id === null || $a->cible_user_id === $membre->id))
-                ->sum(fn ($a) => (float) $a->points_malus);
-
-            return [
-                'da' => preg_replace('/\D/', '', (string) $membre->no_da),
-                'prenom' => $membre->prenom,
-                'nom' => $membre->nom,
-                'note' => round(($obtenu - $malus) * 100) / 100,
-            ];
-        })->values();
+        $lignes = $groupe->membres->map(fn ($membre) => [
+            'da' => preg_replace('/\D/', '', (string) $membre->no_da),
+            'prenom' => $membre->prenom,
+            'nom' => $membre->nom,
+            'note' => round($notes->points($typeProjet->criteres, $projet->critereCorrections, $projet->annotations, $membre->id), 2),
+        ])->values();
 
         return Inertia::render('Projets/ApercuNotes', [
             'cours' => ['id' => $cours->id],
@@ -127,6 +95,4 @@ class ProjetCorrectionController extends Controller
             'lignes' => $lignes,
         ]);
     }
-
-    // ─── Renvois (endnotes) ───────────────────────────────────────────────────
 }

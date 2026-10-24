@@ -6,9 +6,9 @@ use App\Enums\TypeCours;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoursRequest;
 use App\Http\Requests\UpdateCoursRequest;
+use App\Http\Resources\VisioConferenceResource;
 use App\Models\Cours;
 use App\Models\TypeProjet;
-use App\Models\VisioConference;
 use App\Services\AppliquerGabaritService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -87,22 +87,7 @@ class CoursController extends Controller
         $visioConferences = $cours->visioConferences()
             ->with('animateur:id,prenom,nom')
             ->get()
-            ->map(fn (VisioConference $v) => [
-                'id' => $v->id,
-                'cours_id' => $v->cours_id,
-                'groupe_id' => $v->groupe_id,
-                'jitsi_room' => $v->jitsi_room,
-                'titre' => $v->titre,
-                'scheduled_at' => $v->scheduled_at?->toIso8601String(),
-                'started_at' => $v->started_at?->toIso8601String(),
-                'ended_at' => $v->ended_at?->toIso8601String(),
-                'recording_url' => $v->recording_url,
-                'animateur' => [
-                    'id' => $v->animateur->id,
-                    'prenom' => $v->animateur->prenom,
-                    'nom' => $v->animateur->nom,
-                ],
-            ]);
+            ->pipe(fn ($visios) => VisioConferenceResource::collection($visios)->resolve());
 
         return Inertia::render('Cours/Show', [
             'cours' => $cours,

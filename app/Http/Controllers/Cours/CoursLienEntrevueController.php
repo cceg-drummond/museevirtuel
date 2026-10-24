@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReorderRequest;
 use App\Models\Cours;
 use App\Models\CoursLienEntrevue;
+use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +17,7 @@ class CoursLienEntrevueController extends Controller
      *
      * Accessible aux enseignants et admins (authorize sur le cours).
      */
-    public function store(Request $request, Cours $cours): RedirectResponse
+    public function store(Request $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
         $this->authorize('update', $cours);
 
@@ -24,7 +26,7 @@ class CoursLienEntrevueController extends Controller
             'url' => ['required', 'url', 'max:2048'],
         ]);
 
-        $ordre = ($cours->liensEntrevue()->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($cours->liensEntrevue());
 
         $cours->liensEntrevue()->create([
             'label' => $data['label'],
@@ -61,20 +63,11 @@ class CoursLienEntrevueController extends Controller
      *
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
-    public function reorder(Request $request, Cours $cours): RedirectResponse
+    public function reorder(ReorderRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
         $this->authorize('update', $cours);
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer'],
-        ]);
-
-        foreach ($validated['ordre'] as $index => $lienId) {
-            CoursLienEntrevue::where('id', $lienId)
-                ->where('cours_id', $cours->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($cours->liensEntrevue(), $request->ids());
 
         return back();
     }
@@ -82,18 +75,12 @@ class CoursLienEntrevueController extends Controller
     /**
      * Supprime un lien d'entrevue et renumérote les restants.
      */
-    public function destroy(Cours $cours, CoursLienEntrevue $lien): RedirectResponse
+    public function destroy(Cours $cours, CoursLienEntrevue $lien, OrdreElements $ordres): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($lien->cours_id !== $cours->id, 404);
 
-        $lien->delete();
-
-        $cours->liensEntrevue()->each(
-            function (CoursLienEntrevue $l, int $index): void {
-                $l->update(['ordre' => $index + 1]);
-            }
-        );
+        $ordres->supprimer($lien, $cours->liensEntrevue());
 
         return back()->with('success', __('liens_entrevue.deleted'));
     }

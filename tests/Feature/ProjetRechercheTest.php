@@ -856,7 +856,7 @@ test('les développements sont ajoutés en fin, renumérotés après suppression
         ->and($d1->fresh()->ordre)->toBe(2);
 });
 
-test("le réordonnancement ignore un développement d'un autre projet", function () {
+test("le réordonnancement refuse un développement d'un autre projet", function () {
     ['typeProjet' => $tp, 'cours' => $cours, 'classeSection' => $cs, 'classe' => $groupe, 'etudiant1' => $etudiant] = creerScenario();
     $url = "/cours/{$cours->id}/classes/{$cs->id}/groupes/{$groupe->id}/projets/{$tp->id}/developpements";
     $this->actingAs($etudiant)->postJson($url)->assertCreated();
@@ -865,7 +865,9 @@ test("le réordonnancement ignore un développement d'un autre projet", function
     $autreProjet = ProjetRecherche::create(['groupe_id' => $groupe->id, 'type_projet_id' => $autreType->id]);
     $etranger = $autreProjet->developpements()->create(['ordre' => 5, 'titre' => 'x', 'contenu' => 'x']);
 
-    $this->actingAs($etudiant)->patchJson("{$url}/reorder", ['ordre' => [$etranger->id]])->assertOk();
+    $this->actingAs($etudiant)->patchJson("{$url}/reorder", ['ordre' => [$etranger->id]])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('ordre');
 
     expect($etranger->fresh()->ordre)->toBe(5);
 });

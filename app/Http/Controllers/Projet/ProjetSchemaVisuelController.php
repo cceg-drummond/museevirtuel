@@ -84,6 +84,7 @@ class ProjetSchemaVisuelController extends Controller
         Groupe $groupe,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
+        StoreUploadedFile $fichiers,
     ): JsonResponse {
         $projet = $this->autoriserEtTrouverProjet($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -91,7 +92,7 @@ class ProjetSchemaVisuelController extends Controller
             'image' => ['required', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
         ]);
 
-        $meta = (new StoreUploadedFile)->execute(
+        $meta = $fichiers->execute(
             $request->file('image'),
             "medias/schema/{$projet->id}"
         );

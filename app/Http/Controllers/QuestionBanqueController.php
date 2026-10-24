@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReorderRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -10,6 +11,7 @@ use App\Models\ProjetRecherche;
 use App\Models\QuestionBanque;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
+use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -25,6 +27,7 @@ class QuestionBanqueController extends Controller
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
@@ -35,7 +38,7 @@ class QuestionBanqueController extends Controller
             'contenu' => ['required', 'string', 'max:2000'],
         ]);
 
-        $ordre = ($section->questionsBanque()->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($section->questionsBanque());
 
         $section->questionsBanque()->create([
             'contenu' => $data['contenu'],
@@ -75,25 +78,17 @@ class QuestionBanqueController extends Controller
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
     public function reorder(
-        Request $request,
+        ReorderRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer'],
-        ]);
-
-        foreach ($validated['ordre'] as $index => $questionId) {
-            QuestionBanque::where('id', $questionId)
-                ->where('section_id', $section->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($section->questionsBanque(), $request->ids());
 
         return back();
     }
@@ -108,20 +103,14 @@ class QuestionBanqueController extends Controller
         TypeProjet $typeProjet,
         TypeProjetSection $section,
         QuestionBanque $question,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($question->section_id !== $section->id, 404);
 
-        $question->delete();
-
-        // Renuméroter les questions restantes
-        $section->questionsBanque()->orderBy('ordre')->each(
-            function (QuestionBanque $q, int $index): void {
-                $q->update(['ordre' => $index + 1]);
-            }
-        );
+        $ordres->supprimer($question, $section->questionsBanque());
 
         return back()->with('success', __('questions.deleted'));
     }

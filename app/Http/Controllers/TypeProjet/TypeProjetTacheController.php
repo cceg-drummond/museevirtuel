@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\TypeProjet;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReorderRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetTache;
+use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -20,6 +22,7 @@ class TypeProjetTacheController extends Controller
         Request $request,
         Cours $cours,
         TypeProjet $typeProjet,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
@@ -29,7 +32,7 @@ class TypeProjetTacheController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $ordre = ($typeProjet->taches()->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($typeProjet->taches());
 
         $typeProjet->taches()->create([
             'titre' => $data['titre'],
@@ -69,23 +72,15 @@ class TypeProjetTacheController extends Controller
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
     public function reorder(
-        Request $request,
+        ReorderRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer'],
-        ]);
-
-        foreach ($validated['ordre'] as $index => $tacheId) {
-            TypeProjetTache::where('id', $tacheId)
-                ->where('type_projet_id', $typeProjet->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($typeProjet->taches(), $request->ids());
 
         return back();
     }
@@ -97,19 +92,13 @@ class TypeProjetTacheController extends Controller
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetTache $tache,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($tache->type_projet_id !== $typeProjet->id, 404);
 
-        $tache->delete();
-
-        // Renuméroter les tâches restantes
-        $typeProjet->taches()->each(
-            function (TypeProjetTache $t, int $index): void {
-                $t->update(['ordre' => $index + 1]);
-            }
-        );
+        $ordres->supprimer($tache, $typeProjet->taches());
 
         return back()->with('success', __('taches.deleted'));
     }

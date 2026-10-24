@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Groupe;
 
+use App\Actions\StoreUploadedFile;
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
 use App\Jobs\TranscrireVideo;
@@ -13,8 +14,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,19 +36,8 @@ class GroupeVideoController extends Controller
         $estEnseignant = $user->isEnseignant()
             && $cours->enseignant_id === $user->id;
 
-        // Même logique de visibilité que GroupeController::show() :
-        // publié pour tous, brouillons/archivés pour enseignant/admin,
-        // ses propres brouillons pour l'étudiant.
         $videos = $groupe->videos()
-            ->where(function ($q) use ($user, $estEnseignant) {
-                $q->where('statut', 'publié');
-
-                if ($estEnseignant || $user->isAdmin()) {
-                    $q->orWhereIn('statut', ['brouillon', 'archivé']);
-                } else {
-                    $q->orWhere(fn ($q2) => $q2->where('statut', 'brouillon')->where('user_id', $user->id));
-                }
-            })
+            ->visiblesPour($user, $estEnseignant)
             ->with('auteur:id,prenom,nom')
             ->get();
 
@@ -68,7 +56,8 @@ class GroupeVideoController extends Controller
      *
      * @throws AuthorizationException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
+    public function store(Request $request, Cours $cours, Classe $classe,
+                          Groupe $groupe, StoreUploadedFile $fichiers): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe);
         $groupe->load('classe.cours');
@@ -86,19 +75,13 @@ class GroupeVideoController extends Controller
         ]);
 
         // Stockage privé (hors webroot) : l'accès passe par l'endpoint stream() authentifié.
-        $file = $request->file('fichier');
-        $directory = "medias/groupes/{$groupe->id}/videos";
-        $filename = Str::uuid().'.'.strtolower($file->getClientOriginalExtension());
-
-        Storage::disk('local')->putFileAs($directory, $file, $filename);
+        $fichier = $fichiers->executePrive($request->file('fichier'), "medias/groupes/{$groupe->id}/videos");
 
         $video = $groupe->videos()->create([
+            ...$fichier,
             'user_id' => auth()->id(),
             'titre' => $request->input('titre'),
             'description' => $request->input('description'),
-            'nom_original' => $file->getClientOriginalName(),
-            'file_path' => "{$directory}/{$filename}",
-            'taille' => $file->getSize(),
             'statut' => 'brouillon',
             'transcription_statut' => GroupeVideo::TRANSCRIPTION_EN_ATTENTE,
         ]);
@@ -129,15 +112,7 @@ class GroupeVideoController extends Controller
         // Un étudiant ne doit pas voir les brouillons de ses coéquipiers ici.
         $autresVideos = GroupeVideo::where('groupe_id', $groupe->id)
             ->where('id', '!=', $video->id)
-            ->where(function ($q) use ($user, $estEnseignant) {
-                $q->where('statut', 'publié');
-
-                if ($estEnseignant || $user->isAdmin()) {
-                    $q->orWhereIn('statut', ['brouillon', 'archivé']);
-                } else {
-                    $q->orWhere(fn ($q2) => $q2->where('statut', 'brouillon')->where('user_id', $user->id));
-                }
-            })
+            ->visiblesPour($user, $estEnseignant)
             ->where(function ($q) {
                 $q->whereNull('traitement_statut')
                     ->orWhere('traitement_statut', GroupeVideo::TRAITEMENT_TERMINE);

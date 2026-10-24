@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Resources\VisioConferenceResource;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -430,4 +431,27 @@ test('le fichier enregistrement est supprimé du storage quand la visio est effa
     $visio->delete();
 
     Storage::assertMissing($path);
+});
+
+// ─── VisioConferenceResource ──────────────────────────────────────────────────
+
+test('la resource expose le flux interne pour un enregistrement local et les relations chargées', function () {
+    $s = creerScenarioVisio();
+    $visio = VisioConference::create([
+        'cours_id' => $s['cours']->id,
+        'groupe_id' => $s['groupe']->id,
+        'animateur_id' => $s['enseignant']->id,
+        'jitsi_room' => '0001-Resource',
+        'titre' => 'Séance',
+    ]);
+    $visio->forceFill(['recording_path' => "visio-recordings/{$visio->id}/recording.mp4"])->save();
+
+    $props = VisioConferenceResource::make($visio->load(['animateur', 'cours']))->resolve();
+
+    expect($props['recording_stream_url'])->toBe(route('cours.visio.recording', [$s['cours'], $visio]))
+        ->and($props['recording_is_local'])->toBeTrue()
+        ->and($props['has_recording'])->toBeTrue()
+        ->and($props['animateur'])->toBe(['id' => $s['enseignant']->id, 'prenom' => $s['enseignant']->prenom, 'nom' => $s['enseignant']->nom])
+        ->and($props['cours']['nom_cours'])->toBe('Cours Visio Test')
+        ->and($props)->not->toHaveKey('groupe_numero');
 });

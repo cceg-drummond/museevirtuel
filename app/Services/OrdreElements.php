@@ -6,13 +6,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
- * Gère la colonne `ordre` d'une liste d'éléments (ajout en fin, suppression, tri).
- *
- * La « portée » est la requête qui délimite la liste : par exemple les développements
- * d'un projet, ou les paragraphes d'une section d'un projet. Elle est clonée à chaque
- * usage pour ne jamais être modifiée par l'appelant.
+ * Gère l'ordre des éléments d'une liste (ajout en fin, suppression, tri).
  */
 class OrdreElements
 {
@@ -43,13 +40,24 @@ class OrdreElements
     }
 
     /**
-     * Applique l'ordre reçu du client ; les IDs hors de la portée sont ignorés.
+     * Applique l'ordre reçu du client.
+     *
+     * Rejette la liste entière si un ID n'appartient pas à la portée : un ID étranger
+     * signale soit un client désynchronisé, soit une tentative de toucher une autre liste.
      *
      * @param  Builder<Model>|Relation<Model, Model, mixed>  $portee
      * @param  list<int>  $ids
+     *
+     * @throws ValidationException
      */
     public function reordonner(Builder|Relation $portee, array $ids): void
     {
+        if ((clone $portee)->whereKey($ids)->count() !== count($ids)) {
+            throw ValidationException::withMessages([
+                'ordre' => 'Certains éléments n’appartiennent pas à cette liste.',
+            ]);
+        }
+
         DB::transaction(function () use ($portee, $ids): void {
             foreach ($ids as $index => $id) {
                 (clone $portee)->whereKey($id)->update(['ordre' => $index + 1]);

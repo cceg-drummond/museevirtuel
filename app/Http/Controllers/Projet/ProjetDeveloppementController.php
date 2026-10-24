@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\ReorderRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -120,7 +121,7 @@ class ProjetDeveloppementController extends Controller
      *
      * @throws HttpException
      */
-    public function reorder(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, OrdreElements $ordres): JsonResponse
+    public function reorder(ReorderRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, OrdreElements $ordres): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
@@ -128,12 +129,7 @@ class ProjetDeveloppementController extends Controller
 
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer', 'exists:projet_developpements,id'],
-        ]);
-
-        $ordres->reordonner($projet->developpements(), $validated['ordre']);
+        $ordres->reordonner($projet->developpements(), $request->ids());
 
         return response()->json(['message' => 'reordered']);
     }

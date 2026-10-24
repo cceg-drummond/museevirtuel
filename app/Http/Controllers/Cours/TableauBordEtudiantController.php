@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\VisioConferenceResource;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
@@ -70,15 +71,7 @@ class TableauBordEtudiantController extends Controller
             ->orderBy('scheduled_at')
             ->limit(10)
             ->get()
-            ->map(fn (VisioConference $v) => [
-                'id' => $v->id,
-                'titre' => $v->titre,
-                'scheduled_at' => $v->scheduled_at->toIso8601String(),
-                'started_at' => $v->started_at?->toIso8601String(),
-                'jitsi_room' => $v->jitsi_room,
-                'cours' => ['id' => $v->cours->id, 'nom_cours' => $v->cours->nom_cours],
-                'animateur' => ['prenom' => $v->animateur->prenom, 'nom' => $v->animateur->nom],
-            ]);
+            ->pipe(fn ($visios) => VisioConferenceResource::collection($visios)->resolve());
 
         // Références personnelles de l'étudiant
         $mesReferences = $user->etudiantReferences()

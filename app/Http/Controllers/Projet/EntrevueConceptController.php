@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseEntrevue;
+use App\Http\Requests\ReorderRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\EntrevueConcept;
@@ -11,6 +12,7 @@ use App\Models\Groupe;
 use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
+use App\Services\OrdreElements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -24,7 +26,9 @@ class EntrevueConceptController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): JsonResponse
+    public function store(Request $request, Cours $cours, Classe $classe,
+        Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section,
+        OrdreElements $ordres): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -40,9 +44,7 @@ class EntrevueConceptController extends Controller
             'label' => ['required', 'string', 'max:500'],
         ]);
 
-        $ordre = (EntrevueConcept::where('projet_id', $projet->id)
-            ->where('section_id', $section->id)
-            ->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($this->portee($projet, $section));
 
         $concept = EntrevueConcept::create([
             'projet_id' => $projet->id,
@@ -86,7 +88,7 @@ class EntrevueConceptController extends Controller
      *
      * @throws HttpException
      */
-    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept): JsonResponse
+    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, OrdreElements $ordres): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -96,14 +98,7 @@ class EntrevueConceptController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
 
-        $concept->delete();
-
-        EntrevueConcept::where('projet_id', $projet->id)
-            ->where('section_id', $section->id)
-            ->orderBy('ordre')
-            ->each(function (EntrevueConcept $c, int $index): void {
-                $c->update(['ordre' => $index + 1]);
-            });
+        $ordres->supprimer($concept, $this->portee($projet, $section));
 
         return response()->json(['message' => 'deleted']);
     }
@@ -113,7 +108,7 @@ class EntrevueConceptController extends Controller
      *
      * @throws HttpException
      */
-    public function reorder(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): JsonResponse
+    public function reorder(ReorderRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, OrdreElements $ordres): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -121,17 +116,7 @@ class EntrevueConceptController extends Controller
 
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer', 'exists:entrevue_concepts,id'],
-        ]);
-
-        foreach ($validated['ordre'] as $index => $id) {
-            EntrevueConcept::where('id', $id)
-                ->where('projet_id', $projet->id)
-                ->where('section_id', $section->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($this->portee($projet, $section), $request->ids());
 
         return response()->json(['message' => 'reordered']);
     }
@@ -151,5 +136,14 @@ class EntrevueConceptController extends Controller
             'ordre' => $concept->ordre,
             'lignes' => [],
         ];
+    }
+
+    /**
+     * Concepts d'une section donnée dans ce projet : la liste sur laquelle porte l'ordre.
+     */
+    private function portee(ProjetRecherche $projet, TypeProjetSection $section): EntrevueConcept
+    {
+        return EntrevueConcept::where('projet_id', $projet->id)
+            ->where('section_id', $section->id);
     }
 }

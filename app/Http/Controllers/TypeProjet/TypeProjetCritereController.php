@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\TypeProjet;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReorderRequest;
 use App\Http\Requests\StoreCritereRequest;
 use App\Http\Requests\UpdateCritereRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetCritere;
 use App\Models\TypeProjetSection;
+use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -25,6 +27,7 @@ class TypeProjetCritereController extends Controller
         StoreCritereRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
@@ -39,9 +42,7 @@ class TypeProjetCritereController extends Controller
         }
 
         // Calculer le prochain ordre dans le même contexte (global ou par section)
-        $ordre = ($typeProjet->criteres()
-            ->where('section_id', $sectionId)
-            ->max('ordre') ?? 0) + 1;
+        $ordre = $ordres->prochain($typeProjet->criteres()->where('section_id', $sectionId));
 
         $typeProjet->criteres()->create([
             'section_id' => $sectionId,
@@ -95,23 +96,15 @@ class TypeProjetCritereController extends Controller
      * L'UI envoie uniquement les IDs d'un même groupe (global ou section donnée).
      */
     public function reorder(
-        Request $request,
+        ReorderRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
 
-        $validated = $request->validate([
-            'ordre' => ['required', 'array'],
-            'ordre.*' => ['required', 'integer'],
-        ]);
-
-        foreach ($validated['ordre'] as $index => $critereId) {
-            TypeProjetCritere::where('id', $critereId)
-                ->where('type_projet_id', $typeProjet->id)
-                ->update(['ordre' => $index + 1]);
-        }
+        $ordres->reordonner($typeProjet->criteres(), $request->ids());
 
         return back();
     }
@@ -152,23 +145,14 @@ class TypeProjetCritereController extends Controller
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetCritere $critere,
+        OrdreElements $ordres,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($critere->type_projet_id !== $typeProjet->id, 404);
 
-        // Sauvegarder section_id avant suppression pour la renumération
-        $sectionId = $critere->section_id;
-
-        $critere->delete();
-
-        // Renuméroter les critères restants dans le même groupe
-        TypeProjetCritere::where('type_projet_id', $typeProjet->id)
-            ->where('section_id', $sectionId)
-            ->orderBy('ordre')
-            ->each(function (TypeProjetCritere $c, int $index): void {
-                $c->update(['ordre' => $index + 1]);
-            });
+        // Renuméroter seulement les critères du même groupe (global ou même section)
+        $ordres->supprimer($critere, $typeProjet->criteres()->where('section_id', $critere->section_id));
 
         return back()->with('success', 'Critère supprimé.');
     }

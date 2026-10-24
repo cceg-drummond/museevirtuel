@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\VisioConferenceResource;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -230,46 +231,10 @@ class GroupeController extends Controller
             ->with('animateur:id,prenom,nom')
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn (VisioConference $v) => [
-                'id' => $v->id,
-                'cours_id' => $v->cours_id,
-                'groupe_id' => $v->groupe_id,
-                'jitsi_room' => $v->jitsi_room,
-                'titre' => $v->titre,
-                'scheduled_at' => $v->scheduled_at?->toIso8601String(),
-                'started_at' => $v->started_at?->toIso8601String(),
-                'ended_at' => $v->ended_at?->toIso8601String(),
-                'recording_url' => $v->recording_url,
-                // URL sécurisée pour lire l'enregistrement : stream interne si fichier local, URL externe sinon
-                'recording_stream_url' => $v->recording_path
-                    ? route('cours.visio.recording', [$cours, $v])
-                    : $v->recording_url,
-                'has_recording' => (bool) ($v->recording_path || $v->recording_url),
-                // Vrai si le fichier est stocké localement (permet d'afficher un <video> plutôt qu'un lien)
-                'recording_is_local' => (bool) $v->recording_path,
-                'animateur' => [
-                    'id' => $v->animateur->id,
-                    'prenom' => $v->animateur->prenom,
-                    'nom' => $v->animateur->nom,
-                ],
-            ]);
+            ->pipe(fn ($visios) => VisioConferenceResource::collection($visios)->resolve());
 
-        // Vidéos visibles : publiées pour tous les membres, brouillons pour l'auteur et l'enseignant.
         $videos = GroupeVideo::where('groupe_id', $groupe->id)
-            ->where(function ($q) use ($user, $estEnseignant) {
-                // Toujours voir les vidéos publiées.
-                $q->where('statut', 'publié');
-
-                if ($estEnseignant || $user->isAdmin()) {
-                    // L'enseignant voit aussi les brouillons et les archives.
-                    $q->orWhereIn('statut', ['brouillon', 'archivé']);
-                } else {
-                    // L'étudiant voit ses propres brouillons.
-                    $q->orWhere(function ($q2) use ($user) {
-                        $q2->where('statut', 'brouillon')->where('user_id', $user->id);
-                    });
-                }
-            })
+            ->scopeVisiblesPour($user, $estEnseignant)
             ->with('auteur:id,prenom,nom')
             ->orderByDesc('created_at')
             ->get();

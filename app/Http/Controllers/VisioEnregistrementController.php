@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\StoreUploadedFile;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -25,7 +26,7 @@ class VisioEnregistrementController extends Controller
      *
      * @throws HttpException si la visio n'appartient pas au cours
      */
-    public function store(Request $request, Cours $cours, VisioConference $visio): RedirectResponse
+    public function store(Request $request, Cours $cours, VisioConference $visio, StoreUploadedFile $fichiers): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($visio->cours_id !== $cours->id, 404);
@@ -39,13 +40,9 @@ class VisioEnregistrementController extends Controller
             Storage::delete($visio->recording_path);
         }
 
-        $extension = $request->file('recording')->getClientOriginalExtension();
-        $path = $request->file('recording')->storeAs(
-            "visio-recordings/{$visio->id}",
-            "recording.{$extension}"
-        );
+        $fichier = $fichiers->executePrive($request->file('recording'), "visio-recordings/{$visio->id}", 'recording');
 
-        $visio->update(['recording_path' => $path]);
+        $visio->update(['recording_path' => $fichier['file_path']]);
 
         return back()->with('success', __('visio.recording_saved'));
     }
