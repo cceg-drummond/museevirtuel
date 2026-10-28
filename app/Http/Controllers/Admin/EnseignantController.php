@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreEnseignantRequest;
-use App\Http\Requests\UpdateEnseignantRequest;
+use App\Http\Requests\Admin\SaveEnseignantRequest;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -20,9 +19,9 @@ class EnseignantController extends Controller
      * Crée un nouveau compte enseignant.
      *
      * Le mot de passe initial est hashé explicitement (même si le cast 'hashed' le ferait).
-     * L'email est validé pour unicité via StoreEnseignantRequest.
+     * L'email est validé pour unicité via SaveEnseignantRequest.
      */
-    public function store(StoreEnseignantRequest $request): RedirectResponse
+    public function store(SaveEnseignantRequest $request): RedirectResponse
     {
         User::create([
             ...$request->validated(),
@@ -39,7 +38,7 @@ class EnseignantController extends Controller
      *
      * @throws AuthorizationException si la cible n'est pas un enseignant
      */
-    public function update(UpdateEnseignantRequest $request, User $enseignant): RedirectResponse
+    public function update(SaveEnseignantRequest $request, User $enseignant): RedirectResponse
     {
         // Protège contre la modification accidentelle d'un admin ou étudiant via route binding
         abort_if($enseignant->role !== 'enseignant', 403);

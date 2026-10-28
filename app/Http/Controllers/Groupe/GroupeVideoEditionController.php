@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\EditerGroupeVideoRequest;
+use App\Http\Requests\Groupe\JumelerGroupeVideoRequest;
 use App\Jobs\ProcessVideoEdit;
 use App\Jobs\ProcessVideoMerge;
 use App\Models\Classe;
@@ -12,7 +14,6 @@ use App\Models\Groupe;
 use App\Models\GroupeVideo;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 /**
  * Montage d'une vidéo de groupe (coupes et jumelage) via FFmpeg.
@@ -24,21 +25,17 @@ class GroupeVideoEditionController extends Controller
     /**
      * Dispatche un Job de traitement FFmpeg pour appliquer les coupes soumises.
      *
+     * Données validées par EditerGroupeVideoRequest.
+     *
      * @throws AuthorizationException
      */
-    public function editer(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
+    public function editer(EditerGroupeVideoRequest $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe, $video);
         $video->load('groupe.classe.cours');
         $this->authorize('editer', $video);
 
-        $validated = $request->validate([
-            'debut' => ['required', 'numeric', 'min:0'],
-            'fin' => ['required', 'numeric', 'gt:debut'],
-            'coupes' => ['nullable', 'array'],
-            'coupes.*.debut' => ['required', 'numeric', 'min:0'],
-            'coupes.*.fin' => ['required', 'numeric', 'gt:coupes.*.debut'],
-        ]);
+        $validated = $request->validated();
 
         // Le statut est mis à jour avant le dispatch pour éviter une fenêtre
         // où le job commence à s'exécuter avant que la DB reflète l'état en_attente.
@@ -59,18 +56,17 @@ class GroupeVideoEditionController extends Controller
      *
      * La vidéo insérée est extraite en entier, puis le résultat remplace la vidéo de base.
      *
+     * Données validées par JumelerGroupeVideoRequest.
+     *
      * @throws AuthorizationException
      */
-    public function jumeler(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
+    public function jumeler(JumelerGroupeVideoRequest $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe, $video);
         $video->load('groupe.classe.cours');
         $this->authorize('jumeler', $video);
 
-        $validated = $request->validate([
-            'video_a_inserer_id' => ['required', 'integer', 'exists:groupe_videos,id'],
-            'position' => ['required', 'numeric', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
         $videoInsert = GroupeVideo::findOrFail($validated['video_a_inserer_id']);
 

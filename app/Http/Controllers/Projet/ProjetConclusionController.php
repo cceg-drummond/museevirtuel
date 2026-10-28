@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\Projet\UpdateProjetConclusionRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -11,8 +12,6 @@ use App\Models\ProjetConclusion;
 use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -30,22 +29,18 @@ class ProjetConclusionController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function update(UpdateProjetConclusionRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
         // Charger les membres pour valider le user_id cible (toujours nécessaire, même pour l'enseignant)
         $groupe->load(['classe.cours', 'membres']);
 
-        // Vérifier l'autorisation avant la validation pour retourner 403 plutôt que 422
-        // aux utilisateurs qui ne font pas partie du groupe et ne sont pas l'enseignant.
+        // Les utilisateurs qui ne font pas partie du groupe et ne sont pas l'enseignant reçoivent 403.
+        // NB : la FormRequest valide désormais avant ce point (422 possible pour un intrus avec données invalides).
         $this->autoriserMembreOuEnseignant($cours, $classe, $groupe);
 
-        $validated = $request->validate([
-            'contenu' => ['nullable', 'string'],
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-            'section_id' => ['nullable', 'integer', Rule::exists('type_projet_sections', 'id')->where('type_projet_id', $typeProjet->id)],
-        ]);
+        $validated = $request->validated();
 
         abort_unless(
             $groupe->membres->contains('id', $validated['user_id']),

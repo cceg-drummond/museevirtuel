@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Projet\UpdateProjetSectionParagrapheRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -64,7 +65,7 @@ class ProjetSectionParagrapheController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, ProjetSectionParagraphe $paragraphe): JsonResponse
+    public function update(UpdateProjetSectionParagrapheRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, ProjetSectionParagraphe $paragraphe): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
@@ -74,10 +75,7 @@ class ProjetSectionParagrapheController extends Controller
         abort_if($paragraphe->projet_id !== $projet->id || $paragraphe->section_id !== $section->id, 404);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $validated = $request->validate([
-            'titre' => ['nullable', 'string', 'max:500'],
-            'contenu' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $paragraphe->update($validated);
 

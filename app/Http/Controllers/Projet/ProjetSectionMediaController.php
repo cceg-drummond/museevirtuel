@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Actions\StoreUploadedFile;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projet\StoreProjetSectionMediaRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -12,7 +13,6 @@ use App\Models\ProjetSectionMedia;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class ProjetSectionMediaController extends Controller
 {
@@ -23,7 +23,7 @@ class ProjetSectionMediaController extends Controller
      * La section doit être de type 'video' ou 'audio'.
      */
     public function store(
-        Request $request,
+        StoreProjetSectionMediaRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -48,17 +48,7 @@ class ProjetSectionMediaController extends Controller
             403
         );
 
-        $validated = $request->validate([
-            'source_type' => ['required', 'in:upload,url'],
-            'url' => ['required_if:source_type,url', 'nullable', 'url', 'max:2048'],
-            'fichier' => [
-                'required_if:source_type,upload',
-                'nullable',
-                'file',
-                'max:204800', // 200 Mo
-                'mimes:mp4,webm,ogg,mp3,wav,m4a,aac',
-            ],
-        ]);
+        $validated = $request->validated();
 
         $mediaMeta = [
             'projet_id' => $projet->id,

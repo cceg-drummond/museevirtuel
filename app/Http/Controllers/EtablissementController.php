@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Etablissement\SaveEtablissementRequest;
 use App\Models\Etablissement;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,15 +27,11 @@ class EtablissementController extends Controller
 
     /**
      * Crée un nouvel établissement.
+     *
+     * Les données sont validées par SaveEtablissementRequest.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(SaveEtablissementRequest $request): RedirectResponse
     {
-        $request->validate([
-            'nom' => ['required', 'string', 'max:255'],
-            'ville' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50', 'unique:etablissements,code'],
-        ]);
-
         Etablissement::create($request->only('nom', 'ville', 'code'));
 
         return back()->with('success', __('Établissement créé avec succès.'));
@@ -43,15 +39,11 @@ class EtablissementController extends Controller
 
     /**
      * Met à jour un établissement existant.
+     *
+     * Les données sont validées par SaveEtablissementRequest.
      */
-    public function update(Request $request, Etablissement $etablissement): RedirectResponse
+    public function update(SaveEtablissementRequest $request, Etablissement $etablissement): RedirectResponse
     {
-        $request->validate([
-            'nom' => ['required', 'string', 'max:255'],
-            'ville' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50', 'unique:etablissements,code,'.$etablissement->id],
-        ]);
-
         $etablissement->update($request->only('nom', 'ville', 'code'));
 
         return back()->with('success', __('Établissement mis à jour.'));

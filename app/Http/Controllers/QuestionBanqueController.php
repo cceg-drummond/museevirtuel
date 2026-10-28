@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\QuestionBanque\ChoisirQuestionBanqueRequest;
+use App\Http\Requests\QuestionBanque\SaveQuestionBanqueRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -13,7 +15,6 @@ use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class QuestionBanqueController extends Controller
 {
@@ -21,9 +22,10 @@ class QuestionBanqueController extends Controller
      * Ajoute une question dans la banque d'une section de type 'choix_questions'.
      *
      * Accessible aux enseignants et admins uniquement (vérifié via authorize sur le cours).
+     * Les données sont validées par SaveQuestionBanqueRequest.
      */
     public function store(
-        Request $request,
+        SaveQuestionBanqueRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
@@ -34,9 +36,7 @@ class QuestionBanqueController extends Controller
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($section->type !== 'choix_questions', 422);
 
-        $data = $request->validate([
-            'contenu' => ['required', 'string', 'max:2000'],
-        ]);
+        $data = $request->validated();
 
         $ordre = $ordres->prochain($section->questionsBanque());
 
@@ -50,9 +50,11 @@ class QuestionBanqueController extends Controller
 
     /**
      * Met à jour le contenu d'une question de la banque.
+     *
+     * Les données sont validées par SaveQuestionBanqueRequest.
      */
     public function update(
-        Request $request,
+        SaveQuestionBanqueRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
@@ -63,9 +65,7 @@ class QuestionBanqueController extends Controller
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($question->section_id !== $section->id, 404);
 
-        $data = $request->validate([
-            'contenu' => ['required', 'string', 'max:2000'],
-        ]);
+        $data = $request->validated();
 
         $question->update(['contenu' => $data['contenu']]);
 
@@ -120,9 +120,10 @@ class QuestionBanqueController extends Controller
      *
      * Reçoit `question_ids[]` — remplace les choix existants de ce projet pour cette section.
      * Seuls les membres du groupe peuvent choisir.
+     * Les données sont validées par ChoisirQuestionBanqueRequest.
      */
     public function choisir(
-        Request $request,
+        ChoisirQuestionBanqueRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -146,10 +147,7 @@ class QuestionBanqueController extends Controller
             ->where('type_projet_id', $typeProjet->id)
             ->firstOrFail();
 
-        $validated = $request->validate([
-            'question_ids' => ['present', 'array'],
-            'question_ids.*' => ['integer', 'exists:question_banques,id'],
-        ]);
+        $validated = $request->validated();
 
         // Vérifier que toutes les questions appartiennent bien à cette section
         $questionIds = $validated['question_ids'];

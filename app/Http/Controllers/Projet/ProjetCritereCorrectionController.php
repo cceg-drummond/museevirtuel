@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\Projet\ClonerProjetCritereCorrectionRequest;
+use App\Http\Requests\Projet\UpsertProjetCritereCorrectionRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -12,7 +14,6 @@ use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetCritere;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -32,7 +33,7 @@ class ProjetCritereCorrectionController extends Controller
      * @throws HttpException
      */
     public function upsert(
-        Request $request,
+        UpsertProjetCritereCorrectionRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -43,12 +44,7 @@ class ProjetCritereCorrectionController extends Controller
         $this->autoriserEnseignant($cours, $classe, $groupe);
         abort_if($critere->type_projet_id !== $typeProjet->id, 404);
 
-        $validated = $request->validate([
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'points' => ['nullable', 'numeric', 'min:0'],
-            'commentaire' => ['nullable', 'string', 'max:2000'],
-            'verifie' => ['boolean'],
-        ]);
+        $validated = $request->validated();
 
         $projet = ProjetRecherche::firstOrCreate([
             'groupe_id' => $groupe->id,
@@ -128,7 +124,7 @@ class ProjetCritereCorrectionController extends Controller
      * @throws HttpException
      */
     public function cloner(
-        Request $request,
+        ClonerProjetCritereCorrectionRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -141,12 +137,7 @@ class ProjetCritereCorrectionController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
         abort_if($correction->projet_id !== $projet->id, 404);
 
-        $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-            'points' => ['nullable', 'numeric', 'min:0'],
-            'commentaire' => ['nullable', 'string', 'max:2000'],
-            'verifie' => ['boolean'],
-        ]);
+        $validated = $request->validated();
 
         // Remplacer un éventuel clone existant pour ce (critère, étudiant)
         ProjetCritereCorrection::where('projet_id', $projet->id)

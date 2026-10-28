@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\Projet\DestroyProjetAnnotationRequest;
+use App\Http\Requests\Projet\UpsertProjetAnnotationRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -15,7 +17,6 @@ use App\Models\ProjetSectionContenu;
 use App\Models\ProjetSectionParagraphe;
 use App\Models\TypeProjet;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -25,28 +26,17 @@ class ProjetAnnotationController extends Controller
 {
     use AutoriseProjetRecherche;
 
-    /** Pattern regex validant les noms de champs annotables (développement_{id}, section_{id}, section_paragraphe_{id} ou renvoi_{id}). */
-    private const CHAMP_ANNOTABLE_REGEX = '/^(developpement_\d+|section_\d+|section_paragraphe_\d+|renvoi_\d+|page_titre_contenu|table_matieres_contenu)$/';
-
     /**
      * Crée ou met à jour une annotation inline sur un champ du projet.
      *
      * @throws HttpException si l'utilisateur n'est pas l'enseignant du cours
      */
-    public function upsert(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function upsert(UpsertProjetAnnotationRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         $this->autoriserEnseignant($cours, $classe, $groupe);
 
-        $validated = $request->validate([
-            'champ' => ['required', 'string', 'regex:'.self::CHAMP_ANNOTABLE_REGEX],
-            'commentaire_id' => ['required', 'string', 'max:36'],
-            'contenu' => ['required', 'string', 'max:1000'],
-            'html' => ['required', 'string'],
-            'annotation_type' => ['required', 'string', 'in:commentaire,correction'],
-            'points_malus' => ['nullable', 'numeric', 'min:0', 'max:999.99'],
-            'cible_user_id' => ['nullable', 'integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
 
         $projet = ProjetRecherche::firstOrCreate([
             'groupe_id' => $groupe->id,
@@ -103,7 +93,7 @@ class ProjetAnnotationController extends Controller
      *
      * @throws HttpException
      */
-    public function destroy(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, ProjetAnnotation $annotation): JsonResponse
+    public function destroy(DestroyProjetAnnotationRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, ProjetAnnotation $annotation): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         $this->autoriserEnseignant($cours, $classe, $groupe);
@@ -112,10 +102,7 @@ class ProjetAnnotationController extends Controller
 
         abort_if($annotation->projet_id !== $projet->id, 404);
 
-        $validated = $request->validate([
-            'champ' => ['required', 'string', 'regex:'.self::CHAMP_ANNOTABLE_REGEX],
-            'html' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $this->mettreAJourChampHtml($projet, $validated['champ'], $validated['html']);
 
@@ -129,7 +116,7 @@ class ProjetAnnotationController extends Controller
      *
      * Supporte les champs fixes : `page_titre_contenu`, `table_matieres_contenu`.
      * Supporte les préfixes : `developpement_`, `section_paragraphe_`, `section_`, `renvoi_`.
-     * Tout autre valeur est rejetée par le CHAMP_ANNOTABLE_REGEX en amont.
+     * Tout autre valeur est rejetée par UpsertProjetAnnotationRequest::CHAMP_ANNOTABLE_REGEX en amont.
      *
      * @throws HttpException si la ressource n'appartient pas au projet
      */

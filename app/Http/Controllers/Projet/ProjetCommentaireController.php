@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
-use App\Http\Requests\UpsertProjetCommentaireRequest;
+use App\Http\Requests\Projet\UpsertProjetCommentaireRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;

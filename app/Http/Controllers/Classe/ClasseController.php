@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Classe;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Classe\SaveClasseRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\EcheancierEtudiantProgress;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -111,17 +110,15 @@ class ClasseController extends Controller
      * Crée une nouvelle classe (section) dans un cours.
      *
      * Réservé à l'enseignant du cours et aux admins.
+     * Les données sont validées par SaveClasseRequest.
      *
      * @throws AuthorizationException
      */
-    public function store(Request $request, Cours $cours): RedirectResponse
+    public function store(SaveClasseRequest $request, Cours $cours): RedirectResponse
     {
         $this->authorize('update', $cours);
 
-        $validated = $request->validate(
-            $this->reglesValidationClasse($cours),
-            $this->messagesValidationClasse(),
-        );
+        $validated = $request->validated();
 
         Classe::create(array_merge(
             ['cours_id' => $cours->id, 'code' => $cours->code],
@@ -135,58 +132,21 @@ class ClasseController extends Controller
      * Met à jour une classe (section) : code et/ou nom.
      *
      * Réservé à l'enseignant du cours et aux admins.
+     * Les données sont validées par SaveClasseRequest.
      *
      * @throws AuthorizationException
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe): RedirectResponse
+    public function update(SaveClasseRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         $this->authorize('update', $classe);
 
-        $validated = $request->validate(
-            $this->reglesValidationClasse($cours, $classe),
-            $this->messagesValidationClasse(),
-        );
+        $validated = $request->validated();
 
         $classe->update(array_merge($validated, ['code' => $cours->code]));
 
         return back()->with('success', 'Classe mise à jour.');
-    }
-
-    /**
-     * Retourne les règles de validation pour la création ou la mise à jour d'une classe.
-     *
-     * @return array<string, array<int, mixed>>
-     */
-    private function reglesValidationClasse(Cours $cours, ?Classe $classe = null): array
-    {
-        $regleNumero = Rule::unique('classes')->where(fn ($q) => $q->where('cours_id', $cours->id));
-
-        if ($classe !== null) {
-            $regleNumero = $regleNumero->ignore($classe->id);
-        }
-
-        return [
-            'numero' => ['required', 'digits:5', $regleNumero],
-            'nom' => ['nullable', 'string', 'max:100'],
-            'jour_semaine' => ['nullable', 'string', 'max:20'],
-            'plage_horaire' => ['nullable', 'string', 'max:50'],
-        ];
-    }
-
-    /**
-     * Retourne les messages d'erreur de validation en français pour une classe.
-     *
-     * @return array<string, string>
-     */
-    private function messagesValidationClasse(): array
-    {
-        return [
-            'numero.required' => 'Le numéro de classe est obligatoire.',
-            'numero.digits' => 'Les 5 chiffres du groupe doivent être présents.',
-            'numero.unique' => 'Ce numéro de classe est déjà utilisé pour ce cours.',
-        ];
     }
 
     /**

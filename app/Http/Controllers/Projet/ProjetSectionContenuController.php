@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\Projet\UpdateProjetSectionContenuRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -11,7 +12,6 @@ use App\Models\ProjetSectionContenu;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -28,7 +28,7 @@ class ProjetSectionContenuController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): JsonResponse
+    public function update(UpdateProjetSectionContenuRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         // Vérifier que la section appartient au TypeProjet passé en URL — évite l'IDOR
@@ -37,9 +37,7 @@ class ProjetSectionContenuController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $validated = $request->validate([
-            'contenu' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         ProjetSectionContenu::updateOrCreate(
             ['projet_id' => $projet->id, 'section_id' => $section->id],

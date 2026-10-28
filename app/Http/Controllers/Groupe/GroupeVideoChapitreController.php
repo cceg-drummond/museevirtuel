@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\SaveGroupeVideoChapitreRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -13,7 +14,6 @@ use App\Services\OrdreElements;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class GroupeVideoChapitreController extends Controller
 {
@@ -24,10 +24,12 @@ class GroupeVideoChapitreController extends Controller
      *
      * L'ordre est calculé automatiquement comme le max existant + 1.
      *
+     * Données validées par SaveGroupeVideoChapitreRequest.
+     *
      * @throws AuthorizationException
      */
     public function store(
-        Request $request,
+        SaveGroupeVideoChapitreRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -38,11 +40,7 @@ class GroupeVideoChapitreController extends Controller
         $video->load('groupe.classe.cours');
         $this->authorize('gererChapitres', $video);
 
-        $validated = $request->validate([
-            'label' => ['required', 'string', 'max:255'],
-            'debut' => ['required', 'numeric', 'min:0'],
-            'fin' => ['nullable', 'numeric', 'gt:debut'],
-        ]);
+        $validated = $request->validated();
 
         $ordre = $ordres->prochain($video->chapitres());
 
@@ -59,10 +57,12 @@ class GroupeVideoChapitreController extends Controller
     /**
      * Met à jour le label et les bornes temporelles d'un chapitre existant.
      *
+     * Données validées par SaveGroupeVideoChapitreRequest.
+     *
      * @throws AuthorizationException
      */
     public function update(
-        Request $request,
+        SaveGroupeVideoChapitreRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -75,11 +75,7 @@ class GroupeVideoChapitreController extends Controller
 
         abort_if($chapitre->video_id !== $video->id, 403);
 
-        $validated = $request->validate([
-            'label' => ['required', 'string', 'max:255'],
-            'debut' => ['required', 'numeric', 'min:0'],
-            'fin' => ['nullable', 'numeric', 'gt:debut'],
-        ]);
+        $validated = $request->validated();
 
         $chapitre->update([
             'label' => $validated['label'],

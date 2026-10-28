@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\ImporterGroupeVideoTranscriptionRequest;
+use App\Http\Requests\Groupe\UpdateGroupeVideoTranscriptionRequest;
 use App\Jobs\TranscrireVideo;
 use App\Models\Classe;
 use App\Models\Cours;
@@ -12,7 +14,6 @@ use App\Models\GroupeVideo;
 use App\Services\ImportTranscriptionService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 /**
  * Transcription d'une vidéo de groupe : génération Whisper, correction manuelle et import de fichier.
@@ -56,10 +57,12 @@ class GroupeVideoTranscriptionController extends Controller
      * Reconstruit le texte plat à partir des segments modifiés et pose
      * le flag transcription_modifiee = true pour avertir avant une re-génération Whisper.
      *
+     * Données validées par UpdateGroupeVideoTranscriptionRequest.
+     *
      * @throws AuthorizationException
      */
     public function update(
-        Request $request,
+        UpdateGroupeVideoTranscriptionRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -69,13 +72,7 @@ class GroupeVideoTranscriptionController extends Controller
         $video->load('groupe.classe.cours');
         $this->authorize('modifierTranscription', $video);
 
-        $validated = $request->validate([
-            // max:500 évite le dépassement de la colonne TEXT (65 535 octets) en production MySQL.
-            'segments' => ['required', 'array', 'min:1', 'max:500'],
-            'segments.*.start' => ['required', 'numeric', 'min:0'],
-            'segments.*.end' => ['required', 'numeric', 'gt:segments.*.start'],
-            'segments.*.text' => ['required', 'string', 'max:2000'],
-        ]);
+        $validated = $request->validated();
 
         // Reconstruit le texte plat à partir des segments modifiés.
         $transcription = implode(' ', array_column($validated['segments'], 'text'));
@@ -95,10 +92,12 @@ class GroupeVideoTranscriptionController extends Controller
      * Délègue le parsing à ImportTranscriptionService, puis écrase
      * la transcription existante. Pose transcription_modifiee = true.
      *
+     * Données validées par ImporterGroupeVideoTranscriptionRequest.
+     *
      * @throws AuthorizationException
      */
     public function importer(
-        Request $request,
+        ImporterGroupeVideoTranscriptionRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -108,10 +107,6 @@ class GroupeVideoTranscriptionController extends Controller
         $this->verifierChaine($cours, $classe, $groupe, $video);
         $video->load('groupe.classe.cours');
         $this->authorize('modifierTranscription', $video);
-
-        $request->validate([
-            'fichier' => ['required', 'file', 'max:2048', 'mimes:txt,srt,vtt'],
-        ]);
 
         $resultat = $service->importer($request->file('fichier'));
 

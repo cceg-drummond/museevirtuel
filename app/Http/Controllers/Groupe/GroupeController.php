@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\StoreGroupeRequest;
 use App\Http\Resources\VisioConferenceResource;
 use App\Models\Classe;
 use App\Models\Cours;
@@ -16,7 +17,6 @@ use App\Models\User;
 use App\Models\VisioConference;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -79,9 +79,11 @@ class GroupeController extends Controller
     /**
      * Crée un nouveau groupe dans une classe et associe membres et thématiques.
      *
+     * Données validées par StoreGroupeRequest.
+     *
      * @throws HttpException si l'étudiant n'est pas inscrit ou déjà dans un groupe
      */
-    public function store(Request $request, Cours $cours, Classe $classe): RedirectResponse
+    public function store(StoreGroupeRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
 
@@ -97,12 +99,7 @@ class GroupeController extends Controller
             return back()->withErrors(['general' => __('groupe.already_member')]);
         }
 
-        $validated = $request->validate([
-            'membres' => ['array'],
-            'membres.*' => ['integer', 'exists:users,id'],
-            'thematiques' => ['required', 'array', 'min:1', 'max:3'],
-            'thematiques.*' => ['integer', 'exists:thematiques,id'],
-        ]);
+        $validated = $request->validated();
 
         $membresInscrits = $classe->etudiants()
             ->whereIn('users.id', $validated['membres'] ?? [])

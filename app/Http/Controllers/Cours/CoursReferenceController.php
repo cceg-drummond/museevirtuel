@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Cours\SaveCoursReferenceRequest;
 use App\Models\Cours;
 use App\Models\CoursReference;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class CoursReferenceController extends Controller
@@ -17,15 +17,13 @@ class CoursReferenceController extends Controller
      * Ajoute une référence bibliographique à un cours.
      *
      * Réservé à l'enseignant du cours et aux admins.
+     * Les données sont validées par SaveCoursReferenceRequest.
      */
-    public function store(Request $request, Cours $cours, OrdreElements $ordres): RedirectResponse
+    public function store(SaveCoursReferenceRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
         Gate::authorize('update', $cours);
 
-        $validated = $request->validate([
-            'nom' => ['required', 'string', 'max:255'],
-            'url' => ['nullable', 'url', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $ordre = $ordres->prochain($cours->references());
 
@@ -42,16 +40,14 @@ class CoursReferenceController extends Controller
      * Met à jour une référence bibliographique.
      *
      * Réservé à l'enseignant du cours et aux admins.
+     * Les données sont validées par SaveCoursReferenceRequest.
      */
-    public function update(Request $request, Cours $cours, CoursReference $reference): RedirectResponse
+    public function update(SaveCoursReferenceRequest $request, Cours $cours, CoursReference $reference): RedirectResponse
     {
         Gate::authorize('update', $cours);
         abort_if($reference->cours_id !== $cours->id, 404);
 
-        $validated = $request->validate([
-            'nom' => ['required', 'string', 'max:255'],
-            'url' => ['nullable', 'url', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $reference->update($validated);
 

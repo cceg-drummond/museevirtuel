@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseEntrevue;
+use App\Http\Requests\Projet\UpdateEntrevueLigneRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\EntrevueConcept;
@@ -59,7 +60,7 @@ class EntrevueLigneController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, EntrevueLigne $ligne): JsonResponse
+    public function update(UpdateEntrevueLigneRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept, EntrevueLigne $ligne): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -70,12 +71,7 @@ class EntrevueLigneController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
 
-        $validated = $request->validate([
-            'dimension' => ['nullable', 'string'],
-            'indicateur' => ['nullable', 'string'],
-            'questions' => ['nullable', 'array'],
-            'questions.*' => ['string'],
-        ]);
+        $validated = $request->validated();
 
         $ligne->update($validated);
 

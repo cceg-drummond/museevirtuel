@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\StoreUploadedFile;
+use App\Http\Requests\Visio\StoreVisioEnregistrementRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\VisioConference;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -23,17 +23,14 @@ class VisioEnregistrementController extends Controller
      *
      * Remplace l'ancien fichier s'il en existe déjà un.
      * Accessible uniquement à l'enseignant du cours.
+     * Le fichier est validé par StoreVisioEnregistrementRequest.
      *
      * @throws HttpException si la visio n'appartient pas au cours
      */
-    public function store(Request $request, Cours $cours, VisioConference $visio, StoreUploadedFile $fichiers): RedirectResponse
+    public function store(StoreVisioEnregistrementRequest $request, Cours $cours, VisioConference $visio, StoreUploadedFile $fichiers): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($visio->cours_id !== $cours->id, 404);
-
-        $request->validate([
-            'recording' => ['required', 'file', 'mimes:mp4,mov,webm,avi', 'max:1048576'],
-        ]);
 
         // Supprimer l'ancien fichier avant de le remplacer
         if ($visio->recording_path) {

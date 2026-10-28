@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Zotero\StoreZoteroCredentialRequest;
 use App\Services\ZoteroService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 /**
  * Identifiants Zotero de l'étudiant (clé API + identifiant utilisateur).
@@ -15,16 +15,14 @@ class ZoteroCredentialController extends Controller
     /**
      * Sauvegarde les credentials Zotero de l'étudiant (clé API + identifiant utilisateur).
      *
-     * La clé API est validée contre l'API Zotero avant d'être chiffrée et stockée.
+     * Le format est validé par StoreZoteroCredentialRequest, puis la clé API
+     * est validée contre l'API Zotero avant d'être chiffrée et stockée.
      *
      * @throws ConnectionException
      */
-    public function store(Request $request, ZoteroService $zotero): RedirectResponse
+    public function store(StoreZoteroCredentialRequest $request, ZoteroService $zotero): RedirectResponse
     {
-        $validated = $request->validate([
-            'zotero_user_id' => ['required', 'string', 'max:50', 'regex:/^\d+$/'],
-            'api_key' => ['required', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         try {
             $valide = $zotero->validateApiKey($validated['zotero_user_id'], $validated['api_key']);

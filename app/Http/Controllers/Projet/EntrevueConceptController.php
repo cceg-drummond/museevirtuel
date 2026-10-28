@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseEntrevue;
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Projet\SaveEntrevueConceptRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\EntrevueConcept;
@@ -14,7 +15,6 @@ use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Services\OrdreElements;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class EntrevueConceptController extends Controller
@@ -26,7 +26,7 @@ class EntrevueConceptController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Request $request, Cours $cours, Classe $classe,
+    public function store(SaveEntrevueConceptRequest $request, Cours $cours, Classe $classe,
         Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section,
         OrdreElements $ordres): JsonResponse
     {
@@ -40,9 +40,7 @@ class EntrevueConceptController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
 
-        $validated = $request->validate([
-            'label' => ['required', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $ordre = $ordres->prochain($this->portee($projet, $section));
 
@@ -64,7 +62,7 @@ class EntrevueConceptController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept): JsonResponse
+    public function update(SaveEntrevueConceptRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, TypeProjetSection $section, EntrevueConcept $concept): JsonResponse
     {
         $this->autoriserEtVerifier($cours, $classe, $groupe, $typeProjet, $section);
 
@@ -74,9 +72,7 @@ class EntrevueConceptController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
 
-        $validated = $request->validate([
-            'label' => ['required', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $concept->update($validated);
 

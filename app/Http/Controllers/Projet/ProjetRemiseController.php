@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\Projet\VoterProjetRemiseRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -12,7 +13,6 @@ use App\Models\ProjetVoteRemise;
 use App\Models\TypeProjet;
 use App\Services\VerificationCompletudeProjet;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -95,7 +95,7 @@ class ProjetRemiseController extends Controller
      *
      * @throws HttpException
      */
-    public function voter(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function voter(VoterProjetRemiseRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
@@ -109,9 +109,7 @@ class ProjetRemiseController extends Controller
 
         abort_unless($projet->peutEtreRemis(), 422, 'La remise n\'est plus possible.');
 
-        $validated = $request->validate([
-            'vote' => ['required', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         ProjetVoteRemise::updateOrCreate(
             ['projet_id' => $projet->id, 'user_id' => auth()->id()],

@@ -4,12 +4,12 @@ namespace App\Http\Controllers\TypeProjet;
 
 use App\Enums\TypeSection;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TypeProjet\StoreTypeProjetRequest;
+use App\Http\Requests\TypeProjet\UpdateTypeProjetRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,30 +72,13 @@ class TypeProjetController extends Controller
      * Crée un nouveau type de projet pour le cours donné.
      *
      * Accepte un tableau optionnel `sections[]` pour créer les sections en une seule requête.
+     * Les données sont validées par StoreTypeProjetRequest.
      */
-    public function store(Request $request, Cours $cours): RedirectResponse
+    public function store(StoreTypeProjetRequest $request, Cours $cours): RedirectResponse
     {
         $this->authorize('update', $cours);
 
-        $data = $request->validate([
-            'nom' => ['required', 'string', 'max:150'],
-            'type' => ['required', 'string', 'in:standard,musee'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'date_remise' => ['required', 'date_format:Y-m-d\TH:i'],
-            'remises_multiples' => ['boolean'],
-            'retard_permis' => ['boolean'],
-            'generer_page_titre' => ['boolean'],
-            'generer_table_matieres' => ['boolean'],
-            'aide_reference' => ['boolean'],
-            'has_introduction' => ['boolean'],
-            'has_conclusion_individuelle' => ['boolean'],
-            'ponderation' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'is_sommatif' => ['boolean'],
-            'sections' => ['nullable', 'array'],
-            'sections.*.label' => ['required', 'string', 'max:200'],
-            'sections.*.description' => ['nullable', 'string', 'max:1000'],
-            'sections.*.type' => ['nullable', Rule::enum(TypeSection::class)],
-        ]);
+        $data = $request->validated();
 
         $typeProjet = TypeProjet::create([
             'enseignant_id' => auth()->id(),
@@ -162,31 +145,14 @@ class TypeProjetController extends Controller
      * les sections absentes sont supprimées (cascade sur projet_section_contenus),
      * les existantes (avec `id`) sont mises à jour, les nouvelles (sans `id`) sont créées.
      * Si `sections` est absent de la requête, les sections ne sont pas touchées.
+     * Les données sont validées par UpdateTypeProjetRequest.
      */
-    public function update(Request $request, Cours $cours, TypeProjet $typeProjet): RedirectResponse
+    public function update(UpdateTypeProjetRequest $request, Cours $cours, TypeProjet $typeProjet): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
 
-        $data = $request->validate([
-            'nom' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'date_remise' => ['required', 'date_format:Y-m-d\TH:i'],
-            'remises_multiples' => ['boolean'],
-            'retard_permis' => ['boolean'],
-            'generer_page_titre' => ['boolean'],
-            'generer_table_matieres' => ['boolean'],
-            'aide_reference' => ['boolean'],
-            'has_introduction' => ['boolean'],
-            'has_conclusion_individuelle' => ['boolean'],
-            'ponderation' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'is_sommatif' => ['boolean'],
-            'sections' => ['nullable', 'array'],
-            'sections.*.id' => ['nullable', 'integer'],
-            'sections.*.label' => ['required', 'string', 'max:200'],
-            'sections.*.description' => ['nullable', 'string', 'max:1000'],
-            'sections.*.type' => ['nullable', Rule::enum(TypeSection::class)],
-        ]);
+        $data = $request->validated();
 
         $wasGeneratingPageTitre = (bool) $typeProjet->generer_page_titre;
         $willGeneratePageTitre = $request->boolean('generer_page_titre', $typeProjet->generer_page_titre);

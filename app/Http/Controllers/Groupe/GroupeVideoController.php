@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Groupe;
 use App\Actions\StoreUploadedFile;
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\StoreGroupeVideoRequest;
+use App\Http\Requests\Groupe\UpdateGroupeVideoRequest;
 use App\Jobs\TranscrireVideo;
 use App\Models\Classe;
 use App\Models\Cours;
@@ -13,7 +15,6 @@ use App\Models\GroupeVideo;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,25 +55,16 @@ class GroupeVideoController extends Controller
      *
      * Limite : 500 Mo. Formats : mp4, webm, mov, avi, mkv.
      *
+     * Données validées par StoreGroupeVideoRequest.
+     *
      * @throws AuthorizationException
      */
-    public function store(Request $request, Cours $cours, Classe $classe,
-                          Groupe $groupe, StoreUploadedFile $fichiers): RedirectResponse
+    public function store(StoreGroupeVideoRequest $request, Cours $cours, Classe $classe,
+        Groupe $groupe, StoreUploadedFile $fichiers): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe);
         $groupe->load('classe.cours');
         $this->authorize('create', [GroupeVideo::class, $groupe]);
-
-        $request->validate([
-            'titre' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'fichier' => [
-                'required',
-                'file',
-                'max:2097152', // 2 Go en kilo-octets
-                'mimes:mp4,webm,mov,avi,mkv',
-            ],
-        ]);
 
         // Stockage privé (hors webroot) : l'accès passe par l'endpoint stream() authentifié.
         $fichier = $fichiers->executePrive($request->file('fichier'), "medias/groupes/{$groupe->id}/videos");
@@ -137,18 +129,15 @@ class GroupeVideoController extends Controller
     /**
      * Met à jour le titre et la description d'une vidéo.
      *
+     * Données validées par UpdateGroupeVideoRequest.
+     *
      * @throws AuthorizationException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
+    public function update(UpdateGroupeVideoRequest $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeVideo $video): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe, $video);
         $video->load('groupe.classe.cours');
         $this->authorize('update', $video);
-
-        $request->validate([
-            'titre' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-        ]);
 
         $video->update($request->only('titre', 'description'));
 

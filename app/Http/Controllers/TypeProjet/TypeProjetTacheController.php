@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\TypeProjet;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\TypeProjet\SaveTypeProjetTacheRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetTache;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class TypeProjetTacheController extends Controller
 {
@@ -17,9 +17,10 @@ class TypeProjetTacheController extends Controller
      * Ajoute une tâche dans un TypeProjet de type 'tache'.
      *
      * Accessible aux enseignants et admins uniquement (authorize sur le cours).
+     * Les données sont validées par SaveTypeProjetTacheRequest.
      */
     public function store(
-        Request $request,
+        SaveTypeProjetTacheRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         OrdreElements $ordres,
@@ -27,10 +28,7 @@ class TypeProjetTacheController extends Controller
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
 
-        $data = $request->validate([
-            'titre' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $data = $request->validated();
 
         $ordre = $ordres->prochain($typeProjet->taches());
 
@@ -45,9 +43,11 @@ class TypeProjetTacheController extends Controller
 
     /**
      * Met à jour le titre ou la description d'une tâche.
+     *
+     * Les données sont validées par SaveTypeProjetTacheRequest.
      */
     public function update(
-        Request $request,
+        SaveTypeProjetTacheRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetTache $tache,
@@ -56,10 +56,7 @@ class TypeProjetTacheController extends Controller
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($tache->type_projet_id !== $typeProjet->id, 404);
 
-        $data = $request->validate([
-            'titre' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $data = $request->validated();
 
         $tache->update($data);
 

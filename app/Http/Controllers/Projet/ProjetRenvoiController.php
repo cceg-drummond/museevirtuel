@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
+use App\Http\Requests\Projet\StoreProjetRenvoiRequest;
+use App\Http\Requests\Projet\UpdateProjetRenvoiRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -12,7 +14,6 @@ use App\Models\ProjetRenvoi;
 use App\Models\TypeProjet;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -30,7 +31,7 @@ class ProjetRenvoiController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function store(StoreProjetRenvoiRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
@@ -42,11 +43,7 @@ class ProjetRenvoiController extends Controller
         ]);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $validated = $request->validate([
-            'contenu' => ['nullable', 'string', 'max:2000'],
-            'type_reference' => ['nullable', 'string', 'max:50'],
-            'champs_reference' => ['nullable', 'array'],
-        ]);
+        $validated = $request->validated();
 
         $numero = ($projet->renvois()->max('numero') ?? 0) + 1;
 
@@ -83,7 +80,7 @@ class ProjetRenvoiController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, ProjetRenvoi $renvoi): JsonResponse
+    public function update(UpdateProjetRenvoiRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, ProjetRenvoi $renvoi): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
@@ -92,12 +89,7 @@ class ProjetRenvoiController extends Controller
         abort_if($renvoi->projet_id !== $projet->id, 404);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $validated = $request->validate([
-            'contenu' => ['nullable', 'string', 'max:2000'],
-            'numero' => ['sometimes', 'integer', 'min:1'],
-            'type_reference' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'champs_reference' => ['sometimes', 'nullable', 'array'],
-        ]);
+        $validated = $request->validated();
 
         $renvoi->update($validated);
 

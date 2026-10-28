@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Groupe;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\AssignerGroupeTacheRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -10,7 +11,6 @@ use App\Models\GroupeTache;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetTache;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class GroupeTacheController extends Controller
@@ -19,9 +19,11 @@ class GroupeTacheController extends Controller
      * Assigne un membre du groupe à une tâche ou désassigne (assigne_a null).
      *
      * Seuls les membres du groupe peuvent modifier l'assignation.
+     *
+     * Données validées par AssignerGroupeTacheRequest.
      */
     public function assigner(
-        Request $request,
+        AssignerGroupeTacheRequest $request,
         Cours $cours,
         Classe $classe,
         Groupe $groupe,
@@ -38,9 +40,7 @@ class GroupeTacheController extends Controller
             403
         );
 
-        $data = $request->validate([
-            'assigne_a' => ['nullable', 'integer', 'exists:users,id'],
-        ]);
+        $data = $request->validated();
 
         // Vérifier que l'utilisateur assigné est bien membre du groupe
         if ($data['assigne_a'] !== null) {

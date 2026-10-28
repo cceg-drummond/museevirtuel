@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Cours;
 
 use App\Enums\TypeCours;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreCoursRequest;
-use App\Http\Requests\UpdateCoursRequest;
+use App\Http\Requests\Cours\StoreCoursRequest;
+use App\Http\Requests\Cours\UpdateCoursRequest;
 use App\Http\Resources\VisioConferenceResource;
 use App\Models\Cours;
 use App\Models\TypeProjet;

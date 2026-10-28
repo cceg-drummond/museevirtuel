@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Projet;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projet\StoreConsentementVideoRequest;
 use App\Models\ConsentementVideo;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class ConsentementVideoController extends Controller
@@ -21,7 +21,7 @@ class ConsentementVideoController extends Controller
      * La signature numérique (base64 PNG) est stockée si fournie.
      */
     public function store(
-        Request $request,
+        StoreConsentementVideoRequest $request,
         Cours $cours,
         Groupe $groupe,
         TypeProjet $typeProjet,
@@ -40,10 +40,7 @@ class ConsentementVideoController extends Controller
 
         abort_unless($estMembre || $estPersonneAgee, 403);
 
-        $validated = $request->validate([
-            'accepte' => ['required', 'boolean'],
-            'signature' => ['nullable', 'string', 'max:65535'],
-        ]);
+        $validated = $request->validated();
 
         $type = in_array($user->role, ['personne_agee']) ? 'personne_agee' : 'etudiant';
 

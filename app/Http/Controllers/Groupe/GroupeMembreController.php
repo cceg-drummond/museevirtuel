@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\UpdateGroupeMembreRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,20 +22,17 @@ class GroupeMembreController extends Controller
     /**
      * Ajoute ou retire des membres du groupe (créateur uniquement).
      *
+     * Données validées par UpdateGroupeMembreRequest.
+     *
      * @throws AuthorizationException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
+    public function update(UpdateGroupeMembreRequest $request, Cours $cours, Classe $classe, Groupe $groupe): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe);
         $groupe->load('classe.cours');
         $this->authorize('manageMembers', $groupe);
 
-        $validated = $request->validate([
-            'ajouter' => ['array'],
-            'ajouter.*' => ['integer', 'exists:users,id'],
-            'retirer' => ['array'],
-            'retirer.*' => ['integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
 

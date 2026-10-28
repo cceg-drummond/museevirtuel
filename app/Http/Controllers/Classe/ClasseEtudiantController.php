@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Classe;
 
 use App\Actions\CreateEtudiantAction;
 use App\Actions\ImportEtudiantsAction;
-use App\Enums\StatutEtudiantCours;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Classe\ImportClasseEtudiantRequest;
+use App\Http\Requests\Classe\StoreClasseEtudiantRequest;
+use App\Http\Requests\Classe\UpdateClasseEtudiantRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ClasseEtudiantController extends Controller
 {
@@ -30,26 +30,15 @@ class ClasseEtudiantController extends Controller
 
     /**
      * Ajoute manuellement un étudiant dans une section.
+     *
+     * Les données (statut « actif » par défaut) sont validées par StoreClasseEtudiantRequest.
      */
-    public function store(Request $request, Cours $cours, Classe $classe): RedirectResponse
+    public function store(StoreClasseEtudiantRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
         $this->assertClasseAppartientAuCours($classe, $cours);
         $this->authorize('update', $cours);
 
-        $request->merge([
-            'statut_cours' => $request->input(
-                'statut_cours',
-                StatutEtudiantCours::Actif->value,
-            ),
-        ]);
-
-        $validated = $request->validate([
-            'prenom' => ['required', 'string', 'max:255'],
-            'nom' => ['required', 'string', 'max:255'],
-            'no_da' => ['required', 'integer'],
-            'statut_cours' => ['required', Rule::enum(StatutEtudiantCours::class)],
-            'email' => ['nullable', 'string', 'email', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         $etudiant = $this->createEtudiant->execute(
             $validated['no_da'],
@@ -72,21 +61,17 @@ class ClasseEtudiantController extends Controller
 
     /**
      * Met à jour les informations d'un étudiant inscrit dans une section.
+     *
+     * Les données sont validées par UpdateClasseEtudiantRequest.
      */
-    public function update(Request $request, Cours $cours, Classe $classe, User $etudiant): RedirectResponse
+    public function update(UpdateClasseEtudiantRequest $request, Cours $cours, Classe $classe, User $etudiant): RedirectResponse
     {
         $this->assertClasseAppartientAuCours($classe, $cours);
         $this->authorize('update', $cours);
 
         abort_unless($classe->etudiants()->whereKey($etudiant->id)->exists(), 404);
 
-        $validated = $request->validate([
-            'prenom' => ['required', 'string', 'max:255'],
-            'nom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($etudiant->id)],
-            'no_da' => ['required', 'integer'],
-            'statut_cours' => ['required', Rule::enum(StatutEtudiantCours::class)],
-        ]);
+        $validated = $request->validated();
 
         $etudiant->update([
             'prenom' => $validated['prenom'],
@@ -117,15 +102,13 @@ class ClasseEtudiantController extends Controller
 
     /**
      * Importe des étudiants CSV dans la section.
+     *
+     * Le fichier est validé par ImportClasseEtudiantRequest.
      */
-    public function import(Request $request, Cours $cours, Classe $classe): RedirectResponse
+    public function import(ImportClasseEtudiantRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
         $this->assertClasseAppartientAuCours($classe, $cours);
         $this->authorize('update', $cours);
-
-        $request->validate([
-            'csv' => ['required', 'file', 'mimes:csv,txt'],
-        ]);
 
         $content = file_get_contents($request->file('csv')->getPathname());
         $created = $this->importEtudiants->execute($classe, $content);

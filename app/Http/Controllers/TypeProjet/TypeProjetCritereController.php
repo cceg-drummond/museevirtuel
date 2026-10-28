@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\TypeProjet;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ReorderRequest;
-use App\Http\Requests\StoreCritereRequest;
-use App\Http\Requests\UpdateCritereRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\TypeProjet\StoreCritereRequest;
+use App\Http\Requests\TypeProjet\UpdateCritereRequest;
+use App\Http\Requests\TypeProjet\UpdateVisibiliteGroupeCritereRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetCritere;
 use App\Models\TypeProjetSection;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class TypeProjetCritereController extends Controller
 {
@@ -114,19 +114,17 @@ class TypeProjetCritereController extends Controller
      *
      * Permet au professeur de basculer la visibilité de l'ensemble des critères
      * d'un type en une seule action depuis la page d'édition du TypeProjet.
+     * Les données sont validées par UpdateVisibiliteGroupeCritereRequest.
      */
     public function toggleVisibleGroupe(
-        Request $request,
+        UpdateVisibiliteGroupeCritereRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
     ): RedirectResponse {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
 
-        $validated = $request->validate([
-            'type' => ['required', 'in:positif,negatif'],
-            'visible' => ['required', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $typeProjet->criteres()
             ->where('type', $validated['type'])

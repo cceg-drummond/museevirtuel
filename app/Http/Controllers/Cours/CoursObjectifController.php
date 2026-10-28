@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Cours\SaveCoursObjectifRequest;
 use App\Models\Cours;
 use App\Models\CoursObjectif;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class CoursObjectifController extends Controller
@@ -17,14 +17,13 @@ class CoursObjectifController extends Controller
      * Ajoute un objectif pédagogique à un cours.
      *
      * Réservé à l'enseignant du cours et aux admins.
+     * Les données sont validées par SaveCoursObjectifRequest.
      */
-    public function store(Request $request, Cours $cours, OrdreElements $ordres): RedirectResponse
+    public function store(SaveCoursObjectifRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
         Gate::authorize('update', $cours);
 
-        $validated = $request->validate([
-            'contenu' => ['required', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $ordre = $ordres->prochain($cours->objectifs());
 
@@ -40,15 +39,14 @@ class CoursObjectifController extends Controller
      * Met à jour le contenu d'un objectif pédagogique.
      *
      * Réservé à l'enseignant du cours et aux admins.
+     * Les données sont validées par SaveCoursObjectifRequest.
      */
-    public function update(Request $request, Cours $cours, CoursObjectif $objectif): RedirectResponse
+    public function update(SaveCoursObjectifRequest $request, Cours $cours, CoursObjectif $objectif): RedirectResponse
     {
         Gate::authorize('update', $cours);
         abort_if($objectif->cours_id !== $cours->id, 404);
 
-        $validated = $request->validate([
-            'contenu' => ['required', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $objectif->update($validated);
 

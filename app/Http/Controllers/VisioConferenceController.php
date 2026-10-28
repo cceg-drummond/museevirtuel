@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Visio\StoreVisioConferenceRequest;
+use App\Http\Requests\Visio\UpdateVisioConferenceRequest;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\VisioConference;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class VisioConferenceController extends Controller
@@ -19,17 +20,14 @@ class VisioConferenceController extends Controller
      *
      * Accessible à l'enseignant du cours (avec ou sans groupe_id) et aux membres
      * d'un groupe spécifique lorsque groupe_id est fourni.
+     * Les données sont validées par StoreVisioConferenceRequest.
      */
-    public function store(Request $request, Cours $cours): RedirectResponse
+    public function store(StoreVisioConferenceRequest $request, Cours $cours): RedirectResponse
     {
         $user = $request->user();
         $estEnseignant = ($user->isEnseignant() && $cours->enseignant_id === $user->id) || $user->isAdmin();
 
-        $data = $request->validate([
-            'titre' => ['required', 'string', 'max:255'],
-            'groupe_id' => ['nullable', 'integer', 'exists:groupes,id'],
-            'scheduled_at' => ['nullable', 'date'],
-        ]);
+        $data = $request->validated();
 
         if (! empty($data['groupe_id'])) {
             // Vérifier que le groupe appartient bien à ce cours
@@ -61,19 +59,15 @@ class VisioConferenceController extends Controller
 
     /**
      * Met à jour une visioconférence existante (titre, date planifiée, URL enregistrement).
+     *
+     * Les données sont validées par UpdateVisioConferenceRequest.
      */
-    public function update(Request $request, Cours $cours, VisioConference $visio): RedirectResponse
+    public function update(UpdateVisioConferenceRequest $request, Cours $cours, VisioConference $visio): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($visio->cours_id !== $cours->id, 404);
 
-        $data = $request->validate([
-            'titre' => ['sometimes', 'string', 'max:255'],
-            'scheduled_at' => ['nullable', 'date'],
-            'started_at' => ['nullable', 'date'],
-            'ended_at' => ['nullable', 'date'],
-            'recording_url' => ['nullable', 'url', 'max:2048'],
-        ]);
+        $data = $request->validated();
 
         $visio->update($data);
 

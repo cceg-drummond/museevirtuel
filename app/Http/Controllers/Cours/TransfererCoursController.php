@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Cours;
 
 use App\Actions\TransfererCoursAction;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\TransfererCoursRequest;
+use App\Http\Requests\Cours\TransfererCoursRequest;
 use App\Models\Cours;
 use Illuminate\Http\RedirectResponse;
 

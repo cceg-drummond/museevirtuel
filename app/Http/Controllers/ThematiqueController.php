@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreThematiqueRequest;
-use App\Http\Requests\UpdateThematiqueRequest;
+use App\Http\Requests\Thematique\SaveThematiqueRequest;
 use App\Models\Thematique;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -33,7 +32,7 @@ class ThematiqueController extends Controller
     /**
      * Enregistre une nouvelle thématique pour l'enseignant authentifié.
      */
-    public function store(StoreThematiqueRequest $request): RedirectResponse
+    public function store(SaveThematiqueRequest $request): RedirectResponse
     {
         if (is_null(auth()->user()->etablissement_id)) {
             return back()->withErrors(['nom' => __('thematique.no_etablissement')])->withInput();
@@ -61,9 +60,9 @@ class ThematiqueController extends Controller
     /**
      * Met à jour une thématique existante.
      *
-     * L'autorisation (ThematiquePolicy::update) est déléguée à UpdateThematiqueRequest.
+     * L'autorisation (ThematiquePolicy::update) est déléguée à SaveThematiqueRequest.
      */
-    public function update(UpdateThematiqueRequest $request, Thematique $thematique): RedirectResponse
+    public function update(SaveThematiqueRequest $request, Thematique $thematique): RedirectResponse
     {
         $thematique->update($request->validated());
 

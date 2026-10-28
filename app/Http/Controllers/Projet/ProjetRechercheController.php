@@ -7,6 +7,7 @@ use App\Helpers\HtmlHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
 use App\Http\Controllers\Projet\Concerns\RendMuseeProjet;
+use App\Http\Requests\Projet\UpdateProjetRechercheRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -17,7 +18,6 @@ use App\Models\User;
 use App\Services\ProjetRechercheProps;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -238,15 +238,11 @@ class ProjetRechercheController extends Controller
      *
      * @throws HttpException
      */
-    public function update(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function update(UpdateProjetRechercheRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
 
-        $validated = $request->validate([
-            'titre_projet' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'page_titre_contenu' => ['sometimes', 'nullable', 'string', 'max:1500'],
-            'table_matieres_contenu' => ['sometimes', 'nullable', 'string', 'max:1500'],
-        ]);
+        $validated = $request->validated();
 
         $existant = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)

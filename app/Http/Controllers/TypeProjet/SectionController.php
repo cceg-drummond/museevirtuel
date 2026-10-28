@@ -4,30 +4,27 @@ namespace App\Http\Controllers\TypeProjet;
 
 use App\Enums\TypeSection;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ReorderRequest;
+use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\TypeProjet\SaveTypeProjetSectionRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class SectionController extends Controller
 {
     /**
      * Ajoute une section au type de projet.
+     *
+     * Les données sont validées par SaveTypeProjetSectionRequest.
      */
-    public function store(Request $request, Cours $cours, TypeProjet $typeProjet, OrdreElements $ordres): RedirectResponse
+    public function store(SaveTypeProjetSectionRequest $request, Cours $cours, TypeProjet $typeProjet, OrdreElements $ordres): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
 
-        $data = $request->validate([
-            'label' => ['required', 'string', 'max:200'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'type' => ['nullable', Rule::enum(TypeSection::class)],
-        ]);
+        $data = $request->validated();
 
         $ordre = $ordres->prochain($typeProjet->sections());
 
@@ -43,18 +40,16 @@ class SectionController extends Controller
 
     /**
      * Met à jour le label et la description d'une section.
+     *
+     * Les données sont validées par SaveTypeProjetSectionRequest.
      */
-    public function update(Request $request, Cours $cours, TypeProjet $typeProjet, TypeProjetSection $section): RedirectResponse
+    public function update(SaveTypeProjetSectionRequest $request, Cours $cours, TypeProjet $typeProjet, TypeProjetSection $section): RedirectResponse
     {
         $this->authorize('update', $cours);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
 
-        $data = $request->validate([
-            'label' => ['required', 'string', 'max:200'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'type' => ['nullable', Rule::enum(TypeSection::class)],
-        ]);
+        $data = $request->validated();
 
         $section->update($data);
 

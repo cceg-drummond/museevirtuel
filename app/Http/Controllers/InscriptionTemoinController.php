@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InscriptionTemoin\StoreInscriptionTemoinEngagementsRequest;
+use App\Http\Requests\InscriptionTemoin\StoreInscriptionTemoinRequest;
 use App\Models\Etablissement;
 use App\Models\Thematique;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,10 +32,11 @@ class InscriptionTemoinController extends Controller
      * Valide les données de l'étape 1, les stocke en session et redirige vers l'étape 2.
      *
      * Le compte n'est pas encore créé à cette étape.
+     * Les données sont validées par StoreInscriptionTemoinRequest.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreInscriptionTemoinRequest $request): RedirectResponse
     {
-        $validated = $this->validateStep1($request);
+        $validated = $request->validated();
 
         // Valider la cohérence de chaque choix : thème présent + thématiques appartenant au bon cégep
         foreach ($validated['choix'] as $index => $choix) {
@@ -76,9 +77,11 @@ class InscriptionTemoinController extends Controller
     }
 
     /**
-     * Valide les engagements et la signature, puis crée le compte personne âgée.
+     * Crée le compte personne âgée à partir de l'étape 1 et des engagements signés.
+     *
+     * Les engagements et la signature sont validés par StoreInscriptionTemoinEngagementsRequest.
      */
-    public function storeEngagements(Request $request): RedirectResponse
+    public function storeEngagements(StoreInscriptionTemoinEngagementsRequest $request): RedirectResponse
     {
         if ($redirect = $this->redirectIfStep1Missing()) {
             return $redirect;
@@ -86,11 +89,7 @@ class InscriptionTemoinController extends Controller
 
         $step1 = session('inscription_temoin_step1');
 
-        $validated = $request->validate([
-            'engagements' => ['required', 'array', 'size:'.self::NB_ENGAGEMENTS],
-            'engagements.*' => ['accepted'],
-            'signature' => ['required', 'string', 'min:3', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         $user = $this->creerPersonneAgee($step1, $validated['signature']);
 
@@ -111,26 +110,6 @@ class InscriptionTemoinController extends Controller
         }
 
         return null;
-    }
-
-    /**
-     * Valide les champs du formulaire d'étape 1.
-     */
-    private function validateStep1(Request $request): array
-    {
-        return $request->validate([
-            'prenom' => ['required', 'string', 'max:255'],
-            'nom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
-            'choix' => ['required', 'array', 'min:1'],
-            'choix.*.etablissement_id' => ['required', 'integer', 'exists:etablissements,id'],
-            'choix.*.thematique_ids' => ['nullable', 'array'],
-            'choix.*.thematique_ids.*' => ['integer', 'exists:thematiques,id'],
-            'choix.*.theme_libre' => ['nullable', 'string', 'max:500'],
-            'description' => ['required', 'string', 'max:2000'],
-            'disponible_appel_distance' => ['boolean'],
-        ]);
     }
 
     /**

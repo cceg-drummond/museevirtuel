@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Etudiant\StoreEtudiantReferenceRequest;
 use App\Models\EtudiantReference;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class EtudiantReferenceController extends Controller
 {
@@ -13,13 +13,11 @@ class EtudiantReferenceController extends Controller
      * Ajoute manuellement une référence bibliographique à la liste personnelle de l'étudiant.
      *
      * L'ordre est calculé automatiquement (max existant + 1).
+     * Les données sont validées par StoreEtudiantReferenceRequest.
      */
-    public function store(Request $request, OrdreElements $ordres): RedirectResponse
+    public function store(StoreEtudiantReferenceRequest $request, OrdreElements $ordres): RedirectResponse
     {
-        $validated = $request->validate([
-            'titre' => ['required', 'string', 'max:500'],
-            'url' => ['nullable', 'url', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
 

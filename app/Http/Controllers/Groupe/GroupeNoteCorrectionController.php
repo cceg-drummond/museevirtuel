@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Groupe;
 
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Groupe\DestroyGroupeNoteCorrectionRequest;
+use App\Http\Requests\Groupe\UpsertGroupeNoteCorrectionRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\GroupeNote;
 use App\Models\GroupeNoteCorrection;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -23,18 +24,16 @@ class GroupeNoteCorrectionController extends Controller
     /**
      * Crée ou met à jour une correction inline sur une note (enseignant uniquement).
      *
+     * Données validées par UpsertGroupeNoteCorrectionRequest.
+     *
      * @throws HttpException si l'utilisateur n'est pas l'enseignant du cours
      */
-    public function upsert(Request $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeNote $note): RedirectResponse
+    public function upsert(UpsertGroupeNoteCorrectionRequest $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeNote $note): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe);
         $this->autoriserCorrectionNote($cours, $groupe, $note);
 
-        $validated = $request->validate([
-            'commentaire_id' => ['required', 'string', 'max:36'],
-            'contenu' => ['required', 'string', 'max:1000'],
-            'note_html' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $note->update(['contenu' => $validated['note_html']]);
 
@@ -49,9 +48,11 @@ class GroupeNoteCorrectionController extends Controller
     /**
      * Supprime une correction inline et met à jour le HTML de la note.
      *
+     * Données validées par DestroyGroupeNoteCorrectionRequest.
+     *
      * @throws HttpException
      */
-    public function destroy(Request $request, Cours $cours, Classe $classe, Groupe $groupe,
+    public function destroy(DestroyGroupeNoteCorrectionRequest $request, Cours $cours, Classe $classe, Groupe $groupe,
         GroupeNote $note, GroupeNoteCorrection $correction): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe);
@@ -59,9 +60,7 @@ class GroupeNoteCorrectionController extends Controller
 
         abort_if($correction->note_id !== $note->id, 404);
 
-        $validated = $request->validate([
-            'note_html' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $note->update(['contenu' => $validated['note_html']]);
         $correction->delete();
