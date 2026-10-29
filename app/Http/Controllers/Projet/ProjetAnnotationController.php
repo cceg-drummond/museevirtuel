@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Projet;
 
+use App\Helpers\HtmlHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Projet\Concerns\AutoriseProjetRecherche;
 use App\Http\Requests\Projet\DestroyProjetAnnotationRequest;
@@ -46,17 +47,6 @@ class ProjetAnnotationController extends Controller
         $this->mettreAJourChampHtml($projet, $validated['champ'], $validated['html']);
         $this->supprimerAnnotationsOrphelines($projet, $validated['champ'], $validated['html']);
 
-        preg_match_all('/data-comment-id="([^"]+)"/', $validated['html'], $allIds);
-        $positionIndex = array_search($validated['commentaire_id'], $allIds[1], true);
-        $position = $positionIndex !== false ? (int) $positionIndex : null;
-
-        preg_match(
-            '/<mark[^>]*data-comment-id="'.preg_quote($validated['commentaire_id'], '/').'[^>]*"[^>]*>(.*?)<\/mark>/si',
-            $validated['html'],
-            $markMatch
-        );
-        $motAnnote = isset($markMatch[1]) ? strip_tags($markMatch[1]) : null;
-
         $estCorrection = $validated['annotation_type'] === 'correction';
 
         $annotation = ProjetAnnotation::updateOrCreate(
@@ -64,8 +54,8 @@ class ProjetAnnotationController extends Controller
             [
                 'champ' => $validated['champ'],
                 'contenu' => $validated['contenu'],
-                'position' => $position,
-                'mot_annote' => $motAnnote,
+                'position' => HtmlHelper::positionAnnotation($validated['html'], $validated['commentaire_id']),
+                'mot_annote' => HtmlHelper::motAnnote($validated['html'], $validated['commentaire_id']),
                 'annotation_type' => $validated['annotation_type'],
                 // points_malus et cible_user_id n'ont de sens que pour une correction
                 'points_malus' => $estCorrection && isset($validated['points_malus'])

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Projet\Concerns;
 
+use App\Helpers\HtmlHelper;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
@@ -117,8 +118,7 @@ trait AutoriseProjetRecherche
      */
     private function supprimerAnnotationsOrphelines(ProjetRecherche $projet, string $champ, string $html): void
     {
-        preg_match_all('/data-comment-id="([^"]+)"/', $html, $matches);
-        $idsPresents = $matches[1];
+        $idsPresents = HtmlHelper::annotationIds($html);
 
         ProjetAnnotation::where('projet_id', $projet->id)
             ->where('champ', $champ)
