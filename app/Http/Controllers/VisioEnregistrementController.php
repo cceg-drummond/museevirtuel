@@ -29,9 +29,6 @@ class VisioEnregistrementController extends Controller
      */
     public function store(StoreVisioEnregistrementRequest $request, Cours $cours, VisioConference $visio, StoreUploadedFile $fichiers): RedirectResponse
     {
-        $this->authorize('update', $cours);
-        abort_if($visio->cours_id !== $cours->id, 404);
-
         // Supprimer l'ancien fichier avant de le remplacer
         if ($visio->recording_path) {
             Storage::delete($visio->recording_path);

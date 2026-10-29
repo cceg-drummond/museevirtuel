@@ -4,7 +4,7 @@ namespace App\Http\Controllers\TypeProjet;
 
 use App\Enums\TypeSection;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\TypeProjet\ReorderTypeProjetSectionRequest;
 use App\Http\Requests\TypeProjet\SaveTypeProjetSectionRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
@@ -21,9 +21,6 @@ class SectionController extends Controller
      */
     public function store(SaveTypeProjetSectionRequest $request, Cours $cours, TypeProjet $typeProjet, OrdreElements $ordres): RedirectResponse
     {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $data = $request->validated();
 
         $ordre = $ordres->prochain($typeProjet->sections());
@@ -45,10 +42,6 @@ class SectionController extends Controller
      */
     public function update(SaveTypeProjetSectionRequest $request, Cours $cours, TypeProjet $typeProjet, TypeProjetSection $section): RedirectResponse
     {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
-
         $data = $request->validated();
 
         $section->update($data);
@@ -61,11 +54,8 @@ class SectionController extends Controller
      *
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
-    public function reorder(ReorderRequest $request, Cours $cours, TypeProjet $typeProjet, OrdreElements $ordres): RedirectResponse
+    public function reorder(ReorderTypeProjetSectionRequest $request, Cours $cours, TypeProjet $typeProjet, OrdreElements $ordres): RedirectResponse
     {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $ordres->reordonner($typeProjet->sections(), $request->ids());
 
         return back();

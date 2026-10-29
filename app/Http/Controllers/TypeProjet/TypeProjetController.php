@@ -76,8 +76,6 @@ class TypeProjetController extends Controller
      */
     public function store(StoreTypeProjetRequest $request, Cours $cours): RedirectResponse
     {
-        $this->authorize('update', $cours);
-
         $data = $request->validated();
 
         $typeProjet = TypeProjet::create([
@@ -149,9 +147,6 @@ class TypeProjetController extends Controller
      */
     public function update(UpdateTypeProjetRequest $request, Cours $cours, TypeProjet $typeProjet): RedirectResponse
     {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $data = $request->validated();
 
         $wasGeneratingPageTitre = (bool) $typeProjet->generer_page_titre;

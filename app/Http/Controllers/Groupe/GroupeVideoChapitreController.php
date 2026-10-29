@@ -73,7 +73,7 @@ class GroupeVideoChapitreController extends Controller
         $video->load('groupe.classe.cours');
         $this->authorize('gererChapitres', $video);
 
-        abort_if($chapitre->video_id !== $video->id, 403);
+        abort_if($chapitre->video_id !== $video->id, 404);
 
         $validated = $request->validated();
 
@@ -102,7 +102,7 @@ class GroupeVideoChapitreController extends Controller
         $video->load('groupe.classe.cours');
         $this->authorize('gererChapitres', $video);
 
-        abort_if($chapitre->video_id !== $video->id, 403);
+        abort_if($chapitre->video_id !== $video->id, 404);
 
         $chapitre->delete();
 

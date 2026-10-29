@@ -8,7 +8,6 @@ use App\Models\Cours;
 use App\Models\EcheancierEtape;
 use App\Models\EcheancierEtudiantProgress;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 class EcheancierController extends Controller
 {
@@ -20,8 +19,6 @@ class EcheancierController extends Controller
      */
     public function store(SaveEcheancierEtapeRequest $request, Cours $cours): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-
         $validated = $request->validated();
 
         // L'ordre est défini comme le prochain dans la semaine
@@ -49,9 +46,6 @@ class EcheancierController extends Controller
      */
     public function update(SaveEcheancierEtapeRequest $request, Cours $cours, EcheancierEtape $etape): RedirectResponse
     {
-        abort_if($etape->cours_id !== $cours->id, 404);
-        Gate::authorize('update', $cours);
-
         $validated = $request->validated();
 
         $etape->update($validated);
@@ -67,7 +61,7 @@ class EcheancierController extends Controller
     public function destroy(Cours $cours, EcheancierEtape $etape): RedirectResponse
     {
         abort_if($etape->cours_id !== $cours->id, 404);
-        Gate::authorize('update', $cours);
+        $this->authorize('update', $cours);
 
         $etape->delete();
 
@@ -81,7 +75,7 @@ class EcheancierController extends Controller
      */
     public function destroyAll(Cours $cours): RedirectResponse
     {
-        Gate::authorize('update', $cours);
+        $this->authorize('update', $cours);
 
         $cours->echeancierEtapes()->delete();
 
@@ -96,7 +90,7 @@ class EcheancierController extends Controller
     public function toggleDone(Cours $cours, EcheancierEtape $etape): RedirectResponse
     {
         abort_if($etape->cours_id !== $cours->id, 404);
-        Gate::authorize('update', $cours);
+        $this->authorize('update', $cours);
 
         $etape->update(['is_done' => ! $etape->is_done]);
 

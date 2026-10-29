@@ -30,7 +30,7 @@ class CoursController extends Controller
      */
     public function edit(Cours $cours): Response
     {
-        abort_unless($cours->enseignant_id === auth()->id(), 403);
+        $this->authorize('update', $cours);
 
         return Inertia::render('Enseignant/CoursEdition/Edit', ['cours' => $cours]);
     }

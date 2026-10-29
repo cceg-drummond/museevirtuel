@@ -10,11 +10,19 @@ use Illuminate\Foundation\Http\FormRequest;
 class SaveCoursReferenceRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur (sera centralisée dans une Policy).
+     * Seul l'enseignant du cours (ou un admin) peut gérer les références ; en modification, la référence doit appartenir au cours.
      */
     public function authorize(): bool
     {
+        $cours = $this->route('cours');
+
+        if ($this->user()->cannot('update', $cours)) {
+            return false;
+        }
+
+        $reference = $this->route('reference');
+        abort_if($reference !== null && $reference->cours_id !== $cours->id, 404);
+
         return true;
     }
 

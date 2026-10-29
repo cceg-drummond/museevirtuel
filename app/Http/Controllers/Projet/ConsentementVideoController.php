@@ -26,19 +26,12 @@ class ConsentementVideoController extends Controller
         Groupe $groupe,
         TypeProjet $typeProjet,
     ): RedirectResponse {
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         /** @var ProjetRecherche $projet */
         $projet = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)
             ->firstOrFail();
 
-        // Vérifier que l'utilisateur est membre du groupe ou personne âgée liée
         $user = auth()->user();
-        $estMembre = $groupe->membres()->where('user_id', $user->id)->exists();
-        $estPersonneAgee = $groupe->personne_agee_id === $user->id;
-
-        abort_unless($estMembre || $estPersonneAgee, 403);
 
         $validated = $request->validated();
 

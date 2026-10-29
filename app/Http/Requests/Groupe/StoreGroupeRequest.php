@@ -10,11 +10,14 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreGroupeRequest extends FormRequest
 {
     /**
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul un étudiant inscrit dans la classe peut y créer un groupe.
      */
     public function authorize(): bool
     {
-        return true;
+        $classe = $this->route('classe');
+        abort_if($classe->cours_id !== $this->route('cours')->id, 404);
+
+        return $classe->etudiants()->where('users.id', $this->user()->id)->exists();
     }
 
     /**

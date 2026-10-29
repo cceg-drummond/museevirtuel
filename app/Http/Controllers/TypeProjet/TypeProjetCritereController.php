@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\TypeProjet;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\TypeProjet\ReorderCritereRequest;
 use App\Http\Requests\TypeProjet\StoreCritereRequest;
 use App\Http\Requests\TypeProjet\UpdateCritereRequest;
 use App\Http\Requests\TypeProjet\UpdateVisibiliteGroupeCritereRequest;
@@ -29,9 +29,6 @@ class TypeProjetCritereController extends Controller
         TypeProjet $typeProjet,
         OrdreElements $ordres,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $data = $request->validated();
         $sectionId = $data['section_id'] ?? null;
 
@@ -70,10 +67,6 @@ class TypeProjetCritereController extends Controller
         TypeProjet $typeProjet,
         TypeProjetCritere $critere,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($critere->type_projet_id !== $typeProjet->id, 404);
-
         $data = $request->validated();
 
         $critere->update([
@@ -96,14 +89,11 @@ class TypeProjetCritereController extends Controller
      * L'UI envoie uniquement les IDs d'un même groupe (global ou section donnée).
      */
     public function reorder(
-        ReorderRequest $request,
+        ReorderCritereRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         OrdreElements $ordres,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $ordres->reordonner($typeProjet->criteres(), $request->ids());
 
         return back();
@@ -121,9 +111,6 @@ class TypeProjetCritereController extends Controller
         Cours $cours,
         TypeProjet $typeProjet,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $validated = $request->validated();
 
         $typeProjet->criteres()

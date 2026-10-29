@@ -12,12 +12,14 @@ use Illuminate\Validation\Rule;
 class SaveEnseignantRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * La vérification de rôle admin est assurée par le middleware de route.
+     * Le rôle admin est vérifié par le middleware de route.
+     * En modification, protège contre l'édition d'un admin ou d'un étudiant via le route binding.
      */
     public function authorize(): bool
     {
-        return true;
+        $enseignant = $this->route('enseignant');
+
+        return $enseignant === null || $enseignant->role === 'enseignant';
     }
 
     /**

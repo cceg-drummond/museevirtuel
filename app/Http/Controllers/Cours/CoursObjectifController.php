@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Cours\ReorderCoursObjectifRequest;
 use App\Http\Requests\Cours\SaveCoursObjectifRequest;
 use App\Models\Cours;
 use App\Models\CoursObjectif;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 class CoursObjectifController extends Controller
 {
@@ -21,8 +20,6 @@ class CoursObjectifController extends Controller
      */
     public function store(SaveCoursObjectifRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-
         $validated = $request->validated();
 
         $ordre = $ordres->prochain($cours->objectifs());
@@ -43,9 +40,6 @@ class CoursObjectifController extends Controller
      */
     public function update(SaveCoursObjectifRequest $request, Cours $cours, CoursObjectif $objectif): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-        abort_if($objectif->cours_id !== $cours->id, 404);
-
         $validated = $request->validated();
 
         $objectif->update($validated);
@@ -60,7 +54,7 @@ class CoursObjectifController extends Controller
      */
     public function destroy(Cours $cours, CoursObjectif $objectif, OrdreElements $ordres): RedirectResponse
     {
-        Gate::authorize('update', $cours);
+        $this->authorize('update', $cours);
         abort_if($objectif->cours_id !== $cours->id, 404);
 
         $ordres->supprimer($objectif, $cours->objectifs());
@@ -73,10 +67,8 @@ class CoursObjectifController extends Controller
      *
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
-    public function reorder(ReorderRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
+    public function reorder(ReorderCoursObjectifRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-
         $ordres->reordonner($cours->objectifs(), $request->ids());
 
         return back();

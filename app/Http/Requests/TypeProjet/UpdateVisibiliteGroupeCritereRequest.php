@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\TypeProjet;
 
+use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -9,13 +10,14 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class UpdateVisibiliteGroupeCritereRequest extends FormRequest
 {
+    use AutoriseGestionTypeProjet;
+
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut changer la visibilité des critères.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->peutGererTypeProjet();
     }
 
     /**

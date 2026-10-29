@@ -10,12 +10,15 @@ use Illuminate\Foundation\Http\FormRequest;
 class SaveEcheancierEtapeRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * En modification, l'étape doit appartenir au cours ; seul l'enseignant du cours (ou un admin) peut gérer l'échéancier.
      */
     public function authorize(): bool
     {
-        return true;
+        $cours = $this->route('cours');
+        $etape = $this->route('etape');
+        abort_if($etape !== null && $etape->cours_id !== $cours->id, 404);
+
+        return $this->user()->can('update', $cours);
     }
 
     /**

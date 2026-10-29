@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Commun\ReorderRequest;
 use App\Http\Requests\QuestionBanque\ChoisirQuestionBanqueRequest;
+use App\Http\Requests\QuestionBanque\ReorderQuestionBanqueRequest;
 use App\Http\Requests\QuestionBanque\SaveQuestionBanqueRequest;
 use App\Models\Classe;
 use App\Models\Cours;
@@ -31,9 +31,6 @@ class QuestionBanqueController extends Controller
         TypeProjetSection $section,
         OrdreElements $ordres,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($section->type !== 'choix_questions', 422);
 
         $data = $request->validated();
@@ -60,11 +57,6 @@ class QuestionBanqueController extends Controller
         TypeProjetSection $section,
         QuestionBanque $question,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
-        abort_if($question->section_id !== $section->id, 404);
-
         $data = $request->validated();
 
         $question->update(['contenu' => $data['contenu']]);
@@ -78,16 +70,12 @@ class QuestionBanqueController extends Controller
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
     public function reorder(
-        ReorderRequest $request,
+        ReorderQuestionBanqueRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         TypeProjetSection $section,
         OrdreElements $ordres,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
-
         $ordres->reordonner($section->questionsBanque(), $request->ids());
 
         return back();
@@ -130,17 +118,7 @@ class QuestionBanqueController extends Controller
         TypeProjet $typeProjet,
         TypeProjetSection $section,
     ): RedirectResponse {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        abort_if($groupe->classe_id !== $classe->id, 404);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if($section->type !== 'choix_questions', 422);
-
-        // Seuls les membres du groupe peuvent choisir des questions
-        abort_unless(
-            $groupe->membres()->where('user_id', auth()->id())->exists(),
-            403
-        );
 
         /** @var ProjetRecherche $projet */
         $projet = ProjetRecherche::where('groupe_id', $groupe->id)

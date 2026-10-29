@@ -31,22 +31,12 @@ class ProjetSectionMediaController extends Controller
         TypeProjetSection $section,
         StoreUploadedFile $fichiers,
     ): RedirectResponse {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        abort_if($groupe->classe_id !== $classe->id, 404);
-
         /** @var ProjetRecherche $projet */
         $projet = ProjetRecherche::where('groupe_id', $groupe->id)
             ->where('type_projet_id', $typeProjet->id)
             ->firstOrFail();
 
-        abort_if($section->type_projet_id !== $typeProjet->id, 404);
         abort_if(! in_array($section->type, ['video', 'audio']), 422);
-
-        // Vérifier que l'utilisateur est membre du groupe
-        abort_unless(
-            $groupe->membres()->where('user_id', auth()->id())->exists(),
-            403
-        );
 
         $validated = $request->validated();
 

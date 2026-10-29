@@ -23,8 +23,6 @@ class CoursDocumentController extends Controller
      */
     public function store(StoreCoursDocumentRequest $request, Cours $cours, StoreUploadedFile $fichiers): RedirectResponse
     {
-        $this->authorize('update', $cours);
-
         $meta = $fichiers->execute(
             $request->file('document'),
             "images/cours/{$cours->id}"

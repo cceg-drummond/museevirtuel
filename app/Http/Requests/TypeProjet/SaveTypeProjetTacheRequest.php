@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\TypeProjet;
 
+use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -9,12 +10,20 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class SaveTypeProjetTacheRequest extends FormRequest
 {
+    use AutoriseGestionTypeProjet;
+
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut créer ou modifier une tâche du type de projet.
      */
     public function authorize(): bool
     {
+        if (! $this->peutGererTypeProjet()) {
+            return false;
+        }
+
+        $tache = $this->route('tache');
+        abort_if($tache !== null && $tache->type_projet_id !== $this->route('typeProjet')->id, 404);
+
         return true;
     }
 

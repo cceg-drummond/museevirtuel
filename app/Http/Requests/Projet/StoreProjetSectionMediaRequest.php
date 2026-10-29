@@ -10,12 +10,18 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreProjetSectionMediaRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seuls les membres du groupe peuvent ajouter un média, dans une chaîne d'URL cohérente.
      */
     public function authorize(): bool
     {
-        return true;
+        $classe = $this->route('classe');
+        $groupe = $this->route('groupe');
+
+        abort_if($classe->cours_id !== $this->route('cours')->id, 404);
+        abort_if($groupe->classe_id !== $classe->id, 404);
+        abort_if($this->route('section')->type_projet_id !== $this->route('typeProjet')->id, 404);
+
+        return $groupe->membres()->where('user_id', $this->user()->id)->exists();
     }
 
     /**

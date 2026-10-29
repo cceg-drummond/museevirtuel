@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Cours\ReorderCoursLienEntrevueRequest;
 use App\Http\Requests\Cours\SaveCoursLienEntrevueRequest;
 use App\Models\Cours;
 use App\Models\CoursLienEntrevue;
@@ -20,8 +20,6 @@ class CoursLienEntrevueController extends Controller
      */
     public function store(SaveCoursLienEntrevueRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
-        $this->authorize('update', $cours);
-
         $data = $request->validated();
 
         $ordre = $ordres->prochain($cours->liensEntrevue());
@@ -45,9 +43,6 @@ class CoursLienEntrevueController extends Controller
         Cours $cours,
         CoursLienEntrevue $lien,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($lien->cours_id !== $cours->id, 404);
-
         $data = $request->validated();
 
         $lien->update($data);
@@ -60,10 +55,8 @@ class CoursLienEntrevueController extends Controller
      *
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
-    public function reorder(ReorderRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
+    public function reorder(ReorderCoursLienEntrevueRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
-        $this->authorize('update', $cours);
-
         $ordres->reordonner($cours->liensEntrevue(), $request->ids());
 
         return back();

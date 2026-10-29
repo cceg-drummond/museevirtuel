@@ -64,9 +64,6 @@ class VisioConferenceController extends Controller
      */
     public function update(UpdateVisioConferenceRequest $request, Cours $cours, VisioConference $visio): RedirectResponse
     {
-        $this->authorize('update', $cours);
-        abort_if($visio->cours_id !== $cours->id, 404);
-
         $data = $request->validated();
 
         $visio->update($data);

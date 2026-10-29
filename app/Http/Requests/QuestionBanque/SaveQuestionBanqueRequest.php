@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\QuestionBanque;
 
+use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -9,12 +10,23 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class SaveQuestionBanqueRequest extends FormRequest
 {
+    use AutoriseGestionTypeProjet;
+
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut créer ou modifier une question de la banque.
      */
     public function authorize(): bool
     {
+        if (! $this->peutGererTypeProjet()) {
+            return false;
+        }
+
+        $section = $this->route('section');
+        abort_if($section->type_projet_id !== $this->route('typeProjet')->id, 404);
+
+        $question = $this->route('question');
+        abort_if($question !== null && $question->section_id !== $section->id, 404);
+
         return true;
     }
 

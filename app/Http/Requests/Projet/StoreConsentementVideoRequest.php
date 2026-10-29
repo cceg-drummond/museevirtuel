@@ -10,12 +10,17 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreConsentementVideoRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seuls les membres du groupe et la personne âgée liée peuvent signer le consentement.
      */
     public function authorize(): bool
     {
-        return true;
+        abort_if($this->route('typeProjet')->cours_id !== $this->route('cours')->id, 404);
+
+        $groupe = $this->route('groupe');
+        $user = $this->user();
+
+        return $groupe->personne_agee_id === $user->id
+            || $groupe->membres()->where('user_id', $user->id)->exists();
     }
 
     /**

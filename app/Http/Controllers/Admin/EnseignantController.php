@@ -40,9 +40,6 @@ class EnseignantController extends Controller
      */
     public function update(SaveEnseignantRequest $request, User $enseignant): RedirectResponse
     {
-        // Protège contre la modification accidentelle d'un admin ou étudiant via route binding
-        abort_if($enseignant->role !== 'enseignant', 403);
-
         $enseignant->update($request->validated());
 
         return back()->with('success', __('enseignant.updated'));

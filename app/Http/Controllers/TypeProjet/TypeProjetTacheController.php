@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\TypeProjet;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\TypeProjet\ReorderTypeProjetTacheRequest;
 use App\Http\Requests\TypeProjet\SaveTypeProjetTacheRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
@@ -25,9 +25,6 @@ class TypeProjetTacheController extends Controller
         TypeProjet $typeProjet,
         OrdreElements $ordres,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $data = $request->validated();
 
         $ordre = $ordres->prochain($typeProjet->taches());
@@ -52,10 +49,6 @@ class TypeProjetTacheController extends Controller
         TypeProjet $typeProjet,
         TypeProjetTache $tache,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($tache->type_projet_id !== $typeProjet->id, 404);
-
         $data = $request->validated();
 
         $tache->update($data);
@@ -69,14 +62,11 @@ class TypeProjetTacheController extends Controller
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
     public function reorder(
-        ReorderRequest $request,
+        ReorderTypeProjetTacheRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
         OrdreElements $ordres,
     ): RedirectResponse {
-        $this->authorize('update', $cours);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-
         $ordres->reordonner($typeProjet->taches(), $request->ids());
 
         return back();

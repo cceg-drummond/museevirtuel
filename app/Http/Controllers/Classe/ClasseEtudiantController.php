@@ -35,9 +35,6 @@ class ClasseEtudiantController extends Controller
      */
     public function store(StoreClasseEtudiantRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
-        $this->assertClasseAppartientAuCours($classe, $cours);
-        $this->authorize('update', $cours);
-
         $validated = $request->validated();
 
         $etudiant = $this->createEtudiant->execute(
@@ -66,11 +63,6 @@ class ClasseEtudiantController extends Controller
      */
     public function update(UpdateClasseEtudiantRequest $request, Cours $cours, Classe $classe, User $etudiant): RedirectResponse
     {
-        $this->assertClasseAppartientAuCours($classe, $cours);
-        $this->authorize('update', $cours);
-
-        abort_unless($classe->etudiants()->whereKey($etudiant->id)->exists(), 404);
-
         $validated = $request->validated();
 
         $etudiant->update([
@@ -107,9 +99,6 @@ class ClasseEtudiantController extends Controller
      */
     public function import(ImportClasseEtudiantRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
-        $this->assertClasseAppartientAuCours($classe, $cours);
-        $this->authorize('update', $cours);
-
         $content = file_get_contents($request->file('csv')->getPathname());
         $created = $this->importEtudiants->execute($classe, $content);
 

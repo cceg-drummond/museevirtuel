@@ -13,11 +13,21 @@ use Illuminate\Validation\Rule;
 class UpdateClasseEtudiantRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur (sera centralisée dans une Policy).
+     * La classe doit appartenir au cours, que l'utilisateur doit pouvoir modifier,
+     * et l'étudiant doit être inscrit dans la classe.
      */
     public function authorize(): bool
     {
+        $cours = $this->route('cours');
+        $classe = $this->route('classe');
+        abort_if($classe->cours_id !== $cours->id, 404);
+
+        if ($this->user()->cannot('update', $cours)) {
+            return false;
+        }
+
+        abort_unless($classe->etudiants()->whereKey($this->route('etudiant')->id)->exists(), 404);
+
         return true;
     }
 

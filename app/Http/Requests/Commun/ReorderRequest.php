@@ -7,13 +7,14 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Valide un réordonnancement : la liste complète des IDs dans l'ordre voulu.
  *
- * L'autorisation reste dans chaque contrôleur (elle dépend de la ressource parente),
- * et les IDs hors de la liste concernée sont ignorés par OrdreElements::reordonner().
+ * L'autorisation dépend de la ressource parente : chaque domaine a sa sous-classe
+ * (ex. ReorderCoursObjectifRequest) qui surcharge authorize(). Les IDs hors de la
+ * liste concernée sont ignorés par OrdreElements::reordonner().
  */
 class ReorderRequest extends FormRequest
 {
     /**
-     * L'autorisation est vérifiée par le contrôleur appelant.
+     * Utilisée telle quelle, l'autorisation reste vérifiée par le contrôleur appelant.
      */
     public function authorize(): bool
     {

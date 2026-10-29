@@ -12,12 +12,11 @@ use Illuminate\Validation\Rule;
 class StoreTypeProjetRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut créer un type de projet.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('update', $this->route('cours'));
     }
 
     /**

@@ -12,12 +12,14 @@ use Illuminate\Validation\Rule;
 class StoreClasseEtudiantRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur (sera centralisée dans une Policy).
+     * La classe doit appartenir au cours, que l'utilisateur doit pouvoir modifier.
      */
     public function authorize(): bool
     {
-        return true;
+        $cours = $this->route('cours');
+        abort_if($this->route('classe')->cours_id !== $cours->id, 404);
+
+        return $this->user()->can('update', $cours);
     }
 
     /**

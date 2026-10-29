@@ -30,16 +30,6 @@ class GroupeTacheController extends Controller
         TypeProjet $typeProjet,
         TypeProjetTache $tache,
     ): RedirectResponse {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        abort_if($groupe->classe_id !== $classe->id, 404);
-        abort_if($typeProjet->cours_id !== $cours->id, 404);
-        abort_if($tache->type_projet_id !== $typeProjet->id, 404);
-
-        abort_unless(
-            $groupe->membres()->where('user_id', auth()->id())->exists(),
-            403
-        );
-
         $data = $request->validated();
 
         // Vérifier que l'utilisateur assigné est bien membre du groupe

@@ -10,12 +10,11 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreCoursDocumentRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur (sera centralisée dans une Policy).
+     * Seul l'enseignant du cours (ou un admin) peut déposer un document.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('update', $this->route('cours'));
     }
 
     /**

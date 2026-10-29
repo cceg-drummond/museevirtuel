@@ -10,11 +10,18 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreVisioEnregistrementRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut déposer l'enregistrement d'une visioconférence du cours.
      */
     public function authorize(): bool
     {
+        $cours = $this->route('cours');
+
+        if ($this->user()->cannot('update', $cours)) {
+            return false;
+        }
+
+        abort_if($this->route('visio')->cours_id !== $cours->id, 404);
+
         return true;
     }
 

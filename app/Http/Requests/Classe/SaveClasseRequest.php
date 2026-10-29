@@ -13,12 +13,20 @@ use Illuminate\Validation\Rule;
 class SaveClasseRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur (sera centralisée dans une Policy).
+     * Création : l'utilisateur doit pouvoir modifier le cours.
+     * Modification : la classe doit appartenir au cours et l'utilisateur doit pouvoir la modifier.
      */
     public function authorize(): bool
     {
-        return true;
+        $classe = $this->route('classe');
+
+        if ($classe === null) {
+            return $this->user()->can('update', $this->route('cours'));
+        }
+
+        abort_if($classe->cours_id !== $this->route('cours')->id, 404);
+
+        return $this->user()->can('update', $classe);
     }
 
     /**

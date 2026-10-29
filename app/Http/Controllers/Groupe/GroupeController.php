@@ -85,11 +85,7 @@ class GroupeController extends Controller
      */
     public function store(StoreGroupeRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
-        abort_if($classe->cours_id !== $cours->id, 404);
-
         $user = auth()->user();
-
-        abort_if(! $classe->etudiants()->where('users.id', $user->id)->exists(), 403);
 
         $dejaDansGroupe = $classe->groupes()
             ->whereHas('membres', fn ($q) => $q->where('users.id', $user->id))

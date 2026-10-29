@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Cours;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Commun\ReorderRequest;
+use App\Http\Requests\Cours\ReorderCoursReferenceRequest;
 use App\Http\Requests\Cours\SaveCoursReferenceRequest;
 use App\Models\Cours;
 use App\Models\CoursReference;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 class CoursReferenceController extends Controller
 {
@@ -21,8 +20,6 @@ class CoursReferenceController extends Controller
      */
     public function store(SaveCoursReferenceRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-
         $validated = $request->validated();
 
         $ordre = $ordres->prochain($cours->references());
@@ -44,9 +41,6 @@ class CoursReferenceController extends Controller
      */
     public function update(SaveCoursReferenceRequest $request, Cours $cours, CoursReference $reference): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-        abort_if($reference->cours_id !== $cours->id, 404);
-
         $validated = $request->validated();
 
         $reference->update($validated);
@@ -61,7 +55,7 @@ class CoursReferenceController extends Controller
      */
     public function destroy(Cours $cours, CoursReference $reference, OrdreElements $ordres): RedirectResponse
     {
-        Gate::authorize('update', $cours);
+        $this->authorize('update', $cours);
         abort_if($reference->cours_id !== $cours->id, 404);
 
         $ordres->supprimer($reference, $cours->references());
@@ -74,10 +68,8 @@ class CoursReferenceController extends Controller
      *
      * Reçoit un tableau d'IDs dans l'ordre désiré.
      */
-    public function reorder(ReorderRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
+    public function reorder(ReorderCoursReferenceRequest $request, Cours $cours, OrdreElements $ordres): RedirectResponse
     {
-        Gate::authorize('update', $cours);
-
         $ordres->reordonner($cours->references(), $request->ids());
 
         return back();

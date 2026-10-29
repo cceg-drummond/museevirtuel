@@ -10,11 +10,19 @@ use Illuminate\Foundation\Http\FormRequest;
 class SaveCoursObjectifRequest extends FormRequest
 {
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut gérer les objectifs ; en modification, l'objectif doit appartenir au cours.
      */
     public function authorize(): bool
     {
+        $cours = $this->route('cours');
+
+        if ($this->user()->cannot('update', $cours)) {
+            return false;
+        }
+
+        $objectif = $this->route('objectif');
+        abort_if($objectif !== null && $objectif->cours_id !== $cours->id, 404);
+
         return true;
     }
 

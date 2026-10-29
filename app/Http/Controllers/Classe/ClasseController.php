@@ -116,8 +116,6 @@ class ClasseController extends Controller
      */
     public function store(SaveClasseRequest $request, Cours $cours): RedirectResponse
     {
-        $this->authorize('update', $cours);
-
         $validated = $request->validated();
 
         Classe::create(array_merge(
@@ -139,9 +137,6 @@ class ClasseController extends Controller
      */
     public function update(SaveClasseRequest $request, Cours $cours, Classe $classe): RedirectResponse
     {
-        abort_if($classe->cours_id !== $cours->id, 404);
-        $this->authorize('update', $classe);
-
         $validated = $request->validated();
 
         $classe->update(array_merge($validated, ['code' => $cours->code]));

@@ -40,7 +40,7 @@ class ProjetMuseeController extends Controller
         Groupe $groupe,
         TypeProjet $typeProjet,
     ): Response {
-        abort_unless($cours->enseignant_id === auth()->id(), 403);
+        $this->authorize('update', $cours);
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
         abort_if($typeProjet->cours_id !== $cours->id, 404);

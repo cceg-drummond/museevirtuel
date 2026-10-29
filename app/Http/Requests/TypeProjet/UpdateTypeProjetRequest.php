@@ -3,6 +3,7 @@
 namespace App\Http\Requests\TypeProjet;
 
 use App\Enums\TypeSection;
+use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,13 +12,14 @@ use Illuminate\Validation\Rule;
  */
 class UpdateTypeProjetRequest extends FormRequest
 {
+    use AutoriseGestionTypeProjet;
+
     /**
-     * Détermine si l'utilisateur est autorisé à faire cette requête.
-     * L'autorisation reste vérifiée dans le contrôleur.
+     * Seul l'enseignant du cours (ou un admin) peut modifier un type de projet de ce cours.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->peutGererTypeProjet();
     }
 
     /**

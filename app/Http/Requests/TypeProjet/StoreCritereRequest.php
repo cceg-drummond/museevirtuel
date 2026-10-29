@@ -2,19 +2,21 @@
 
 namespace App\Http\Requests\TypeProjet;
 
+use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
 use App\Http\Requests\Concerns\HasCritereRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCritereRequest extends FormRequest
 {
-    use HasCritereRules;
+    use AutoriseGestionTypeProjet, HasCritereRules;
 
     /**
-     * L'autorisation est vérifiée dans le controller (authorize sur le cours).
+     * Seul l'enseignant du cours (ou un admin) peut ajouter un critère.
+     * L'appartenance de section_id au type de projet reste vérifiée dans le contrôleur.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->peutGererTypeProjet();
     }
 
     /**

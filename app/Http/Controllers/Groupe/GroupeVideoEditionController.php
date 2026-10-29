@@ -71,7 +71,7 @@ class GroupeVideoEditionController extends Controller
         $videoInsert = GroupeVideo::findOrFail($validated['video_a_inserer_id']);
 
         // La vidéo à insérer doit appartenir au même groupe.
-        abort_if($videoInsert->groupe_id !== $groupe->id, 403);
+        abort_if($videoInsert->groupe_id !== $groupe->id, 422);
 
         // On ne peut pas jumeler une vidéo avec elle-même.
         abort_if($videoInsert->id === $video->id, 422);

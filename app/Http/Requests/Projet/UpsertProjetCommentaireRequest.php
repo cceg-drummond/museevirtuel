@@ -6,9 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpsertProjetCommentaireRequest extends FormRequest
 {
-
-    private const CHAMP_COMMENTAIRE_REGEX = "regex:/^(normes_presentation|introduction_amener|introduction_poser|
-    introduction_diviser|developpement|developpement_\d+|references|ecriture|conclusion_\d+)$/";
+    private const CHAMP_COMMENTAIRE_REGEX = '/^(normes_presentation|introduction_amener|introduction_poser|introduction_diviser|developpement|developpement_\d+|references|ecriture|conclusion_\d+)$/';
 
     /**
      * Détermine si l'utilisateur est autorisé à faire cette requête.

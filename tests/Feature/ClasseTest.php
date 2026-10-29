@@ -54,6 +54,7 @@ test('store cree une section pour le cours', function () {
 
 test('store refuse un numero manquant avec message en francais', function () {
     ['enseignant' => $enseignant, 'cours' => $cours] = creerCoursAvecEnseignant();
+    $enseignant->update(['locale' => 'fr']);
 
     $this->actingAs($enseignant)
         ->from("/cours/{$cours->id}")
@@ -68,6 +69,7 @@ test('store refuse un numero manquant avec message en francais', function () {
 
 test('store refuse un numero qui n a pas 5 chiffres', function () {
     ['enseignant' => $enseignant, 'cours' => $cours] = creerCoursAvecEnseignant();
+    $enseignant->update(['locale' => 'fr']);
 
     $this->actingAs($enseignant)
         ->from("/cours/{$cours->id}")
