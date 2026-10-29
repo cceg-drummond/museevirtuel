@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Groupe;
 
+use App\Actions\EditerImage;
 use App\Actions\StoreUploadedFile;
 use App\Concerns\ValidatesGroupeChain;
 use App\Http\Controllers\Controller;
@@ -14,9 +15,6 @@ use App\Models\Groupe;
 use App\Models\GroupeMedia;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Intervention\Image\Direction;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\ImageManager;
 
 class GroupeMediaController extends Controller
 {
@@ -96,7 +94,7 @@ class GroupeMediaController extends Controller
      *
      * @throws AuthorizationException
      */
-    public function editer(EditerGroupeMediaRequest $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeMedia $media): RedirectResponse
+    public function editer(EditerGroupeMediaRequest $request, Cours $cours, Classe $classe, Groupe $groupe, GroupeMedia $media, EditerImage $editerImage): RedirectResponse
     {
         $this->verifierChaine($cours, $classe, $groupe, $media);
         abort_if($media->type !== 'photo', 422);
@@ -108,33 +106,9 @@ class GroupeMediaController extends Controller
         $ext = strtolower(pathinfo($media->file_path, PATHINFO_EXTENSION));
         abort_if($ext === 'gif', 422, __('media.gif_non_editable'));
 
-        $validated = $request->validated();
+        $taille = $editerImage->execute(public_path($media->file_path), $request->validated());
 
-        $fullPath = public_path($media->file_path);
-
-        $manager = new ImageManager(new Driver);
-        $image = $manager->decode($fullPath);
-
-        match ($validated['operation']) {
-            'crop' => $image->crop(
-                (int) $validated['width'],
-                (int) $validated['height'],
-                (int) $validated['x'],
-                (int) $validated['y'],
-            ),
-            'rotate' => $image->rotate((float) $validated['angle']),
-            'flip' => $image->flip(
-                $validated['direction'] === 'vertical'
-                    ? Direction::VERTICAL
-                    : Direction::HORIZONTAL
-            ),
-        };
-
-        // Encoder à 90 % de qualité pour JPEG/WEBP, sans perte pour PNG.
-        $image->save($fullPath, quality: 90);
-
-        // Met à jour la taille puisque la re-compression a changé le poids.
-        $media->update(['taille' => filesize($fullPath)]);
+        $media->update(['taille' => $taille]);
 
         return back()->with('success', __('media.edited'));
     }
