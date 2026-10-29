@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\TypeProjet;
 
-use App\Enums\TypeSection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TypeProjet\StoreTypeProjetRequest;
 use App\Http\Requests\TypeProjet\UpdateTypeProjetRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
-use App\Models\TypeProjetSection;
+use App\Services\TypeProjetService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -72,62 +71,13 @@ class TypeProjetController extends Controller
      * Crée un nouveau type de projet pour le cours donné.
      *
      * Accepte un tableau optionnel `sections[]` pour créer les sections en une seule requête.
-     * Les données sont validées par StoreTypeProjetRequest.
+     * Les données sont validées par StoreTypeProjetRequest ; la création est faite par TypeProjetService.
      */
-    public function store(StoreTypeProjetRequest $request, Cours $cours): RedirectResponse
+    public function store(StoreTypeProjetRequest $request, Cours $cours, TypeProjetService $typeProjetService): RedirectResponse
     {
-        $data = $request->validated();
-
-        $typeProjet = TypeProjet::create([
-            'enseignant_id' => auth()->id(),
-            'cours_id' => $cours->id,
-            'nom' => $data['nom'],
-            'type' => $data['type'] ?? 'standard',
-            'description' => $data['description'] ?? null,
-            'accessible' => false,
-            'date_remise' => $data['date_remise'] ?? null,
-            'remises_multiples' => $data['remises_multiples'] ?? false,
-            'retard_permis' => $data['retard_permis'] ?? false,
-            'generer_page_titre' => $request->boolean('generer_page_titre', true),
-            'generer_table_matieres' => $request->boolean('generer_table_matieres', true),
-            'aide_reference' => $request->boolean('aide_reference', false),
-            // Nouvelles sections legacy — désactivées par défaut sur les nouveaux types
-            'has_introduction' => $request->boolean('has_introduction', false),
-            'has_conclusion_individuelle' => $request->boolean('has_conclusion_individuelle', false),
-            'ponderation' => $data['ponderation'] ?? null,
-            'is_sommatif' => $request->boolean('is_sommatif', true),
-        ]);
-
-        foreach ($data['sections'] ?? [] as $index => $section) {
-            $typeProjet->sections()->create([
-                'label' => $section['label'],
-                'description' => $section['description'] ?? null,
-                'type' => $section['type'] ?? TypeSection::Texte->value,
-                'ordre' => $index + 1,
-            ]);
-        }
+        $typeProjet = $typeProjetService->creer($request->user(), $cours, $request->validated());
 
         if ($typeProjet->isMusee()) {
-            // Créer automatiquement le critère de publication du musée (20 pts par défaut).
-            // Il sera coché lors de l'approbation par l'enseignant.
-            $typeProjet->criteres()->create([
-                'type' => 'positif',
-                'contenu_type' => 'texte',
-                'contenu' => '<p>Publication du musée dans la galerie.</p>',
-                'pointage' => 20,
-                'visible' => true,
-                'is_musee_publication' => true,
-                'ordre' => 1,
-            ]);
-
-            // Créer une section de contenu par défaut — un musée est un long bloc libre
-            // sans structure intro/développement/conclusion imposée.
-            $typeProjet->sections()->create([
-                'label' => 'Publication',
-                'type' => TypeSection::MuseeContenu->value,
-                'ordre' => 1,
-            ]);
-
             return redirect()->route('types-projets.musee-template.edit', [$cours, $typeProjet])
                 ->with('success', 'Projet musée créé. Personnalisez maintenant le template visuel.');
         }
@@ -143,66 +93,11 @@ class TypeProjetController extends Controller
      * les sections absentes sont supprimées (cascade sur projet_section_contenus),
      * les existantes (avec `id`) sont mises à jour, les nouvelles (sans `id`) sont créées.
      * Si `sections` est absent de la requête, les sections ne sont pas touchées.
-     * Les données sont validées par UpdateTypeProjetRequest.
+     * Les données sont validées par UpdateTypeProjetRequest ; la mise à jour est faite par TypeProjetService.
      */
-    public function update(UpdateTypeProjetRequest $request, Cours $cours, TypeProjet $typeProjet): RedirectResponse
+    public function update(UpdateTypeProjetRequest $request, Cours $cours, TypeProjet $typeProjet, TypeProjetService $typeProjetService): RedirectResponse
     {
-        $data = $request->validated();
-
-        $wasGeneratingPageTitre = (bool) $typeProjet->generer_page_titre;
-        $willGeneratePageTitre = $request->boolean('generer_page_titre', $typeProjet->generer_page_titre);
-
-        $typeProjet->update([
-            'nom' => $data['nom'],
-            'description' => $data['description'] ?? null,
-            'date_remise' => $data['date_remise'] ?? null,
-            'remises_multiples' => $request->boolean('remises_multiples', $typeProjet->remises_multiples),
-            'retard_permis' => $request->boolean('retard_permis', $typeProjet->retard_permis),
-            'generer_page_titre' => $willGeneratePageTitre,
-            'generer_table_matieres' => $request->boolean('generer_table_matieres', $typeProjet->generer_table_matieres),
-            'aide_reference' => $request->boolean('aide_reference', $typeProjet->aide_reference),
-            'has_introduction' => $request->boolean('has_introduction', $typeProjet->has_introduction),
-            'has_conclusion_individuelle' => $request->boolean('has_conclusion_individuelle', $typeProjet->has_conclusion_individuelle),
-            'ponderation' => $data['ponderation'] ?? $typeProjet->ponderation,
-            'is_sommatif' => $request->boolean('is_sommatif', $typeProjet->is_sommatif),
-        ]);
-
-        // Vider le contenu auto-généré quand le flag passe de auto → manuel
-        if ($wasGeneratingPageTitre && ! $willGeneratePageTitre) {
-            $typeProjet->projets()->update(['page_titre_contenu' => null]);
-        }
-
-        if ($request->has('sections')) {
-            $sections = $data['sections'] ?? [];
-            $incomingIds = collect($sections)->pluck('id')->filter()->values()->all();
-
-            // Supprimer les sections retirées — la contrainte DB cascade sur projet_section_contenus
-            if (! empty($incomingIds)) {
-                $typeProjet->sections()->whereNotIn('id', $incomingIds)->delete();
-            } else {
-                $typeProjet->sections()->delete();
-            }
-
-            foreach ($sections as $index => $sec) {
-                if (! empty($sec['id'])) {
-                    TypeProjetSection::where('id', $sec['id'])
-                        ->where('type_projet_id', $typeProjet->id)
-                        ->update([
-                            'label' => $sec['label'],
-                            'description' => $sec['description'] ?? null,
-                            'type' => $sec['type'] ?? TypeSection::Texte->value,
-                            'ordre' => $index + 1,
-                        ]);
-                } else {
-                    $typeProjet->sections()->create([
-                        'label' => $sec['label'],
-                        'description' => $sec['description'] ?? null,
-                        'type' => $sec['type'] ?? TypeSection::Texte->value,
-                        'ordre' => $index + 1,
-                    ]);
-                }
-            }
-        }
+        $typeProjetService->mettreAJour($typeProjet, $request->validated());
 
         return redirect()->route('types-projets.index', $cours)
             ->with('success', 'Type de projet mis à jour.');
