@@ -9,11 +9,9 @@ use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
-use App\Models\ProjetVoteRemise;
 use App\Models\TypeProjet;
-use App\Services\VerificationCompletudeProjet;
+use App\Services\RemiseProjetService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -28,7 +26,7 @@ class ProjetRemiseController extends Controller
      *
      * @throws HttpException
      */
-    public function store(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, VerificationCompletudeProjet $completude): JsonResponse
+    public function store(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, RemiseProjetService $remiseProjetService): JsonResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
@@ -48,7 +46,7 @@ class ProjetRemiseController extends Controller
         abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
         abort_unless($projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis et les remises multiples ne sont pas autorisées.');
 
-        $contenusManquants = $completude->contenusManquants($projet, $groupe);
+        $contenusManquants = $remiseProjetService->remettre($projet, $groupe);
 
         if ($contenusManquants !== []) {
             return response()->json([
@@ -56,9 +54,6 @@ class ProjetRemiseController extends Controller
                 'manquants' => $contenusManquants,
             ], 422);
         }
-
-        $projet->update(['remis_le' => now()]);
-        $projet->synchroniserStatut();
 
         return response()->json([
             'message' => 'remis',
@@ -71,7 +66,7 @@ class ProjetRemiseController extends Controller
      *
      * @throws HttpException
      */
-    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function destroy(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, RemiseProjetService $remiseProjetService): JsonResponse
     {
         $this->verifierTypeProjetAppartientCours($typeProjet, $cours);
         $this->autoriserEnseignant($cours, $classe, $groupe);
@@ -79,11 +74,7 @@ class ProjetRemiseController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
         $projet->setRelation('typeProjet', $typeProjet);
 
-        DB::transaction(function () use ($projet): void {
-            $projet->votes()->delete();
-            $projet->update(['remis_le' => null]);
-            $projet->synchroniserStatut();
-        });
+        $remiseProjetService->annuler($projet);
 
         return response()->json(['message' => 'remise_annulee']);
     }
@@ -95,7 +86,7 @@ class ProjetRemiseController extends Controller
      *
      * @throws HttpException
      */
-    public function voter(VoterProjetRemiseRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet): JsonResponse
+    public function voter(VoterProjetRemiseRequest $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet, RemiseProjetService $remiseProjetService): JsonResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         abort_if($groupe->classe_id !== $classe->id, 404);
@@ -109,29 +100,7 @@ class ProjetRemiseController extends Controller
 
         abort_unless($projet->peutEtreRemis(), 422, 'La remise n\'est plus possible.');
 
-        $validated = $request->validated();
-
-        ProjetVoteRemise::updateOrCreate(
-            ['projet_id' => $projet->id, 'user_id' => auth()->id()],
-            ['vote' => $validated['vote']],
-        );
-
-        $votes = $projet->votes()->get();
-        $nbMembres = $groupe->membres->count();
-
-        $tousOntVote = $votes->count() === $nbMembres
-            && $votes->every(fn (ProjetVoteRemise $v) => $v->vote);
-
-        if ($tousOntVote) {
-            DB::transaction(function () use ($projet, $typeProjet): void {
-                $projet->refresh();
-
-                if ($projet->remis_le === null || $typeProjet->remises_multiples) {
-                    $projet->update(['remis_le' => now()]);
-                    $projet->synchroniserStatut();
-                }
-            });
-        }
+        $remiseProjetService->voter($projet, $groupe, $request->user(), (bool) $request->validated('vote'));
 
         return response()->json([
             'message' => 'vote_enregistre',

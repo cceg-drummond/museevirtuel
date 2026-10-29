@@ -15,9 +15,10 @@ use App\Models\Thematique;
 use App\Models\TypeProjet;
 use App\Models\User;
 use App\Models\VisioConference;
+use App\Services\GroupeService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -79,72 +80,21 @@ class GroupeController extends Controller
     /**
      * Crée un nouveau groupe dans une classe et associe membres et thématiques.
      *
-     * Données validées par StoreGroupeRequest.
+     * Accès et données vérifiés par StoreGroupeRequest ; règles de composition dans GroupeService.
      *
-     * @throws HttpException si l'étudiant n'est pas inscrit ou déjà dans un groupe
+     * @throws ValidationException si l'étudiant est déjà dans un groupe ou si la composition est invalide
      */
-    public function store(StoreGroupeRequest $request, Cours $cours, Classe $classe): RedirectResponse
+    public function store(StoreGroupeRequest $request, Cours $cours, Classe $classe, GroupeService $groupeService): RedirectResponse
     {
-        $user = auth()->user();
-
-        $dejaDansGroupe = $classe->groupes()
-            ->whereHas('membres', fn ($q) => $q->where('users.id', $user->id))
-            ->exists();
-
-        if ($dejaDansGroupe) {
-            return back()->withErrors(['general' => __('groupe.already_member')]);
-        }
-
         $validated = $request->validated();
 
-        $membresInscrits = $classe->etudiants()
-            ->whereIn('users.id', $validated['membres'] ?? [])
-            ->pluck('users.id')
-            ->map(fn ($id) => (int) $id)
-            ->toArray();
-
-        // Exclure les membres déjà dans un autre groupe de la même classe
-        $membresInscrits = array_diff($membresInscrits, $classe->etudiantsDejaGroupes());
-
-        // Vérifier les contraintes de taille d'équipe du cours
-        $totalMembres = count(array_unique(array_merge([(int) $user->id], $membresInscrits)));
-
-        if ($totalMembres < 2) {
-            return back()->withErrors(['membres' => 'Le groupe doit avoir au moins 2 membres.']);
-        }
-
-        if ($cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min) {
-            return back()->withErrors(['membres' => "Le groupe doit avoir au moins {$cours->taille_equipe_min} membre(s) (vous inclus)."]);
-        }
-
-        if ($cours->taille_equipe_max !== null && $totalMembres > $cours->taille_equipe_max) {
-            return back()->withErrors(['membres' => "Le groupe ne peut pas avoir plus de {$cours->taille_equipe_max} membre(s)."]);
-        }
-
-        $thematiquesValides = Thematique::visiblesPar($cours->enseignant)
-            ->whereIn('id', $validated['thematiques'] ?? [])
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->toArray();
-
-        if (count($thematiquesValides) < 1) {
-            return back()->withErrors(['thematiques' => 'Le groupe doit avoir au moins 1 thématique valide.']);
-        }
-
-        DB::transaction(function () use ($user, $classe, $membresInscrits, $thematiquesValides) {
-            $groupe = Groupe::create([
-                'classe_id' => $classe->id,
-                'created_by' => $user->id,
-            ]);
-
-            // Le créateur est toujours inclus même s'il ne s'est pas sélectionné lui-même
-            $membres = array_unique(array_merge([(int) $user->id], $membresInscrits));
-            $groupe->membres()->attach($membres);
-
-            if (! empty($thematiquesValides)) {
-                $groupe->thematiques()->attach($thematiquesValides);
-            }
-        });
+        $groupeService->creer(
+            $request->user(),
+            $cours,
+            $classe,
+            $validated['membres'] ?? [],
+            $validated['thematiques'] ?? [],
+        );
 
         return back()->with('success', __('groupe.created'));
     }

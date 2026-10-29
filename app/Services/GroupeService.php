@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Classe;
+use App\Models\Cours;
+use App\Models\Groupe;
+use App\Models\Thematique;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * Règles métier de la composition d'un groupe : création, membres et thématiques.
+ *
+ * Les violations de règles lèvent une ValidationException ; Laravel la convertit
+ * en redirection avec erreurs, comme le faisait back()->withErrors() dans les contrôleurs.
+ */
+class GroupeService
+{
+    /**
+     * Crée un groupe dans la classe avec son créateur, ses membres et ses thématiques.
+     *
+     * Les membres non inscrits dans la classe ou déjà dans un autre groupe sont ignorés.
+     *
+     * @param  array<int, int|string>  $membres
+     * @param  array<int, int|string>  $thematiques
+     *
+     * @throws ValidationException
+     */
+    public function creer(User $createur, Cours $cours, Classe $classe, array $membres, array $thematiques): Groupe
+    {
+        $dejaDansGroupe = $classe->groupes()
+            ->whereHas('membres', fn ($q) => $q->where('users.id', $createur->id))
+            ->exists();
+
+        if ($dejaDansGroupe) {
+            throw ValidationException::withMessages(['general' => __('groupe.already_member')]);
+        }
+
+        $membresInscrits = $classe->etudiants()
+            ->whereIn('users.id', $membres)
+            ->pluck('users.id')
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        // Exclure les membres déjà dans un autre groupe de la même classe
+        $membresInscrits = array_diff($membresInscrits, $classe->etudiantsDejaGroupes());
+
+        // Le créateur est toujours inclus même s'il ne s'est pas sélectionné lui-même
+        $tousLesMembres = array_values(array_unique(array_merge([(int) $createur->id], $membresInscrits)));
+
+        $this->verifierTailleEquipe($cours, count($tousLesMembres), inclutCreateur: true);
+
+        $thematiquesValides = $this->thematiquesValides($cours, $thematiques);
+
+        return DB::transaction(function () use ($createur, $classe, $tousLesMembres, $thematiquesValides) {
+            $groupe = Groupe::create([
+                'classe_id' => $classe->id,
+                'created_by' => $createur->id,
+            ]);
+
+            $groupe->membres()->attach($tousLesMembres);
+            $groupe->thematiques()->attach($thematiquesValides);
+
+            return $groupe;
+        });
+    }
+
+    /**
+     * Ajoute et retire des membres du groupe en respectant la taille d'équipe du cours.
+     *
+     * L'utilisateur qui fait la modification ne peut pas se retirer lui-même.
+     *
+     * @param  array<int, int|string>  $ajouter
+     * @param  array<int, int|string>  $retirer
+     *
+     * @throws ValidationException
+     */
+    public function modifierMembres(User $auteur, Cours $cours, Classe $classe, Groupe $groupe, array $ajouter, array $retirer): void
+    {
+        $aAjouter = [];
+
+        if ($ajouter !== []) {
+            $aAjouter = $classe->etudiants()
+                ->whereIn('users.id', $ajouter)
+                ->pluck('users.id')
+                ->map(fn ($id) => (int) $id)
+                ->toArray();
+
+            // Exclure les étudiants déjà dans un autre groupe de la même classe
+            $aAjouter = array_values(array_diff($aAjouter, $classe->etudiantsDejaGroupes($groupe->id)));
+        }
+
+        $aRetirer = array_values(array_diff(array_map('intval', $retirer), [(int) $auteur->id]));
+
+        $membresCourants = $groupe->membres()->pluck('users.id')->map(fn ($id) => (int) $id)->toArray();
+        $nouveauxMembres = array_unique(array_diff(array_merge($membresCourants, $aAjouter), $aRetirer));
+
+        $this->verifierTailleEquipe($cours, count($nouveauxMembres), inclutCreateur: false);
+
+        DB::transaction(function () use ($aAjouter, $aRetirer, $groupe) {
+            if ($aAjouter !== []) {
+                $groupe->membres()->syncWithoutDetaching($aAjouter);
+            }
+
+            if ($aRetirer !== []) {
+                $groupe->membres()->detach($aRetirer);
+            }
+        });
+    }
+
+    /**
+     * Remplace les thématiques du groupe par celles visibles de l'enseignant du cours.
+     *
+     * @param  array<int, int|string>  $thematiques
+     *
+     * @throws ValidationException
+     */
+    public function synchroniserThematiques(Cours $cours, Groupe $groupe, array $thematiques): void
+    {
+        $thematiquesValides = $this->thematiquesValides($cours, $thematiques);
+
+        DB::transaction(fn () => $groupe->thematiques()->sync($thematiquesValides));
+    }
+
+    /**
+     * Vérifie le minimum de 2 membres et les bornes de taille d'équipe du cours.
+     *
+     * @throws ValidationException
+     */
+    private function verifierTailleEquipe(Cours $cours, int $totalMembres, bool $inclutCreateur): void
+    {
+        $message = match (true) {
+            $totalMembres < 2 => 'Le groupe doit avoir au moins 2 membres.',
+            $cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min => "Le groupe doit avoir au moins {$cours->taille_equipe_min} membre(s)".($inclutCreateur ? ' (vous inclus).' : '.'),
+            $cours->taille_equipe_max !== null && $totalMembres > $cours->taille_equipe_max => "Le groupe ne peut pas avoir plus de {$cours->taille_equipe_max} membre(s).",
+            default => null,
+        };
+
+        if ($message !== null) {
+            throw ValidationException::withMessages(['membres' => $message]);
+        }
+    }
+
+    /**
+     * Filtre les thématiques demandées sur celles visibles par l'enseignant du cours (au moins une).
+     *
+     * @param  array<int, int|string>  $thematiques
+     * @return list<int>
+     *
+     * @throws ValidationException
+     */
+    private function thematiquesValides(Cours $cours, array $thematiques): array
+    {
+        $valides = Thematique::visiblesPar($cours->enseignant)
+            ->whereIn('id', $thematiques)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->toArray();
+
+        if ($valides === []) {
+            throw ValidationException::withMessages(['thematiques' => 'Le groupe doit avoir au moins 1 thématique valide.']);
+        }
+
+        return $valides;
+    }
+}
