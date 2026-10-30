@@ -43,14 +43,14 @@ class InscriptionTemoinController extends Controller
         foreach ($validated['choix'] as $index => $choix) {
             if (empty($choix['thematique_ids']) && empty($choix['theme_libre'])) {
                 return back()->withErrors([
-                    "choix.{$index}.theme_libre" => __('Veuillez choisir au moins une thématique ou saisir un thème libre pour ce cégep.'),
+                    "choix.{$index}.theme_libre" => __('inscription_temoin.theme_requis'),
                 ])->withInput();
             }
 
             foreach ($choix['thematique_ids'] ?? [] as $thematiqueId) {
                 if (! Thematique::where('id', $thematiqueId)->where('etablissement_id', $choix['etablissement_id'])->exists()) {
                     return back()->withErrors([
-                        "choix.{$index}.thematique_ids" => __('Une thématique sélectionnée n\'appartient pas à ce cégep.'),
+                        "choix.{$index}.thematique_ids" => __('inscription_temoin.thematique_hors_cegep'),
                     ])->withInput();
                 }
             }
@@ -97,7 +97,7 @@ class InscriptionTemoinController extends Controller
         session()->forget('inscription_temoin_step1');
 
         return redirect()->route('inscription.temoin')
-            ->with('success', __('Votre demande a été envoyée. Un administrateur examinera votre inscription prochainement.'));
+            ->with('success', __('inscription_temoin.demande_envoyee'));
     }
 
     /**
@@ -107,7 +107,7 @@ class InscriptionTemoinController extends Controller
     {
         if (! session()->has('inscription_temoin_step1')) {
             return redirect()->route('inscription.temoin')
-                ->with('error', __('Votre session a expiré. Veuillez recommencer votre inscription.'));
+                ->with('error', __('inscription_temoin.session_expiree'));
         }
 
         return null;

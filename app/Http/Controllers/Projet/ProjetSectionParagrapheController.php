@@ -55,7 +55,7 @@ class ProjetSectionParagrapheController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'created',
+            'message' => __('reponse.created'),
             'paragraphe' => $paragraphe->only('id', 'ordre', 'titre', 'contenu'),
         ], 201);
     }
@@ -87,7 +87,7 @@ class ProjetSectionParagrapheController extends Controller
             );
         }
 
-        return response()->json(['message' => 'saved']);
+        return response()->json(['message' => __('reponse.saved')]);
     }
 
     /**
@@ -107,11 +107,11 @@ class ProjetSectionParagrapheController extends Controller
         abort_if($paragraphe->projet_id !== $projet->id || $paragraphe->section_id !== $section->id, 404);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        abort_if($this->portee($projet, $section)->count() <= 1, 422, 'La section doit conserver au moins un paragraphe.');
+        abort_if($this->portee($projet, $section)->count() <= 1, 422, __('projet.paragraphe_minimum'));
 
         $ordres->supprimer($paragraphe, $this->portee($projet, $section));
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 
     /**
@@ -130,7 +130,7 @@ class ProjetSectionParagrapheController extends Controller
 
         $ordres->reordonner($this->portee($projet, $section), $request->ids());
 
-        return response()->json(['message' => 'reordered']);
+        return response()->json(['message' => __('reponse.reordered')]);
     }
 
     /**

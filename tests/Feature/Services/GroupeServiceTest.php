@@ -76,7 +76,7 @@ test('creer respecte la taille maximale d\'équipe du cours', function () {
         $etudiants[0], $cours, $classe, [$etudiants[1]->id, $etudiants[2]->id], [$thematique->id],
     ));
 
-    expect($erreurs['membres'][0])->toBe('Le groupe ne peut pas avoir plus de 2 membre(s).')
+    expect($erreurs['membres'][0])->toBe(__('groupe.taille_max', ['max' => 2]))
         ->and(Groupe::count())->toBe(0);
 });
 
@@ -109,7 +109,7 @@ test('modifierMembres refuse de descendre sous la taille minimale du cours', fun
 
     $erreurs = erreursDe(fn () => $service->modifierMembres($etudiants[0], $cours, $classe, $groupe, [], [$etudiants[2]->id]));
 
-    expect($erreurs['membres'][0])->toBe('Le groupe doit avoir au moins 3 membre(s).')
+    expect($erreurs['membres'][0])->toBe(__('groupe.taille_min', ['min' => 3]))
         ->and($groupe->membres()->count())->toBe(3);
 });
 

@@ -63,7 +63,7 @@ class ProjetRenvoiController extends Controller
         }
 
         return response()->json([
-            'message' => 'created',
+            'message' => __('reponse.created'),
             'renvoi' => $renvoi->only('id', 'numero', 'contenu', 'type_reference', 'champs_reference'),
         ], 201);
     }
@@ -93,7 +93,7 @@ class ProjetRenvoiController extends Controller
 
         $renvoi->update($validated);
 
-        return response()->json(['message' => 'saved']);
+        return response()->json(['message' => __('reponse.saved')]);
     }
 
     /**
@@ -115,6 +115,6 @@ class ProjetRenvoiController extends Controller
 
         $renvoi->delete();
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 }

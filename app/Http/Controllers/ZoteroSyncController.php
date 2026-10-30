@@ -27,19 +27,19 @@ class ZoteroSyncController extends Controller
         $credential = $user->zoteroCredential;
 
         if (! $credential) {
-            return back()->withErrors(['zotero' => 'Configurez votre compte Zotero avant de synchroniser.']);
+            return back()->withErrors(['zotero' => __('zotero.non_configure')]);
         }
 
         try {
             $items = $zotero->fetchItems($credential->zotero_user_id, $credential->api_key);
         } catch (ConnectionException) {
-            return back()->withErrors(['zotero' => 'Impossible de joindre l\'API Zotero. Réessayez dans quelques instants.']);
+            return back()->withErrors(['zotero' => __('zotero.connexion_impossible')]);
         } catch (RequestException $e) {
             if ($e->response->status() === 403) {
-                return back()->withErrors(['zotero' => 'La clé API Zotero est invalide ou a été révoquée. Reconfigurez votre compte.']);
+                return back()->withErrors(['zotero' => __('zotero.cle_revoquee')]);
             }
 
-            return back()->withErrors(['zotero' => 'Erreur lors de la synchronisation Zotero.']);
+            return back()->withErrors(['zotero' => __('zotero.erreur_sync')]);
         }
 
         DB::transaction(function () use ($user, $items, $credential) {
@@ -60,6 +60,6 @@ class ZoteroSyncController extends Controller
             $credential->update(['synchronise_le' => now()]);
         });
 
-        return back()->with('success', count($items).' référence(s) synchronisée(s) depuis Zotero.');
+        return back()->with('success', __('zotero.synchronise', ['count' => count($items)]));
     }
 }

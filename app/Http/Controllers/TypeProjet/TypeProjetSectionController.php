@@ -12,7 +12,7 @@ use App\Models\TypeProjetSection;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
 
-class SectionController extends Controller
+class TypeProjetSectionController extends Controller
 {
     /**
      * Ajoute une section au type de projet.
@@ -32,7 +32,7 @@ class SectionController extends Controller
             'ordre' => $ordre,
         ]);
 
-        return back()->with('success', 'Section ajoutée.');
+        return back()->with('success', __('type_projet_section.created'));
     }
 
     /**
@@ -46,7 +46,7 @@ class SectionController extends Controller
 
         $section->update($data);
 
-        return back()->with('success', 'Section mise à jour.');
+        return back()->with('success', __('type_projet_section.updated'));
     }
 
     /**
@@ -72,6 +72,6 @@ class SectionController extends Controller
 
         $ordres->supprimer($section, $typeProjet->sections());
 
-        return back()->with('success', 'Section supprimée.');
+        return back()->with('success', __('type_projet_section.deleted'));
     }
 }

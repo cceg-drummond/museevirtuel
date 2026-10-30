@@ -186,7 +186,7 @@ test("l'enseignant peut réordonner les tâches", function () {
     expect($t1->fresh()->ordre)->toBe(2);
 });
 
-// ─── toggleCompleted() + assigner() — Étudiant ───────────────────────────────
+// ─── toggleTerminee() + assigner() — Étudiant ───────────────────────────────
 
 test('un étudiant membre peut marquer une tâche comme complétée', function () {
     $s = creerScenarioTaches();

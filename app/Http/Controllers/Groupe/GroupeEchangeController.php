@@ -55,7 +55,7 @@ class GroupeEchangeController extends Controller
             'contenu' => $validated['contenu'],
         ]);
 
-        return back()->with('success', 'Message envoyé.');
+        return back()->with('success', __('groupe.echange_sent'));
     }
 
     /**

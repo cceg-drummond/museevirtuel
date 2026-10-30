@@ -79,11 +79,11 @@ class TypeProjetController extends Controller
 
         if ($typeProjet->isMusee()) {
             return redirect()->route('types-projets.musee-template.edit', [$cours, $typeProjet])
-                ->with('success', 'Projet musée créé. Personnalisez maintenant le template visuel.');
+                ->with('success', __('type_projet.musee_created'));
         }
 
         return redirect()->route('types-projets.edit', [$cours, $typeProjet])
-            ->with('success', 'Type de projet créé.');
+            ->with('success', __('type_projet.created'));
     }
 
     /**
@@ -100,7 +100,7 @@ class TypeProjetController extends Controller
         $typeProjetService->mettreAJour($typeProjet, $request->validated());
 
         return redirect()->route('types-projets.index', $cours)
-            ->with('success', 'Type de projet mis à jour.');
+            ->with('success', __('type_projet.updated'));
     }
 
     /**
@@ -129,6 +129,6 @@ class TypeProjetController extends Controller
         $typeProjet->delete();
 
         return redirect()->route('types-projets.index', $cours)
-            ->with('success', 'Type de projet supprimé.');
+            ->with('success', __('type_projet.deleted'));
     }
 }

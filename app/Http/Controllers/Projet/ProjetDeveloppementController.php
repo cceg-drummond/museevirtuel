@@ -51,7 +51,7 @@ class ProjetDeveloppementController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'created',
+            'message' => __('reponse.created'),
             'developpement' => $dev->only('id', 'ordre', 'titre', 'contenu'),
             'completion' => $projet->completion(),
         ], 201);
@@ -84,7 +84,7 @@ class ProjetDeveloppementController extends Controller
         }
 
         return response()->json([
-            'message' => 'saved',
+            'message' => __('reponse.saved'),
             'completion' => $projet->completion(),
         ]);
     }
@@ -104,12 +104,12 @@ class ProjetDeveloppementController extends Controller
 
         abort_if($developpement->projet_id !== $projet->id, 404);
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
-        abort_if($projet->developpements()->count() <= 1, 422, 'Le projet doit conserver au moins un paragraphe.');
+        abort_if($projet->developpements()->count() <= 1, 422, __('projet.developpement_minimum'));
 
         $ordres->supprimer($developpement, $projet->developpements());
 
         return response()->json([
-            'message' => 'deleted',
+            'message' => __('reponse.deleted'),
             'completion' => $projet->completion(),
         ]);
     }
@@ -129,6 +129,6 @@ class ProjetDeveloppementController extends Controller
 
         $ordres->reordonner($projet->developpements(), $request->ids());
 
-        return response()->json(['message' => 'reordered']);
+        return response()->json(['message' => __('reponse.reordered')]);
     }
 }

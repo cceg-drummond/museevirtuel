@@ -49,7 +49,7 @@ class ProjetSectionContenuController extends Controller
         }
 
         return response()->json([
-            'message' => 'saved',
+            'message' => __('reponse.saved'),
             'completion' => $projet->fresh()->load(['typeProjet.sections', 'sectionContenus'])->completion(),
         ]);
     }

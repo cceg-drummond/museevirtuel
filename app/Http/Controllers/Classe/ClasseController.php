@@ -123,7 +123,7 @@ class ClasseController extends Controller
             array_filter($validated, fn ($v) => $v !== null)
         ));
 
-        return back()->with('success', 'Classe créée.');
+        return back()->with('success', __('classe.created'));
     }
 
     /**
@@ -141,7 +141,7 @@ class ClasseController extends Controller
 
         $classe->update(array_merge($validated, ['code' => $cours->code]));
 
-        return back()->with('success', 'Classe mise à jour.');
+        return back()->with('success', __('classe.updated'));
     }
 
     /**
@@ -161,6 +161,6 @@ class ClasseController extends Controller
 
         $classe->delete();
 
-        return redirect()->route('cours.show', $cours)->with('success', 'Classe supprimée.');
+        return redirect()->route('cours.show', $cours)->with('success', __('classe.deleted'));
     }
 }

@@ -70,7 +70,7 @@ class ProjetAnnotationController extends Controller
         });
 
         return response()->json([
-            'message' => 'saved',
+            'message' => __('reponse.saved'),
             'id' => $annotation->id,
             'commentaire_id' => $annotation->commentaire_id,
             'contenu' => $annotation->contenu,
@@ -102,7 +102,7 @@ class ProjetAnnotationController extends Controller
             $annotation->delete();
         });
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 
     /**

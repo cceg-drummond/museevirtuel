@@ -219,7 +219,7 @@ test('un membre peut enregistrer sa conclusion individuelle', function () {
             'contenu' => '<p>Ma conclusion personnelle…</p>',
         ])
         ->assertOk()
-        ->assertJson(['message' => 'saved']);
+        ->assertJson(['message' => __('reponse.saved')]);
 
     $projet = ProjetRecherche::where('groupe_id', $classe->id)->first();
     $this->assertDatabaseHas('projet_conclusions', [
@@ -324,7 +324,7 @@ test("l'enseignant peut verrouiller un document", function () {
     $this->actingAs($enseignant)
         ->patchJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/verrouille")
         ->assertOk()
-        ->assertJson(['message' => 'toggled', 'verrouille' => true]);
+        ->assertJson(['message' => __('reponse.toggled'), 'verrouille' => true]);
 
     $this->assertDatabaseHas('projets_recherche', ['groupe_id' => $classe->id, 'verrouille' => true]);
 });
@@ -382,7 +382,7 @@ test("l'enseignant peut activer la visibilité des corrections", function () {
     $this->actingAs($enseignant)
         ->patchJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/correction-visible")
         ->assertOk()
-        ->assertJson(['message' => 'toggled', 'correction_visible' => true]);
+        ->assertJson(['message' => __('reponse.toggled'), 'correction_visible' => true]);
 });
 
 test('un étudiant ne peut pas modifier la visibilité des corrections', function () {
@@ -470,7 +470,7 @@ test('un membre peut remettre son travail', function () {
         ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/remettre")
         ->assertOk()
         ->assertJsonStructure(['message', 'remis_le'])
-        ->assertJson(['message' => 'remis']);
+        ->assertJson(['message' => __('projet.remis')]);
 
     $projet = ProjetRecherche::where('groupe_id', $classe->id)->first();
     expect($projet->remis_le)->not->toBeNull();
@@ -555,7 +555,7 @@ test('une deuxième remise est autorisée avec remises multiples (paramètre Typ
     $this->actingAs($etudiant)
         ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/remettre")
         ->assertOk()
-        ->assertJson(['message' => 'remis']);
+        ->assertJson(['message' => __('projet.remis')]);
 });
 
 // ─── Paramètres de remise — route supprimée (Sprint 10) ───────────────────────
@@ -604,7 +604,7 @@ test('upsertAnnotation persiste la position séquentielle et le mot annoté', fu
             'html' => $html,
         ])
         ->assertOk()
-        ->assertJson(['message' => 'saved']);
+        ->assertJson(['message' => __('reponse.saved')]);
 
     $this->assertDatabaseHas('projet_annotations', [
         'commentaire_id' => $uuid,

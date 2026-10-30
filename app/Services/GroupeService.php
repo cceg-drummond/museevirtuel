@@ -132,9 +132,12 @@ class GroupeService
     private function verifierTailleEquipe(Cours $cours, int $totalMembres, bool $inclutCreateur): void
     {
         $message = match (true) {
-            $totalMembres < 2 => 'Le groupe doit avoir au moins 2 membres.',
-            $cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min => "Le groupe doit avoir au moins {$cours->taille_equipe_min} membre(s)".($inclutCreateur ? ' (vous inclus).' : '.'),
-            $cours->taille_equipe_max !== null && $totalMembres > $cours->taille_equipe_max => "Le groupe ne peut pas avoir plus de {$cours->taille_equipe_max} membre(s).",
+            $totalMembres < 2 => __('groupe.membres_minimum'),
+            $cours->taille_equipe_min !== null && $totalMembres < $cours->taille_equipe_min => __(
+                $inclutCreateur ? 'groupe.taille_min_createur' : 'groupe.taille_min',
+                ['min' => $cours->taille_equipe_min],
+            ),
+            $cours->taille_equipe_max !== null && $totalMembres > $cours->taille_equipe_max => __('groupe.taille_max', ['max' => $cours->taille_equipe_max]),
             default => null,
         };
 
@@ -161,7 +164,7 @@ class GroupeService
             ->toArray();
 
         if ($valides === []) {
-            throw ValidationException::withMessages(['thematiques' => 'Le groupe doit avoir au moins 1 thématique valide.']);
+            throw ValidationException::withMessages(['thematiques' => __('groupe.thematique_requise')]);
         }
 
         return $valides;

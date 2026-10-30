@@ -37,7 +37,7 @@ class ProjetVerrouController extends Controller
         $projet->update(['verrouille' => ! $projet->verrouille]);
 
         return response()->json([
-            'message' => 'toggled',
+            'message' => __('reponse.toggled'),
             'verrouille' => (bool) $projet->verrouille,
         ]);
     }

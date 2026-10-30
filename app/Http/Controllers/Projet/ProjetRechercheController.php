@@ -139,7 +139,7 @@ class ProjetRechercheController extends Controller
 
         // Guard accessibilité : si le type de projet n'est pas accessible, les étudiants ne peuvent pas accéder
         if (! $estEnseignant && $user->role !== 'admin') {
-            abort_if(! $typeProjet->accessible, 403, 'Ce type de projet n\'est pas encore accessible.');
+            abort_if(! $typeProjet->accessible, 403, __('projet.type_inaccessible'));
         }
 
         // Créer le projet partagé s'il n'existe pas encore (accès à l'éditeur implique volonté de créer)
@@ -266,7 +266,7 @@ class ProjetRechercheController extends Controller
         }
 
         return response()->json([
-            'message' => 'saved',
+            'message' => __('reponse.saved'),
             'completion' => $projet->completion(),
         ]);
     }

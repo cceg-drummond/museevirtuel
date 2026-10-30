@@ -51,7 +51,7 @@ class GroupeVideoChapitreController extends Controller
             'ordre' => $ordre,
         ]);
 
-        return back()->with('success', 'Chapitre ajouté.');
+        return back()->with('success', __('chapitre.created'));
     }
 
     /**
@@ -83,7 +83,7 @@ class GroupeVideoChapitreController extends Controller
             'fin' => isset($validated['fin']) ? (float) $validated['fin'] : null,
         ]);
 
-        return back()->with('success', 'Chapitre mis à jour.');
+        return back()->with('success', __('chapitre.updated'));
     }
 
     /**
@@ -106,7 +106,7 @@ class GroupeVideoChapitreController extends Controller
 
         $chapitre->delete();
 
-        return back()->with('success', 'Chapitre supprimé.');
+        return back()->with('success', __('chapitre.deleted'));
     }
 
     /**

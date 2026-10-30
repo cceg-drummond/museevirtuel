@@ -45,7 +45,7 @@ class GroupeNoteCorrectionController extends Controller
             );
         });
 
-        return back()->with('success', 'Correction enregistrée.');
+        return back()->with('success', __('groupe.note_correction_saved'));
     }
 
     /**
@@ -70,7 +70,7 @@ class GroupeNoteCorrectionController extends Controller
             $correction->delete();
         });
 
-        return back()->with('success', 'Correction supprimée.');
+        return back()->with('success', __('groupe.note_correction_deleted'));
     }
 
     /**

@@ -55,16 +55,16 @@ class ProjetConclusionController extends Controller
 
         $this->verifierEditionContenuAutorisee($cours, $classe, $groupe, $projet);
 
-        $clé = ['projet_id' => $projet->id, 'user_id' => $validated['user_id']];
+        $cle = ['projet_id' => $projet->id, 'user_id' => $validated['user_id']];
         if (isset($validated['section_id'])) {
-            $clé['section_id'] = $validated['section_id'];
+            $cle['section_id'] = $validated['section_id'];
         }
 
         ProjetConclusion::updateOrCreate(
-            $clé,
+            $cle,
             ['contenu' => $validated['contenu']],
         );
 
-        return response()->json(['message' => 'saved']);
+        return response()->json(['message' => __('reponse.saved')]);
     }
 }

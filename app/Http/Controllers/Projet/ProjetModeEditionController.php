@@ -40,7 +40,7 @@ class ProjetModeEditionController extends Controller
         $projet->update(['mode_edition_enseignant' => ! $projet->mode_edition_enseignant]);
 
         return response()->json([
-            'message' => 'toggled',
+            'message' => __('reponse.toggled'),
             'mode_edition_enseignant' => (bool) $projet->mode_edition_enseignant,
         ]);
     }

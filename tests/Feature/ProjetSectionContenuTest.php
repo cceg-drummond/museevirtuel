@@ -63,7 +63,7 @@ test("un étudiant membre peut sauvegarder le contenu d'une section", function (
             'contenu' => '<p>Texte de la section</p>',
         ])
         ->assertOk()
-        ->assertJsonFragment(['message' => 'saved']);
+        ->assertJsonFragment(['message' => __('reponse.saved')]);
 
     $this->assertDatabaseHas('projet_section_contenus', [
         'projet_id' => $projet->id,

@@ -42,7 +42,7 @@ class ProjetCommentaireController extends Controller
         );
 
         return response()->json([
-            'message' => 'saved',
+            'message' => __('reponse.saved'),
             'id' => $commentaire->id,
             'contenu' => $commentaire->contenu,
         ]);
@@ -63,6 +63,6 @@ class ProjetCommentaireController extends Controller
         abort_if($commentaire->projet_id !== $projet->id, 404);
         $commentaire->delete();
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 }

@@ -42,8 +42,8 @@ trait AutoriseProjetRecherche
      */
     private function verifierProjetModifiable(ProjetRecherche $projet): void
     {
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
     }
 
     /**

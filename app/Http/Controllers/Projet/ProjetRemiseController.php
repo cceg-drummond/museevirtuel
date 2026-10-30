@@ -43,20 +43,20 @@ class ProjetRemiseController extends Controller
         // Associer la relation pour que peutEtreRemis() lise les paramètres depuis TypeProjet
         $projet->setRelation('typeProjet', $typeProjet);
 
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_unless($projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis et les remises multiples ne sont pas autorisées.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_unless($projet->peutEtreRemis(), 422, __('projet.deja_remis_sans_multiples'));
 
         $contenusManquants = $remiseProjetService->remettre($projet, $groupe);
 
         if ($contenusManquants !== []) {
             return response()->json([
-                'message' => 'Le projet doit contenir les textes requis avant de pouvoir être remis.',
+                'message' => __('projet.contenus_manquants'),
                 'manquants' => $contenusManquants,
             ], 422);
         }
 
         return response()->json([
-            'message' => 'remis',
+            'message' => __('projet.remis'),
             'remis_le' => $projet->remis_le->toIso8601String(),
         ]);
     }
@@ -76,7 +76,7 @@ class ProjetRemiseController extends Controller
 
         $remiseProjetService->annuler($projet);
 
-        return response()->json(['message' => 'remise_annulee']);
+        return response()->json(['message' => __('projet.remise_annulee')]);
     }
 
     /**
@@ -98,12 +98,12 @@ class ProjetRemiseController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
         $projet->setRelation('typeProjet', $typeProjet);
 
-        abort_unless($projet->peutEtreRemis(), 422, 'La remise n\'est plus possible.');
+        abort_unless($projet->peutEtreRemis(), 422, __('projet.remise_impossible'));
 
         $remiseProjetService->voter($projet, $groupe, $request->user(), (bool) $request->validated('vote'));
 
         return response()->json([
-            'message' => 'vote_enregistre',
+            'message' => __('projet.vote_enregistre'),
             'remis_le' => $projet->fresh()->remis_le?->toIso8601String(),
         ]);
     }

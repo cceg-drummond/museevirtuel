@@ -295,7 +295,7 @@ it('updateRenvoi met à jour les trois champs', function () {
             'champs_reference' => $nouveauxChamps,
         ])
         ->assertOk()
-        ->assertJsonPath('message', 'saved');
+        ->assertJsonPath('message', __('reponse.saved'));
 
     $renvoi->refresh();
 

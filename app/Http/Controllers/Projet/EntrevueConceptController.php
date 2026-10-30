@@ -37,8 +37,8 @@ class EntrevueConceptController extends Controller
             'type_projet_id' => $typeProjet->id,
         ]);
 
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
 
         $validated = $request->validated();
 
@@ -52,7 +52,7 @@ class EntrevueConceptController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'created',
+            'message' => __('reponse.created'),
             'concept' => $this->formaterConcept($concept),
         ], 201);
     }
@@ -69,14 +69,14 @@ class EntrevueConceptController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
 
         abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
 
         $validated = $request->validated();
 
         $concept->update($validated);
 
-        return response()->json(['message' => 'saved']);
+        return response()->json(['message' => __('reponse.saved')]);
     }
 
     /**
@@ -91,12 +91,12 @@ class EntrevueConceptController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
 
         abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
 
         $ordres->supprimer($concept, $this->portee($projet, $section));
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 
     /**
@@ -110,11 +110,11 @@ class EntrevueConceptController extends Controller
 
         $projet = $this->trouverProjet($groupe, $typeProjet);
 
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
 
         $ordres->reordonner($this->portee($projet, $section), $request->ids());
 
-        return response()->json(['message' => 'reordered']);
+        return response()->json(['message' => __('reponse.reordered')]);
     }
 
     // ─── Méthodes privées ─────────────────────────────────────────────────────

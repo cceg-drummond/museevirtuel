@@ -76,7 +76,7 @@ test('un membre peut créer un concept dans une section entrevue', function () {
         ->postJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section), ['label' => 'Pratique religieuse']);
 
     $response->assertCreated()
-        ->assertJsonFragment(['message' => 'created'])
+        ->assertJsonFragment(['message' => __('reponse.created')])
         ->assertJsonPath('concept.label', 'Pratique religieuse')
         ->assertJsonPath('concept.ordre', 1);
 
@@ -143,7 +143,7 @@ test("un membre peut mettre à jour le label d'un concept", function () {
     $this->actingAs($etudiant)
         ->patchJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section)."/{$concept->id}", ['label' => 'Nouveau label'])
         ->assertOk()
-        ->assertJsonFragment(['message' => 'saved']);
+        ->assertJsonFragment(['message' => __('reponse.saved')]);
 
     $this->assertDatabaseHas('entrevue_concepts', ['id' => $concept->id, 'label' => 'Nouveau label']);
 });
@@ -176,7 +176,7 @@ test('un membre peut supprimer un concept', function () {
     $this->actingAs($etudiant)
         ->deleteJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section)."/{$concept->id}")
         ->assertOk()
-        ->assertJsonFragment(['message' => 'deleted']);
+        ->assertJsonFragment(['message' => __('reponse.deleted')]);
 
     $this->assertDatabaseMissing('entrevue_concepts', ['id' => $concept->id]);
 });
@@ -208,7 +208,7 @@ test('un membre peut réordonner les concepts', function () {
             'ordre' => [$c2->id, $c1->id],
         ])
         ->assertOk()
-        ->assertJsonFragment(['message' => 'reordered']);
+        ->assertJsonFragment(['message' => __('reponse.reordered')]);
 
     expect($c2->fresh()->ordre)->toBe(1)
         ->and($c1->fresh()->ordre)->toBe(2);
@@ -225,7 +225,7 @@ test('un membre peut ajouter une ligne à un concept', function () {
         ->postJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section)."/{$concept->id}/lignes");
 
     $response->assertCreated()
-        ->assertJsonFragment(['message' => 'created'])
+        ->assertJsonFragment(['message' => __('reponse.created')])
         ->assertJsonPath('ligne.ordre', 1);
 
     $this->assertDatabaseHas('entrevue_lignes', ['concept_id' => $concept->id, 'ordre' => 1]);
@@ -249,7 +249,7 @@ test('un membre peut mettre à jour une ligne (dimension/indicateur/questions)',
             ]
         )
         ->assertOk()
-        ->assertJsonFragment(['message' => 'saved']);
+        ->assertJsonFragment(['message' => __('reponse.saved')]);
 
     $ligneUpdated = $ligne->fresh();
     expect($ligneUpdated->dimension)->toBe('Fréquence de pratique')
@@ -284,7 +284,7 @@ test('un membre peut supprimer une ligne', function () {
     $this->actingAs($etudiant)
         ->deleteJson(urlConcepts($cours, $cs, $classe, $typeProjet, $section)."/{$concept->id}/lignes/{$ligne->id}")
         ->assertOk()
-        ->assertJsonFragment(['message' => 'deleted']);
+        ->assertJsonFragment(['message' => __('reponse.deleted')]);
 
     $this->assertDatabaseMissing('entrevue_lignes', ['id' => $ligne->id]);
 });

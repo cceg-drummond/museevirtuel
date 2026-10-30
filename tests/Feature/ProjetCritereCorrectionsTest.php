@@ -240,7 +240,7 @@ test("l'enseignant peut cloner une correction pour donner des points différents
             'verifie' => true,
         ])
         ->assertOk()
-        ->assertJson(['message' => 'cloned']);
+        ->assertJson(['message' => __('reponse.cloned')]);
 
     $this->assertDatabaseHas('projet_critere_corrections', [
         'critere_id' => $critere->id,

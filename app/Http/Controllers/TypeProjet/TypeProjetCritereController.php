@@ -53,7 +53,7 @@ class TypeProjetCritereController extends Controller
             'ordre' => $ordre,
         ]);
 
-        return back()->with('success', 'Critère ajouté.');
+        return back()->with('success', __('critere.created'));
     }
 
     /**
@@ -79,7 +79,7 @@ class TypeProjetCritereController extends Controller
             'visible' => $request->boolean('visible', $critere->visible),
         ]);
 
-        return back()->with('success', 'Critère mis à jour.');
+        return back()->with('success', __('critere.updated'));
     }
 
     /**
@@ -106,7 +106,7 @@ class TypeProjetCritereController extends Controller
      * d'un type en une seule action depuis la page d'édition du TypeProjet.
      * Les données sont validées par UpdateVisibiliteGroupeCritereRequest.
      */
-    public function toggleVisibleGroupe(
+    public function toggleVisibiliteGroupe(
         UpdateVisibiliteGroupeCritereRequest $request,
         Cours $cours,
         TypeProjet $typeProjet,
@@ -139,6 +139,6 @@ class TypeProjetCritereController extends Controller
         // Renuméroter seulement les critères du même groupe (global ou même section)
         $ordres->supprimer($critere, $typeProjet->criteres()->where('section_id', $critere->section_id));
 
-        return back()->with('success', 'Critère supprimé.');
+        return back()->with('success', __('critere.deleted'));
     }
 }

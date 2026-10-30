@@ -29,7 +29,7 @@ class CoursObjectifController extends Controller
             'ordre' => $ordre,
         ]);
 
-        return back()->with('success', 'Objectif ajouté.');
+        return back()->with('success', __('objectif.created'));
     }
 
     /**
@@ -44,7 +44,7 @@ class CoursObjectifController extends Controller
 
         $objectif->update($validated);
 
-        return back()->with('success', 'Objectif mis à jour.');
+        return back()->with('success', __('objectif.updated'));
     }
 
     /**
@@ -59,7 +59,7 @@ class CoursObjectifController extends Controller
 
         $ordres->supprimer($objectif, $cours->objectifs());
 
-        return back()->with('success', 'Objectif supprimé.');
+        return back()->with('success', __('objectif.deleted'));
     }
 
     /**

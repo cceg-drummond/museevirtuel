@@ -43,7 +43,7 @@ class ProjetRenvoiCommentaireController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'created',
+            'message' => __('reponse.created'),
             'commentaire' => $commentaire->only('id', 'contenu', 'user_id'),
         ], 201);
     }
@@ -66,6 +66,6 @@ class ProjetRenvoiCommentaireController extends Controller
 
         $renvoiCommentaire->delete();
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 }

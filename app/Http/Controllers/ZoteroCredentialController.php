@@ -28,11 +28,11 @@ class ZoteroCredentialController extends Controller
         try {
             $valide = $zotero->validateApiKey($validated['zotero_user_id'], $validated['api_key']);
         } catch (ConnectionException) {
-            return back()->withErrors(['api_key' => 'Impossible de joindre l\'API Zotero. Réessayez dans quelques instants.']);
+            return back()->withErrors(['api_key' => __('zotero.connexion_impossible')]);
         }
 
         if (! $valide) {
-            return back()->withErrors(['api_key' => 'Clé API ou identifiant Zotero invalide. Vérifiez vos informations.']);
+            return back()->withErrors(['api_key' => __('zotero.identifiants_invalides')]);
         }
 
         // La clé est chiffrée automatiquement par le cast 'encrypted' du modèle
@@ -44,7 +44,7 @@ class ZoteroCredentialController extends Controller
             ],
         );
 
-        return back()->with('success', 'Compte Zotero configuré avec succès.');
+        return back()->with('success', __('zotero.configure'));
     }
 
     /**
@@ -61,6 +61,6 @@ class ZoteroCredentialController extends Controller
             $user->zoteroCredential()?->delete();
         });
 
-        return back()->with('success', 'Compte Zotero déconnecté et références Zotero supprimées.');
+        return back()->with('success', __('zotero.deconnecte'));
     }
 }

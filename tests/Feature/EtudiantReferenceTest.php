@@ -197,7 +197,7 @@ test('sync ignore les items sans clé Zotero et ne les compte pas', function () 
 
     $this->actingAs($etudiant)
         ->post('/etudiant/references/sync')
-        ->assertSessionHas('success', '1 référence(s) synchronisée(s) depuis Zotero.');
+        ->assertSessionHas('success', __('zotero.synchronise', ['count' => 1]));
 
     expect(EtudiantReference::where('user_id', $etudiant->id)->count())->toBe(1);
 });

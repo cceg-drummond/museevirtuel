@@ -68,9 +68,9 @@ use App\Http\Controllers\QuestionBanqueController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\TemoinApprobationController;
 use App\Http\Controllers\ThematiqueController;
-use App\Http\Controllers\TypeProjet\SectionController;
 use App\Http\Controllers\TypeProjet\TypeProjetController;
 use App\Http\Controllers\TypeProjet\TypeProjetCritereController;
+use App\Http\Controllers\TypeProjet\TypeProjetSectionController;
 use App\Http\Controllers\TypeProjet\TypeProjetTacheController;
 use App\Http\Controllers\VisioConferenceController;
 use App\Http\Controllers\VisioEnregistrementController;
@@ -317,16 +317,16 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
         ->name('types-projets.destroy');
 
     // Sections du type de projet (définies par le professeur)
-    Route::post('/cours/{cours}/types-projets/{typeProjet}/sections', [SectionController::class, 'store'])
+    Route::post('/cours/{cours}/types-projets/{typeProjet}/sections', [TypeProjetSectionController::class, 'store'])
         ->name('types-projets.sections.store');
 
-    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/reorder', [SectionController::class, 'reorder'])
+    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/reorder', [TypeProjetSectionController::class, 'reorder'])
         ->name('types-projets.sections.reorder');
 
-    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [SectionController::class, 'update'])
+    Route::put('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [TypeProjetSectionController::class, 'update'])
         ->name('types-projets.sections.update');
 
-    Route::delete('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [SectionController::class, 'destroy'])
+    Route::delete('/cours/{cours}/types-projets/{typeProjet}/sections/{section}', [TypeProjetSectionController::class, 'destroy'])
         ->name('types-projets.sections.destroy');
 
     // Banque de questions (sections de type choix_questions) — gérées par l'enseignant
@@ -362,7 +362,7 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
     Route::patch('/cours/{cours}/types-projets/{typeProjet}/criteres/reorder', [TypeProjetCritereController::class, 'reorder'])
         ->name('types-projets.criteres.reorder');
 
-    Route::patch('/cours/{cours}/types-projets/{typeProjet}/criteres/visible-groupe', [TypeProjetCritereController::class, 'toggleVisibleGroupe'])
+    Route::patch('/cours/{cours}/types-projets/{typeProjet}/criteres/visible-groupe', [TypeProjetCritereController::class, 'toggleVisibiliteGroupe'])
         ->name('types-projets.criteres.visible-groupe');
 
     Route::put('/cours/{cours}/types-projets/{typeProjet}/criteres/{critere}', [TypeProjetCritereController::class, 'update'])
@@ -423,7 +423,7 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
     Route::delete('/cours/{cours}/echeancier', [EcheancierController::class, 'destroyAll'])
         ->name('echeancier.destroyAll');
 
-    Route::patch('/cours/{cours}/echeancier/{etape}/toggle', [EcheancierController::class, 'toggleDone'])
+    Route::patch('/cours/{cours}/echeancier/{etape}/toggle', [EcheancierController::class, 'toggleTerminee'])
         ->name('echeancier.toggle');
 
     Route::put('/cours/{cours}/visio/{visio}', [VisioConferenceController::class, 'update'])
@@ -587,7 +587,7 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
         ->name('groupes.videos.transcription.modifier')
         ->middleware('throttle:10,1');
 
-    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/videos/{video}/transcription/importer', [GroupeVideoTranscriptionController::class, 'importer'])
+    Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/videos/{video}/transcription/importer', [GroupeVideoTranscriptionController::class, 'import'])
         ->name('groupes.videos.transcription.importer')
         ->middleware('throttle:10,1');
 
@@ -772,7 +772,7 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
     Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/taches/{tache}/assigner', [GroupeTacheController::class, 'assigner'])
         ->name('groupes.taches.assigner');
 
-    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/taches/{tache}/toggle', [GroupeTacheController::class, 'toggleCompleted'])
+    Route::patch('/cours/{cours}/classes/{classe}/groupes/{groupe}/projets/{typeProjet}/taches/{tache}/toggle', [GroupeTacheController::class, 'toggleTerminee'])
         ->name('groupes.taches.toggle');
 
     // ─── Musée virtuel — Pages (multi-pages) ─────────────────────────────────

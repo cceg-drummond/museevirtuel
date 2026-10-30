@@ -41,7 +41,7 @@ class ProjetCorrectionController extends Controller
         $projet->update(['correction_visible' => ! $projet->correction_visible]);
 
         return response()->json([
-            'message' => 'toggled',
+            'message' => __('reponse.toggled'),
             'correction_visible' => (bool) $projet->correction_visible,
         ]);
     }

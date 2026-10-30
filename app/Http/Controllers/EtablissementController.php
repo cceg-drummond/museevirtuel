@@ -34,7 +34,7 @@ class EtablissementController extends Controller
     {
         Etablissement::create($request->only('nom', 'ville', 'code'));
 
-        return back()->with('success', __('Établissement créé avec succès.'));
+        return back()->with('success', __('etablissement.created'));
     }
 
     /**
@@ -46,7 +46,7 @@ class EtablissementController extends Controller
     {
         $etablissement->update($request->only('nom', 'ville', 'code'));
 
-        return back()->with('success', __('Établissement mis à jour.'));
+        return back()->with('success', __('etablissement.updated'));
     }
 
     /**
@@ -57,6 +57,6 @@ class EtablissementController extends Controller
     {
         $etablissement->delete();
 
-        return back()->with('success', __('Établissement supprimé.'));
+        return back()->with('success', __('etablissement.deleted'));
     }
 }

@@ -100,7 +100,7 @@ it('peut modifier le contenu d\'un renvoi', function () {
     $this->actingAs($etudiant)
         ->patchJson("{$url}/renvois/{$renvoi->id}", ['contenu' => 'Nouveau texte.'])
         ->assertOk()
-        ->assertJsonPath('message', 'saved');
+        ->assertJsonPath('message', __('reponse.saved'));
 
     expect($renvoi->fresh()->contenu)->toBe('Nouveau texte.');
 });
@@ -115,7 +115,7 @@ it('peut modifier le numéro d\'un renvoi lors d\'une renumérotation', function
     $this->actingAs($etudiant)
         ->patchJson("{$url}/renvois/{$renvoi3->id}", ['numero' => 2])
         ->assertOk()
-        ->assertJsonPath('message', 'saved');
+        ->assertJsonPath('message', __('reponse.saved'));
 
     expect($renvoi3->fresh()->numero)->toBe(2);
 });
@@ -130,7 +130,7 @@ it('peut supprimer un renvoi', function () {
     $this->actingAs($etudiant)
         ->deleteJson("{$url}/renvois/{$renvoi->id}")
         ->assertOk()
-        ->assertJsonPath('message', 'deleted');
+        ->assertJsonPath('message', __('reponse.deleted'));
 
     expect(ProjetRenvoi::find($renvoi->id))->toBeNull();
 });
@@ -217,7 +217,7 @@ it('un enseignant peut ajouter un commentaire sur un renvoi', function () {
     $this->actingAs($enseignant)
         ->postJson("{$url}/renvois/{$renvoi->id}/commentaires", ['contenu' => 'Vérifier la source.'])
         ->assertCreated()
-        ->assertJsonPath('message', 'created')
+        ->assertJsonPath('message', __('reponse.created'))
         ->assertJsonPath('commentaire.contenu', 'Vérifier la source.');
 
     expect(ProjetRenvoiCommentaire::where('renvoi_id', $renvoi->id)->count())->toBe(1);
@@ -256,7 +256,7 @@ it('un enseignant peut supprimer son commentaire sur un renvoi', function () {
     $this->actingAs($enseignant)
         ->deleteJson("{$url}/renvois/{$renvoi->id}/commentaires/{$commentaire->id}")
         ->assertOk()
-        ->assertJsonPath('message', 'deleted');
+        ->assertJsonPath('message', __('reponse.deleted'));
 
     expect(ProjetRenvoiCommentaire::find($commentaire->id))->toBeNull();
 });
@@ -304,7 +304,7 @@ it('un enseignant peut activer le mode édition enseignant', function () {
     $this->actingAs($enseignant)
         ->patchJson("{$url}/mode-edition-enseignant")
         ->assertOk()
-        ->assertJsonPath('message', 'toggled')
+        ->assertJsonPath('message', __('reponse.toggled'))
         ->assertJsonPath('mode_edition_enseignant', true);
 
     expect($projet->fresh()->mode_edition_enseignant)->toBeTrue();

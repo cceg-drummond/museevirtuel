@@ -30,23 +30,23 @@ class ImportEtudiantsAction
         $rows = $this->parseCsvRows($csvContent);
 
         // Précharger les IDs déjà inscrits (O(1) pour les vérifications dans la boucle)
-        $existingUserIds = $classe->etudiants()->allRelatedIds()->flip()->toArray();
+        $idsDejaInscrits = $classe->etudiants()->allRelatedIds()->flip()->toArray();
 
         $created = 0;
 
-        DB::transaction(function () use ($classe, $rows, &$existingUserIds, &$created) {
+        DB::transaction(function () use ($classe, $rows, &$idsDejaInscrits, &$created) {
             foreach ($rows as ['noDa' => $noDa, 'prenom' => $prenom, 'nom' => $nom, 'statut' => $statut]) {
                 $etudiant = $this->createEtudiant->execute($noDa, $prenom, $nom);
 
                 // Un étudiant peut être inscrit à plusieurs classes, mais une seule fois dans celle-ci.
-                if (! isset($existingUserIds[$etudiant->id])) {
+                if (! isset($idsDejaInscrits[$etudiant->id])) {
                     $classe->etudiants()->attach($etudiant->id, [
                         'no_da' => $noDa,
                         'statut_cours' => StatutEtudiantCours::tryFrom(Str::lower($statut))?->value
                             ?? StatutEtudiantCours::Actif->value,
                     ]);
                     // Marquer comme inscrit pour éviter un double attach si le DA apparaît deux fois dans le CSV
-                    $existingUserIds[$etudiant->id] = true;
+                    $idsDejaInscrits[$etudiant->id] = true;
                     $created++;
                 }
             }

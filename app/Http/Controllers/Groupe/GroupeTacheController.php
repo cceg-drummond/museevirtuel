@@ -53,7 +53,7 @@ class GroupeTacheController extends Controller
      *
      * Seuls les membres du groupe peuvent basculer.
      */
-    public function toggleCompleted(
+    public function toggleTerminee(
         Cours $cours,
         Classe $classe,
         Groupe $groupe,

@@ -30,7 +30,7 @@ class CoursReferenceController extends Controller
             'ordre' => $ordre,
         ]);
 
-        return back()->with('success', 'Référence ajoutée.');
+        return back()->with('success', __('cours_reference.created'));
     }
 
     /**
@@ -45,7 +45,7 @@ class CoursReferenceController extends Controller
 
         $reference->update($validated);
 
-        return back()->with('success', 'Référence mise à jour.');
+        return back()->with('success', __('cours_reference.updated'));
     }
 
     /**
@@ -60,7 +60,7 @@ class CoursReferenceController extends Controller
 
         $ordres->supprimer($reference, $cours->references());
 
-        return back()->with('success', 'Référence supprimée.');
+        return back()->with('success', __('cours_reference.deleted'));
     }
 
     /**

@@ -68,7 +68,7 @@ class ProjetCritereCocheController extends Controller
         }
 
         return response()->json([
-            'message' => 'toggled',
+            'message' => __('reponse.toggled'),
             'coche' => $estCoche,
         ]);
     }

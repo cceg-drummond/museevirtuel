@@ -66,7 +66,7 @@ test('un membre peut créer un paragraphe dans une section de type paragraphes',
     $this->actingAs($etudiant)
         ->postJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/sections/{$section->id}/paragraphes")
         ->assertCreated()
-        ->assertJsonFragment(['message' => 'created'])
+        ->assertJsonFragment(['message' => __('reponse.created')])
         ->assertJsonPath('paragraphe.ordre', 1);
 
     $this->assertDatabaseHas('projet_section_paragraphes', [
@@ -158,7 +158,7 @@ test('un membre peut modifier le titre et le contenu d\'un paragraphe', function
             'contenu' => '<p>Mon contenu</p>',
         ])
         ->assertOk()
-        ->assertJsonFragment(['message' => 'saved']);
+        ->assertJsonFragment(['message' => __('reponse.saved')]);
 
     $this->assertDatabaseHas('projet_section_paragraphes', [
         'id' => $paragraphe->id,
@@ -227,7 +227,7 @@ test('un membre peut supprimer un paragraphe s\'il en reste au moins 2', functio
     $this->actingAs($etudiant)
         ->deleteJson("/cours/{$cours->id}/classes/{$cs->id}/groupes/{$classe->id}/projets/{$typeProjet->id}/sections/{$section->id}/paragraphes/{$p1->id}")
         ->assertOk()
-        ->assertJsonFragment(['message' => 'deleted']);
+        ->assertJsonFragment(['message' => __('reponse.deleted')]);
 
     $this->assertDatabaseMissing('projet_section_paragraphes', ['id' => $p1->id]);
     $this->assertDatabaseHas('projet_section_paragraphes', ['id' => $p2->id, 'ordre' => 1]);
@@ -275,7 +275,7 @@ test('l\'ordre des paragraphes est mis à jour correctement', function () {
             'ordre' => [$p2->id, $p1->id],
         ])
         ->assertOk()
-        ->assertJsonFragment(['message' => 'reordered']);
+        ->assertJsonFragment(['message' => __('reponse.reordered')]);
 
     $this->assertDatabaseHas('projet_section_paragraphes', ['id' => $p2->id, 'ordre' => 1]);
     $this->assertDatabaseHas('projet_section_paragraphes', ['id' => $p1->id, 'ordre' => 2]);
@@ -328,7 +328,7 @@ test('un membre peut sauvegarder une conclusion liée à une section', function 
             'contenu' => '<p>Ma conclusion</p>',
         ])
         ->assertOk()
-        ->assertJsonFragment(['message' => 'saved']);
+        ->assertJsonFragment(['message' => __('reponse.saved')]);
 
     $this->assertDatabaseHas('projet_conclusions', [
         'projet_id' => $projet->id,

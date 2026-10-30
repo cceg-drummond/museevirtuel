@@ -61,7 +61,7 @@ class TemoinApprobationController extends Controller
         $user->email_verified_at = now();
         $user->save();
 
-        return back()->with('success', __('Le compte de '.$user->prenom.' '.$user->nom.' a été approuvé.'));
+        return back()->with('success', __('temoin_approbation.approuve', ['nom' => $user->prenom.' '.$user->nom]));
     }
 
     /**
@@ -76,7 +76,7 @@ class TemoinApprobationController extends Controller
         $user->statut = 'refuse';
         $user->save();
 
-        return back()->with('success', __('La demande de '.$user->prenom.' '.$user->nom.' a été déclinée.'));
+        return back()->with('success', __('temoin_approbation.decline', ['nom' => $user->prenom.' '.$user->nom]));
     }
 
     /**
@@ -98,7 +98,7 @@ class TemoinApprobationController extends Controller
         $user->email_verified_at = null;
         $user->save();
 
-        return back()->with('success', __('Le compte de '.$user->prenom.' '.$user->nom.' a été remis en attente.'));
+        return back()->with('success', __('temoin_approbation.remis_en_attente', ['nom' => $user->prenom.' '.$user->nom]));
     }
 
     /**

@@ -54,16 +54,16 @@ class ProjetCritereCorrectionController extends Controller
 
         $verifie = $request->boolean('verifie', false);
 
-        [$correction, $clearedUserIds] = DB::transaction(function () use ($validated, $projet, $critere, $verifie) {
-            $clearedUserIds = [];
+        [$correction, $idsRetires] = DB::transaction(function () use ($validated, $projet, $critere, $verifie) {
+            $idsRetires = [];
             if (! isset($validated['user_id'])) {
-                $clearedUserIds = ProjetCritereCorrection::where('projet_id', $projet->id)
+                $idsRetires = ProjetCritereCorrection::where('projet_id', $projet->id)
                     ->where('critere_id', $critere->id)
                     ->whereNotNull('user_id')
                     ->pluck('user_id')
                     ->all();
 
-                if (! empty($clearedUserIds)) {
+                if (! empty($idsRetires)) {
                     ProjetCritereCorrection::where('projet_id', $projet->id)
                         ->where('critere_id', $critere->id)
                         ->whereNotNull('user_id')
@@ -84,13 +84,13 @@ class ProjetCritereCorrectionController extends Controller
                 ]
             );
 
-            return [$correction, $clearedUserIds];
+            return [$correction, $idsRetires];
         });
 
         return response()->json([
-            'message' => 'saved',
+            'message' => __('reponse.saved'),
             'correction' => $correction->only('id', 'projet_id', 'critere_id', 'user_id', 'points', 'commentaire', 'verifie', 'source_id'),
-            'cleared_user_ids' => $clearedUserIds,
+            'cleared_user_ids' => $idsRetires,
         ]);
     }
 
@@ -117,7 +117,7 @@ class ProjetCritereCorrectionController extends Controller
             $correction->delete();
         });
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 
     /**
@@ -165,7 +165,7 @@ class ProjetCritereCorrectionController extends Controller
         });
 
         return response()->json([
-            'message' => 'cloned',
+            'message' => __('reponse.cloned'),
             'correction' => $clone->only('id', 'projet_id', 'critere_id', 'user_id', 'points', 'commentaire', 'verifie', 'source_id'),
         ]);
     }

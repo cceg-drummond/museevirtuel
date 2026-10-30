@@ -35,6 +35,6 @@ class GroupeTemoinController extends Controller
 
         $groupe->update(['personne_agee_id' => $validated['personne_agee_id']]);
 
-        return back()->with('success', 'Témoin mis à jour.');
+        return back()->with('success', __('groupe.temoin_updated'));
     }
 }

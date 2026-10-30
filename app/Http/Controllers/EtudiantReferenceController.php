@@ -29,7 +29,7 @@ class EtudiantReferenceController extends Controller
             'ordre' => $ordre,
         ]);
 
-        return back()->with('success', 'Référence ajoutée.');
+        return back()->with('success', __('etudiant_reference.created'));
     }
 
     /**
@@ -43,6 +43,6 @@ class EtudiantReferenceController extends Controller
 
         $reference->delete();
 
-        return back()->with('success', 'Référence supprimée.');
+        return back()->with('success', __('etudiant_reference.deleted'));
     }
 }

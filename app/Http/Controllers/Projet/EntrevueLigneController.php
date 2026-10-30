@@ -36,8 +36,8 @@ class EntrevueLigneController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
 
         abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
 
         $ordre = $ordres->prochain($concept->lignes());
 
@@ -50,7 +50,7 @@ class EntrevueLigneController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'created',
+            'message' => __('reponse.created'),
             'ligne' => $ligne->only('id', 'ordre', 'dimension', 'indicateur', 'questions'),
         ], 201);
     }
@@ -68,14 +68,14 @@ class EntrevueLigneController extends Controller
 
         abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
         abort_if($ligne->concept_id !== $concept->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
 
         $validated = $request->validated();
 
         $ligne->update($validated);
 
-        return response()->json(['message' => 'saved']);
+        return response()->json(['message' => __('reponse.saved')]);
     }
 
     /**
@@ -91,11 +91,11 @@ class EntrevueLigneController extends Controller
 
         abort_if($concept->projet_id !== $projet->id || $concept->section_id !== $section->id, 404);
         abort_if($ligne->concept_id !== $concept->id, 404);
-        abort_if($projet->verrouille, 403, 'Ce document est verrouillé.');
-        abort_if(! $projet->peutEtreRemis(), 422, 'Ce travail a déjà été remis.');
+        abort_if($projet->verrouille, 403, __('projet.verrouille'));
+        abort_if(! $projet->peutEtreRemis(), 422, __('projet.deja_remis'));
 
         $ordres->supprimer($ligne, $concept->lignes());
 
-        return response()->json(['message' => 'deleted']);
+        return response()->json(['message' => __('reponse.deleted')]);
     }
 }

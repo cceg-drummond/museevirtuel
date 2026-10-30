@@ -33,7 +33,7 @@ trait AutoriseEntrevue
         abort_if($groupe->classe_id !== $classe->id, 404);
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
-        abort_if($section->type !== 'entrevue', 422, 'Cette section n\'est pas de type entrevue.');
+        abort_if($section->type !== 'entrevue', 422, __('entrevue.section_invalide'));
 
         $groupe->loadMissing('classe.cours');
         $this->authorize('manageThematiques', $groupe);

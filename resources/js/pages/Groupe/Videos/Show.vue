@@ -722,7 +722,7 @@ function onImportFichierChange(e: Event) {
         importTranscriptionForm
             .transform((data) => ({ fichier: data.fichier }))
             .post(
-                GroupeVideoTranscriptionController.importer({
+                GroupeVideoTranscriptionController.importMethod({
                     cours: props.cours,
                     classe: props.classe,
                     groupe: props.groupe,

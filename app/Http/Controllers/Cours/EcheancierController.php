@@ -35,7 +35,7 @@ class EcheancierController extends Controller
             'ordre' => $ordre + 1,
         ]);
 
-        return back()->with('success', 'La nouvelle étape a été créée!');
+        return back()->with('success', __('echeancier.etape_created'));
     }
 
     /**
@@ -50,7 +50,7 @@ class EcheancierController extends Controller
 
         $etape->update($validated);
 
-        return back()->with('success', 'L\'étape a été modifiée avec succès!');
+        return back()->with('success', __('echeancier.etape_updated'));
     }
 
     /**
@@ -79,7 +79,7 @@ class EcheancierController extends Controller
 
         $cours->echeancierEtapes()->delete();
 
-        return back()->with('success', 'L\'étape a été supprimée avec succès!');
+        return back()->with('success', __('echeancier.etape_deleted'));
     }
 
     /**
@@ -87,7 +87,7 @@ class EcheancierController extends Controller
      *
      * Réservé à l'enseignant du cours et aux admins.
      */
-    public function toggleDone(Cours $cours, EcheancierEtape $etape): RedirectResponse
+    public function toggleTerminee(Cours $cours, EcheancierEtape $etape): RedirectResponse
     {
         abort_if($etape->cours_id !== $cours->id, 404);
         $this->authorize('update', $cours);

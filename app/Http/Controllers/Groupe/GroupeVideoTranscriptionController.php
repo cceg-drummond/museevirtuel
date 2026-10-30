@@ -83,7 +83,7 @@ class GroupeVideoTranscriptionController extends Controller
             'transcription_modifiee' => true,
         ]);
 
-        return back()->with('success', 'Transcription mise à jour.');
+        return back()->with('success', __('transcription.updated'));
     }
 
     /**
@@ -96,7 +96,7 @@ class GroupeVideoTranscriptionController extends Controller
      *
      * @throws AuthorizationException
      */
-    public function importer(
+    public function import(
         ImporterGroupeVideoTranscriptionRequest $request,
         Cours $cours,
         Classe $classe,
@@ -117,6 +117,6 @@ class GroupeVideoTranscriptionController extends Controller
             'transcription_modifiee' => true,
         ]);
 
-        return back()->with('success', 'Transcription importée avec succès.');
+        return back()->with('success', __('transcription.imported'));
     }
 }
