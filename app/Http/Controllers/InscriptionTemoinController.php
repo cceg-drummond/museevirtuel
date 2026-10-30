@@ -8,6 +8,7 @@ use App\Models\Etablissement;
 use App\Models\Thematique;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -119,36 +120,36 @@ class InscriptionTemoinController extends Controller
      */
     private function creerPersonneAgee(array $step1, string $signature): User
     {
-        $user = User::create([
-            'prenom' => $step1['prenom'],
-            'nom' => $step1['nom'],
-            'email' => $step1['email'],
-            'password' => $step1['password'],
-            'role' => 'personne_agee',
-            'statut' => 'en_attente',
-            'description' => $step1['description'],
-            'disponible_appel_distance' => $step1['disponible_appel_distance'] ?? false,
-            'engagements_acceptes_le' => now(),
-            'signature_electronique' => $signature,
-        ]);
+        return DB::transaction(function () use ($step1, $signature) {
+            $user = User::create([
+                'prenom' => $step1['prenom'],
+                'nom' => $step1['nom'],
+                'email' => $step1['email'],
+                'password' => $step1['password'],
+                'role' => 'personne_agee',
+                'statut' => 'en_attente',
+                'description' => $step1['description'],
+                'disponible_appel_distance' => $step1['disponible_appel_distance'] ?? false,
+                'engagements_acceptes_le' => now(),
+                'signature_electronique' => $signature,
+            ]);
 
-        // Sync toutes les thématiques choisies
-        $tousLesIds = collect($step1['choix'])
-            ->flatMap(fn ($c) => $c['thematique_ids'] ?? [])
-            ->unique()
-            ->all();
+            $tousLesIds = collect($step1['choix'])
+                ->flatMap(fn ($c) => $c['thematique_ids'] ?? [])
+                ->unique()
+                ->all();
 
-        if (! empty($tousLesIds)) {
-            $user->thematiquesChoisies()->sync($tousLesIds);
-        }
+            if (! empty($tousLesIds)) {
+                $user->thematiquesChoisies()->sync($tousLesIds);
+            }
 
-        // Insérer le pivot user_etablissement avec thème libre par cégep
-        $pivots = collect($step1['choix'])->mapWithKeys(fn ($c) => [
-            $c['etablissement_id'] => ['theme_libre' => $c['theme_libre'] ?? null],
-        ])->all();
+            $pivots = collect($step1['choix'])->mapWithKeys(fn ($c) => [
+                $c['etablissement_id'] => ['theme_libre' => $c['theme_libre'] ?? null],
+            ])->all();
 
-        $user->etablissementsChoisis()->sync($pivots);
+            $user->etablissementsChoisis()->sync($pivots);
 
-        return $user;
+            return $user;
+        });
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Requests\Zotero\StoreZoteroCredentialRequest;
 use App\Services\ZoteroService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Identifiants Zotero de l'étudiant (clé API + identifiant utilisateur).
@@ -55,10 +56,10 @@ class ZoteroCredentialController extends Controller
     {
         $user = auth()->user();
 
-        // Supprimer uniquement les références provenant de Zotero
-        $user->etudiantReferences()->whereNotNull('zotero_item_key')->delete();
-
-        $user->zoteroCredential()?->delete();
+        DB::transaction(function () use ($user) {
+            $user->etudiantReferences()->whereNotNull('zotero_item_key')->delete();
+            $user->zoteroCredential()?->delete();
+        });
 
         return back()->with('success', 'Compte Zotero déconnecté et références Zotero supprimées.');
     }

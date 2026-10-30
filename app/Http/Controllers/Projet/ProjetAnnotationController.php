@@ -18,6 +18,7 @@ use App\Models\ProjetSectionContenu;
 use App\Models\ProjetSectionParagraphe;
 use App\Models\TypeProjet;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -44,27 +45,29 @@ class ProjetAnnotationController extends Controller
             'type_projet_id' => $typeProjet->id,
         ]);
 
-        $this->mettreAJourChampHtml($projet, $validated['champ'], $validated['html']);
-        $this->supprimerAnnotationsOrphelines($projet, $validated['champ'], $validated['html']);
-
         $estCorrection = $validated['annotation_type'] === 'correction';
 
-        $annotation = ProjetAnnotation::updateOrCreate(
-            ['projet_id' => $projet->id, 'commentaire_id' => $validated['commentaire_id']],
-            [
-                'champ' => $validated['champ'],
-                'contenu' => $validated['contenu'],
-                'position' => HtmlHelper::positionAnnotation($validated['html'], $validated['commentaire_id']),
-                'mot_annote' => HtmlHelper::motAnnote($validated['html'], $validated['commentaire_id']),
-                'annotation_type' => $validated['annotation_type'],
-                // points_malus et cible_user_id n'ont de sens que pour une correction
-                'points_malus' => $estCorrection && isset($validated['points_malus'])
-                    ? (float) $validated['points_malus']
-                    : null,
-                'cible_user_id' => $estCorrection ? ($validated['cible_user_id'] ?? null) : null,
-                'user_id' => auth()->id(),
-            ]
-        );
+        $annotation = DB::transaction(function () use ($projet, $validated, $estCorrection) {
+            $this->mettreAJourChampHtml($projet, $validated['champ'], $validated['html']);
+            $this->supprimerAnnotationsOrphelines($projet, $validated['champ'], $validated['html']);
+
+            return ProjetAnnotation::updateOrCreate(
+                ['projet_id' => $projet->id, 'commentaire_id' => $validated['commentaire_id']],
+                [
+                    'champ' => $validated['champ'],
+                    'contenu' => $validated['contenu'],
+                    'position' => HtmlHelper::positionAnnotation($validated['html'], $validated['commentaire_id']),
+                    'mot_annote' => HtmlHelper::motAnnote($validated['html'], $validated['commentaire_id']),
+                    'annotation_type' => $validated['annotation_type'],
+                    // points_malus et cible_user_id n'ont de sens que pour une correction
+                    'points_malus' => $estCorrection && isset($validated['points_malus'])
+                        ? (float) $validated['points_malus']
+                        : null,
+                    'cible_user_id' => $estCorrection ? ($validated['cible_user_id'] ?? null) : null,
+                    'user_id' => auth()->id(),
+                ]
+            );
+        });
 
         return response()->json([
             'message' => 'saved',
@@ -94,9 +97,10 @@ class ProjetAnnotationController extends Controller
 
         $validated = $request->validated();
 
-        $this->mettreAJourChampHtml($projet, $validated['champ'], $validated['html']);
-
-        $annotation->delete();
+        DB::transaction(function () use ($projet, $validated, $annotation) {
+            $this->mettreAJourChampHtml($projet, $validated['champ'], $validated['html']);
+            $annotation->delete();
+        });
 
         return response()->json(['message' => 'deleted']);
     }

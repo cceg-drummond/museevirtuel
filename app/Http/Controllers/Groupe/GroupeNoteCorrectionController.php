@@ -12,6 +12,7 @@ use App\Models\Groupe;
 use App\Models\GroupeNote;
 use App\Models\GroupeNoteCorrection;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -35,12 +36,14 @@ class GroupeNoteCorrectionController extends Controller
 
         $validated = $request->validated();
 
-        $note->update(['contenu' => $validated['note_html']]);
+        DB::transaction(function () use ($note, $validated) {
+            $note->update(['contenu' => $validated['note_html']]);
 
-        GroupeNoteCorrection::updateOrCreate(
-            ['note_id' => $note->id, 'commentaire_id' => $validated['commentaire_id']],
-            ['contenu' => $validated['contenu'], 'user_id' => auth()->id()]
-        );
+            GroupeNoteCorrection::updateOrCreate(
+                ['note_id' => $note->id, 'commentaire_id' => $validated['commentaire_id']],
+                ['contenu' => $validated['contenu'], 'user_id' => auth()->id()]
+            );
+        });
 
         return back()->with('success', 'Correction enregistrée.');
     }
@@ -62,8 +65,10 @@ class GroupeNoteCorrectionController extends Controller
 
         $validated = $request->validated();
 
-        $note->update(['contenu' => $validated['note_html']]);
-        $correction->delete();
+        DB::transaction(function () use ($note, $validated, $correction) {
+            $note->update(['contenu' => $validated['note_html']]);
+            $correction->delete();
+        });
 
         return back()->with('success', 'Correction supprimée.');
     }

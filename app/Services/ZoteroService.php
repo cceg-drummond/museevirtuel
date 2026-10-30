@@ -36,6 +36,8 @@ class ZoteroService
      * Récupère les items de la bibliothèque personnelle Zotero de l'étudiant.
      *
      * Retourne un tableau d'items transformés et prêts à insérer en base.
+     * Les items sans titre ou sans clé sont écartés : sans clé, impossible de les
+     * rapprocher d'une référence existante lors des synchronisations suivantes.
      * La limite par défaut est 100 items — suffisant pour un usage étudiant courant.
      *
      * @param  string  $zoteroUserId  Identifiant numérique du compte Zotero
@@ -61,7 +63,8 @@ class ZoteroService
         $response->throw();
 
         return collect($response->json())
-            ->filter(fn (array $item): bool => isset($item['data']['title']) && $item['data']['title'] !== '')
+            ->filter(fn (array $item): bool => isset($item['data']['title']) && $item['data']['title'] !== ''
+                && ! empty($item['key']))
             ->map(fn (array $item): array => $this->parseItem($item))
             ->values()
             ->all();

@@ -14,6 +14,7 @@ use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetCritere;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -51,36 +52,40 @@ class ProjetCritereCorrectionController extends Controller
             'type_projet_id' => $typeProjet->id,
         ]);
 
-        // Quand on met à jour la correction groupe (user_id = null), supprimer les
-        // overrides individuels afin que "attribuer à tous" s'applique réellement à tous.
-        $clearedUserIds = [];
-        if (! isset($validated['user_id'])) {
-            $clearedUserIds = ProjetCritereCorrection::where('projet_id', $projet->id)
-                ->where('critere_id', $critere->id)
-                ->whereNotNull('user_id')
-                ->pluck('user_id')
-                ->all();
+        $verifie = $request->boolean('verifie', false);
 
-            if (! empty($clearedUserIds)) {
-                ProjetCritereCorrection::where('projet_id', $projet->id)
+        [$correction, $clearedUserIds] = DB::transaction(function () use ($validated, $projet, $critere, $verifie) {
+            $clearedUserIds = [];
+            if (! isset($validated['user_id'])) {
+                $clearedUserIds = ProjetCritereCorrection::where('projet_id', $projet->id)
                     ->where('critere_id', $critere->id)
                     ->whereNotNull('user_id')
-                    ->delete();
-            }
-        }
+                    ->pluck('user_id')
+                    ->all();
 
-        $correction = ProjetCritereCorrection::updateOrCreate(
-            [
-                'projet_id' => $projet->id,
-                'critere_id' => $critere->id,
-                'user_id' => $validated['user_id'] ?? null,
-            ],
-            [
-                'points' => $validated['points'] ?? null,
-                'commentaire' => $validated['commentaire'] ?? null,
-                'verifie' => $request->boolean('verifie', false),
-            ]
-        );
+                if (! empty($clearedUserIds)) {
+                    ProjetCritereCorrection::where('projet_id', $projet->id)
+                        ->where('critere_id', $critere->id)
+                        ->whereNotNull('user_id')
+                        ->delete();
+                }
+            }
+
+            $correction = ProjetCritereCorrection::updateOrCreate(
+                [
+                    'projet_id' => $projet->id,
+                    'critere_id' => $critere->id,
+                    'user_id' => $validated['user_id'] ?? null,
+                ],
+                [
+                    'points' => $validated['points'] ?? null,
+                    'commentaire' => $validated['commentaire'] ?? null,
+                    'verifie' => $verifie,
+                ]
+            );
+
+            return [$correction, $clearedUserIds];
+        });
 
         return response()->json([
             'message' => 'saved',
@@ -107,9 +112,10 @@ class ProjetCritereCorrectionController extends Controller
         $projet = $this->trouverProjet($groupe, $typeProjet);
         abort_if($correction->projet_id !== $projet->id, 404);
 
-        // Supprimer d'abord les clones pour éviter la violation de contrainte FK
-        $correction->clones()->delete();
-        $correction->delete();
+        DB::transaction(function () use ($correction) {
+            $correction->clones()->delete();
+            $correction->delete();
+        });
 
         return response()->json(['message' => 'deleted']);
     }
@@ -139,21 +145,24 @@ class ProjetCritereCorrectionController extends Controller
 
         $validated = $request->validated();
 
-        // Remplacer un éventuel clone existant pour ce (critère, étudiant)
-        ProjetCritereCorrection::where('projet_id', $projet->id)
-            ->where('critere_id', $correction->critere_id)
-            ->where('user_id', $validated['user_id'])
-            ->delete();
+        $verifie = $request->boolean('verifie', (bool) $correction->verifie);
 
-        $clone = ProjetCritereCorrection::create([
-            'projet_id' => $projet->id,
-            'critere_id' => $correction->critere_id,
-            'user_id' => $validated['user_id'],
-            'points' => $validated['points'] ?? null,
-            'commentaire' => $validated['commentaire'] ?? null,
-            'verifie' => $request->boolean('verifie', (bool) $correction->verifie),
-            'source_id' => $correction->id,
-        ]);
+        $clone = DB::transaction(function () use ($projet, $correction, $validated, $verifie) {
+            ProjetCritereCorrection::where('projet_id', $projet->id)
+                ->where('critere_id', $correction->critere_id)
+                ->where('user_id', $validated['user_id'])
+                ->delete();
+
+            return ProjetCritereCorrection::create([
+                'projet_id' => $projet->id,
+                'critere_id' => $correction->critere_id,
+                'user_id' => $validated['user_id'],
+                'points' => $validated['points'] ?? null,
+                'commentaire' => $validated['commentaire'] ?? null,
+                'verifie' => $verifie,
+                'source_id' => $correction->id,
+            ]);
+        });
 
         return response()->json([
             'message' => 'cloned',

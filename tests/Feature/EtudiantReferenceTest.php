@@ -186,6 +186,22 @@ test('une sync répétée ne crée pas de doublon (upsert)', function () {
     expect(EtudiantReference::where('user_id', $etudiant->id)->count())->toBe(1);
 });
 
+test('sync ignore les items sans clé Zotero et ne les compte pas', function () {
+    Http::preventStrayRequests();
+    $sansCle = fakeZoteroItems()[0];
+    unset($sansCle['key']);
+    Http::fake(['api.zotero.org/*' => Http::response([...fakeZoteroItems(), $sansCle], 200)]);
+
+    $etudiant = creerEtudiant();
+    creerCredential($etudiant);
+
+    $this->actingAs($etudiant)
+        ->post('/etudiant/references/sync')
+        ->assertSessionHas('success', '1 référence(s) synchronisée(s) depuis Zotero.');
+
+    expect(EtudiantReference::where('user_id', $etudiant->id)->count())->toBe(1);
+});
+
 test('sync sans credentials redirige avec une erreur', function () {
     $etudiant = creerEtudiant();
 

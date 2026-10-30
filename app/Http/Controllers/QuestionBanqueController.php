@@ -15,6 +15,7 @@ use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Services\OrdreElements;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class QuestionBanqueController extends Controller
 {
@@ -138,19 +139,19 @@ class QuestionBanqueController extends Controller
             abort_if($validCount !== count($questionIds), 422);
         }
 
-        // Supprimer les anciens choix pour cette section + projet
-        ProjetQuestionChoisie::where('projet_id', $projet->id)
-            ->where('section_id', $section->id)
-            ->delete();
+        DB::transaction(function () use ($projet, $section, $questionIds) {
+            ProjetQuestionChoisie::where('projet_id', $projet->id)
+                ->where('section_id', $section->id)
+                ->delete();
 
-        // Insérer les nouveaux choix
-        foreach ($questionIds as $questionId) {
-            ProjetQuestionChoisie::create([
-                'projet_id' => $projet->id,
-                'section_id' => $section->id,
-                'question_banque_id' => $questionId,
-            ]);
-        }
+            foreach ($questionIds as $questionId) {
+                ProjetQuestionChoisie::create([
+                    'projet_id' => $projet->id,
+                    'section_id' => $section->id,
+                    'question_banque_id' => $questionId,
+                ]);
+            }
+        });
 
         return back()->with('success', __('questions.choices_saved'));
     }

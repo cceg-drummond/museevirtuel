@@ -59,27 +59,39 @@ class RemiseProjetService
      */
     public function voter(ProjetRecherche $projet, Groupe $groupe, User $membre, bool $vote): void
     {
-        ProjetVoteRemise::updateOrCreate(
-            ['projet_id' => $projet->id, 'user_id' => $membre->id],
-            ['vote' => $vote],
-        );
+        DB::transaction(function () use ($projet, $groupe, $membre, $vote): void {
+            ProjetVoteRemise::updateOrCreate(
+                ['projet_id' => $projet->id, 'user_id' => $membre->id],
+                ['vote' => $vote],
+            );
 
-        $votes = $projet->votes()->get();
-
-        $tousOntVote = $votes->count() === $groupe->membres->count()
-            && $votes->every(fn (ProjetVoteRemise $v) => $v->vote);
-
-        if (! $tousOntVote) {
-            return;
-        }
-
-        DB::transaction(function () use ($projet): void {
-            $projet->refresh();
-
-            if ($projet->remis_le === null || $projet->typeProjet->remises_multiples) {
-                $projet->update(['remis_le' => now()]);
-                $projet->synchroniserStatut();
+            if ($this->tousOntVotePour($projet, $groupe)) {
+                $this->remettreApresVote($projet);
             }
         });
+    }
+
+    /**
+     * Indique si chaque membre du groupe a voté pour la remise.
+     */
+    private function tousOntVotePour(ProjetRecherche $projet, Groupe $groupe): bool
+    {
+        $votes = $projet->votes()->get();
+
+        return $votes->count() === $groupe->membres->count()
+            && $votes->every(fn (ProjetVoteRemise $v) => $v->vote);
+    }
+
+    /**
+     * Remet le projet après un vote unanime, sauf s'il est déjà remis sans multiples remises.
+     */
+    private function remettreApresVote(ProjetRecherche $projet): void
+    {
+        $projet->refresh();
+
+        if ($projet->remis_le === null || $projet->typeProjet->remises_multiples) {
+            $projet->update(['remis_le' => now()]);
+            $projet->synchroniserStatut();
+        }
     }
 }

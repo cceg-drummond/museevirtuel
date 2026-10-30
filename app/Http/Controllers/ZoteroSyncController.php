@@ -6,6 +6,7 @@ use App\Services\ZoteroService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Synchronisation de la bibliothèque Zotero de l'étudiant.
@@ -34,7 +35,6 @@ class ZoteroSyncController extends Controller
         } catch (ConnectionException) {
             return back()->withErrors(['zotero' => 'Impossible de joindre l\'API Zotero. Réessayez dans quelques instants.']);
         } catch (RequestException $e) {
-            // 403 = clé révoquée ou invalide
             if ($e->response->status() === 403) {
                 return back()->withErrors(['zotero' => 'La clé API Zotero est invalide ou a été révoquée. Reconfigurez votre compte.']);
             }
@@ -42,25 +42,23 @@ class ZoteroSyncController extends Controller
             return back()->withErrors(['zotero' => 'Erreur lors de la synchronisation Zotero.']);
         }
 
-        $maxOrdre = $user->etudiantReferences()->max('ordre') ?? 0;
-        $existantes = $user->etudiantReferences()
-            ->whereNotNull('zotero_item_key')
-            ->get()
-            ->keyBy('zotero_item_key');
+        DB::transaction(function () use ($user, $items, $credential) {
+            $maxOrdre = $user->etudiantReferences()->max('ordre') ?? 0;
+            $existantes = $user->etudiantReferences()
+                ->whereNotNull('zotero_item_key')
+                ->get()
+                ->keyBy('zotero_item_key');
 
-        foreach ($items as $item) {
-            if (! $item['zotero_item_key']) {
-                continue;
+            foreach ($items as $item) {
+                if ($reference = $existantes->get($item['zotero_item_key'])) {
+                    $reference->update($item);
+                } else {
+                    $user->etudiantReferences()->create(array_merge($item, ['ordre' => ++$maxOrdre]));
+                }
             }
 
-            if ($reference = $existantes->get($item['zotero_item_key'])) {
-                $reference->update($item);
-            } else {
-                $user->etudiantReferences()->create(array_merge($item, ['ordre' => ++$maxOrdre]));
-            }
-        }
-
-        $credential->update(['synchronise_le' => now()]);
+            $credential->update(['synchronise_le' => now()]);
+        });
 
         return back()->with('success', count($items).' référence(s) synchronisée(s) depuis Zotero.');
     }
