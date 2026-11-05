@@ -1,0 +1,42 @@
+# Reconstruits dans l'étape build du Dockerfile
+node_modules/
+vendor/
+public/build/
+public/hot
+public/storage
+resources/js/actions/
+resources/js/routes/
+resources/js/wayfinder/
+
+# Caches générés sur la machine du développeur : packages.php y liste les
+# fournisseurs de dev (Boost, Pail, Sail) absents de l'image → plantage au démarrage.
+bootstrap/cache/*.php
+
+# Secrets et environnements — injectés au runtime via env_file
+.env
+.env.*
+auth.json
+
+# Données runtime (le volume storage_app les fournit en prod)
+storage/app/public/*
+storage/app/private/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+storage/pail/
+database/*.sqlite
+
+# Outils, dev et tests
+.git/
+.github/
+.claude/
+.idea/
+.vscode/
+.junie/
+.phpunit.cache/
+tests/
+compose.yaml
+docker/8.5/
+docker/mysql/
+*.md
