@@ -1,125 +1,87 @@
 # =============================================================================
-# Stage 1 — composer-builder : installe les dépendances PHP + génère Wayfinder
-# (doit être avant node-builder car node-builder en a besoin)
+# Image de PRODUCTION de Muse — le développement passe par Laravel Sail (compose.yaml).
+# Usage : docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 # =============================================================================
-FROM composer:2 AS composer-builder
 
-WORKDIR /app
+# -----------------------------------------------------------------------------
+# base — PHP-FPM + extensions, partagé par le build et le runtime
+# pour que les deux tournent exactement sur la même version de PHP.
+# Debian plutôt qu'Alpine : les wheels PyTorch (Whisper) exigent glibc.
+# -----------------------------------------------------------------------------
+FROM php:8.5-fpm-bookworm AS base
 
-COPY composer.json composer.lock ./
-
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-scripts \
-    --optimize-autoloader \
-    --prefer-dist
-
-# Copier tout le code source (nécessaire pour php artisan wayfinder:generate)
-COPY . .
-
-# ..env minimal pour bootstrapper Laravel sans base de données
-RUN printf "APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\nAPP_ENV=production\nDB_CONNECTION=sqlite\nDB_DATABASE=/tmp/dummy.db\n" > ..env \
-    && touch /tmp/dummy.db \
-    && php artisan wayfinder:generate --no-interaction
-
-
-# =============================================================================
-# Stage 2 — node-builder : compile les assets front-end (Vite + Tailwind)
-# =============================================================================
-FROM node:22-alpine AS node-builder
-
-WORKDIR /app
-
-# Copier uniquement ce qui est nécessaire pour npm install
-COPY package.json package-lock.json ./
-
-RUN npm ci --ignore-scripts
-
-# Copier les sources front-end et la config de build
-COPY resources/ resources/
-COPY public/ public/
-COPY vite.config.ts tsconfig.json ./
-
-# Copier les fichiers Wayfinder générés (ignorés par git, générés en Stage 1)
-COPY --from=composer-builder /app/resources/js/actions resources/js/actions
-COPY --from=composer-builder /app/resources/js/routes resources/js/routes
-COPY --from=composer-builder /app/resources/js/wayfinder resources/js/wayfinder
-
-RUN npm run build
-
-
-# =============================================================================
-# Stage 3 — runtime : image de production finale
-# =============================================================================
-FROM php:8.4-fpm-alpine AS runtime
-
-LABEL maintainer="Muse Application"
-
-# Extensions PHP nécessaires
-RUN apk add --no-cache \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
-        libzip-dev \
-        libxml2-dev \
-        icu-dev \
-        oniguruma-dev \
-        mysql-client \
-        nginx \
-        supervisor \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libfreetype6-dev libjpeg62-turbo-dev libpng-dev libzip-dev libicu-dev unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        gd \
-        zip \
-        xml \
-        mbstring \
-        bcmath \
-        intl \
-        opcache \
-    && rm -rf /var/cache/apk/*
-
-# Configuration OPcache pour la production
-RUN { \
-    echo 'opcache.enable=1'; \
-    echo 'opcache.memory_consumption=256'; \
-    echo 'opcache.interned_strings_buffer=16'; \
-    echo 'opcache.max_accelerated_files=20000'; \
-    echo 'opcache.validate_timestamps=0'; \
-    echo 'opcache.revalidate_freq=0'; \
-    echo 'opcache.save_comments=1'; \
-} > /usr/local/etc/php/conf.d/opcache.ini
-
-# Configuration PHP (upload et variables)
-RUN { \
-    echo 'post_max_size=100M'; \
-    echo 'upload_max_filesize=100M'; \
-    echo 'variables_order=EGPCS'; \
-} > /usr/local/etc/php/conf.d/app.ini
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql gd zip intl bcmath opcache pcntl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
 
-# Copier le code source de l'application
+# -----------------------------------------------------------------------------
+# build — dépendances Composer + assets Vite.
+# PHP et Node dans la même étape : le plugin Vite de Wayfinder exécute
+# `php artisan wayfinder:generate` pendant `npm run build`.
+# -----------------------------------------------------------------------------
+FROM base AS build
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
+
+# Couches séparées : les dépendances ne sont réinstallées que si les manifestes changent.
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --no-scripts --no-autoloader --prefer-dist
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
 COPY . .
 
-# Copier les dépendances depuis les stages précédents
-COPY --from=composer-builder /app/vendor ./vendor
-COPY --from=node-builder /app/public/build ./public/build
+# Environnement factice : artisan doit démarrer pour Wayfinder, sans base de données réelle.
+ENV APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+    DB_CONNECTION=sqlite \
+    DB_DATABASE=:memory:
 
-# Copier les fichiers de configuration Docker
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-COPY docker/supervisord.prod.conf /etc/supervisor/conf.d/supervisord.conf
+RUN composer dump-autoload --optimize --no-dev \
+    && npm run build \
+    && rm -rf node_modules
 
+# -----------------------------------------------------------------------------
+# runtime — image finale : nginx + php-fpm (supervisord), FFmpeg, Whisper.
+# -----------------------------------------------------------------------------
+FROM base AS runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nginx supervisor ffmpeg python3-venv curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
+
+# Whisper CLI pour les jobs TranscrireVideo / TranscrireGroupeMedia.
+# torch CPU : évite ~2 Go de bibliothèques CUDA inutiles sur un serveur sans GPU.
+RUN python3 -m venv /opt/whisper \
+    && /opt/whisper/bin/pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch \
+    && /opt/whisper/bin/pip install --no-cache-dir openai-whisper
+
+# PATH : config('services.whisper.binary', 'whisper') le trouve sans configuration.
+# XDG_CACHE_HOME : Whisper y télécharge ses modèles ; ce dossier est monté en volume.
+ENV PATH="/opt/whisper/bin:$PATH" \
+    XDG_CACHE_HOME=/opt/cache
+RUN mkdir -p /opt/cache/whisper && chown -R www-data:www-data /opt/cache
+
+COPY docker/prod/php.ini /usr/local/etc/php/conf.d/zz-muse.ini
+COPY docker/prod/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/prod/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/prod/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
-# Permissions Laravel
-RUN mkdir -p storage/app/public storage/framework/cache storage/framework/sessions \
-        storage/framework/views storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+COPY --from=build --chown=www-data:www-data /var/www/html /var/www/html
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -fsS http://localhost/up || exit 1
 
 ENTRYPOINT ["entrypoint"]

@@ -1,36 +1,42 @@
-# Dépendances (reconstruites dans Docker)
+# Reconstruits dans l'étape build du Dockerfile
 node_modules/
 vendor/
+public/build/
+public/hot
+public/storage
+resources/js/actions/
+resources/js/routes/
+resources/js/wayfinder/
 
-# Environnement (jamais dans l'image)
+# Caches générés sur la machine du développeur : packages.php y liste les
+# fournisseurs de dev (Boost, Pail, Sail) absents de l'image → plantage au démarrage.
+bootstrap/cache/*.php
+
+# Secrets et environnements — injectés au runtime via env_file
 .env
 .env.*
-!.env.example
+auth.json
 
-# Git et outils de dev
+# Données runtime (le volume storage_app les fournit en prod)
+storage/app/public/*
+storage/app/private/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+storage/pail/
+database/*.sqlite
+
+# Outils, dev et tests
 .git/
-.gitignore
 .github/
 .claude/
-.editorconfig
 .idea/
 .vscode/
-
-# Logs et caches générés au runtime
-storage/logs/
-storage/framework/cache/
-storage/framework/sessions/
-storage/framework/views/
-storage/app/public/
-
-# Assets de dev (reconstruits dans le stage node-builder)
-# public/build/ est généré dans le Dockerfile multi-stage
-
-# Tests (inutiles en production)
+.junie/
+.phpunit.cache/
 tests/
-phpunit.xml
-pest.xml
-.phpunit.result.cache
-
-# Documentation
+compose.yaml
+docker/8.5/
+docker/mysql/
 *.md

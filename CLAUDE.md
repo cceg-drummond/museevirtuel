@@ -16,14 +16,15 @@
 | Clé | Valeur |
 |-----|--------|
 | Framework | Laravel 12 |
-| PHP | 8.4 |
+| PHP | 8.5 |
 | Tests | Pest 4 |
 | Style | Pint (`pint.json`) |
 | Base de données | MySQL |
 | Frontend | Vue 3 + Inertia.js v2 + Tailwind CSS v4 |
 | Routes typées | Wayfinder v0 |
 | Auth | Laravel Fortify v1 |
-| Serveur local | Laravel Herd (`.test`) |
+| Serveur local | Laravel Sail (Docker) ou Laravel Herd (`.test`) |
+| Production | Docker (`Dockerfile` + `docker-compose.prod.yml`) |
 
 ---
 
