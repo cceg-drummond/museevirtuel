@@ -5,11 +5,15 @@ import laravel from 'laravel-vite-plugin';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 
+// Sous Sail (LARAVEL_SAIL=1 dans compose.yaml), Vite tourne dans le conteneur :
+// il doit écouter sur toutes les interfaces pour être joignable depuis l'hôte.
+const isSail = process.env.LARAVEL_SAIL === '1';
+
 export default defineConfig({
     server: {
-        host: '127.0.0.1',
+        host: isSail ? '0.0.0.0' : '127.0.0.1',
         hmr: {
-            host: '127.0.0.1',
+            host: isSail ? 'localhost' : '127.0.0.1',
         },
         watch: {
             // Wayfinder supprime et recrée ces dossiers à chaque changement PHP,
