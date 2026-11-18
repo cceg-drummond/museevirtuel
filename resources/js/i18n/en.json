@@ -930,6 +930,20 @@
         "send": "Send"
     },
     "types_projet": {
+        "acces": {
+            "btn_make_accessible": "Make accessible",
+            "btn_manage": "Edit access",
+            "btn_hide": "Hide",
+            "menu_label": "Classes with access",
+            "all": "All",
+            "class": "Class {numero}",
+            "no_classes": "No classes in this course.",
+            "section_title": "Accessible to classes",
+            "all_classes": "All classes, including ones added later",
+            "none": "No class has access yet.",
+            "tooltip_choose": "Choose which classes can access this project type",
+            "tooltip_hide": "Hide this project type from all classes"
+        },
         "index": {
             "page_title": "Project types",
             "heading_title": "Project types",

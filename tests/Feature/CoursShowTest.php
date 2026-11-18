@@ -50,8 +50,8 @@ test("la page d'un cours expose classes, ressources, types de projets et visios"
             ->where('references', [['id' => $reference->id, 'nom' => 'BAnQ', 'url' => 'https://banq.qc.ca', 'ordre' => 1]])
             // Triés par nom
             ->where('typesProjets', [
-                ['id' => $tpA->id, 'nom' => 'A projet', 'description' => null, 'accessible' => false, 'sections' => []],
-                ['id' => $tpB->id, 'nom' => 'B projet', 'description' => 'Desc', 'accessible' => true, 'sections' => [
+                ['id' => $tpA->id, 'nom' => 'A projet', 'description' => null, 'accessible' => false, 'classes' => [], 'sections' => []],
+                ['id' => $tpB->id, 'nom' => 'B projet', 'description' => 'Desc', 'accessible' => true, 'classes' => [], 'sections' => [
                     ['id' => $section->id, 'label' => 'Intro', 'description' => 'D', 'ordre' => 1],
                 ]],
             ])

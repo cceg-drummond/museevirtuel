@@ -26,7 +26,7 @@ class ProjetRechercheIndexProps
     public function pourGroupe(Cours $cours, Classe $classe, Groupe $groupe,
         User $user, bool $estEnseignant): array
     {
-        $typesProjets = $this->typesProjetsVisibles($cours, $user, $estEnseignant);
+        $typesProjets = $this->typesProjetsVisibles($cours, $classe, $user, $estEnseignant);
         $projetsParType = $this->projetsParType($groupe, $typesProjets);
 
         return [
@@ -42,12 +42,13 @@ class ProjetRechercheIndexProps
     /**
      * Retourne les types de projets du cours (pas de tous les cours de l'enseignant).
      *
-     * Les étudiants ne voient que les types rendus accessibles par l'enseignant.
+     * Les étudiants ne voient que les types rendus accessibles à leur classe par l'enseignant.
      */
-    private function typesProjetsVisibles(Cours $cours, User $user, bool $estEnseignant): Collection
+    private function typesProjetsVisibles(Cours $cours, Classe $classe, User $user, bool $estEnseignant): Collection
     {
         return TypeProjet::where('cours_id', $cours->id)
-            ->when(! $estEnseignant && ! $user->isAdmin(), fn ($q) => $q->where('accessible', true))
+            ->when(! $estEnseignant && ! $user->isAdmin(), fn ($q) => $q->accessiblesPour($classe))
+            ->withExists(['classes as accessible_classe' => fn ($q) => $q->where('classes.id', $classe->id)])
             ->get();
     }
 
@@ -72,8 +73,11 @@ class ProjetRechercheIndexProps
     {
         return [
             'typeProjet' => array_merge(
-                $typeProjet->only('id', 'nom', 'description', 'accessible'),
-                ['type' => $typeProjet->type],
+                $typeProjet->only('id', 'nom', 'description'),
+                [
+                    'accessible' => $typeProjet->accessible || $typeProjet->accessible_classe,
+                    'type' => $typeProjet->type,
+                ],
             ),
             'projet' => $projet ? $this->resumeProjet($typeProjet, $projet) : null,
             'statut' => $projet?->statutActuel()->value

@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import {
-    ChevronDown,
-    ChevronRight,
-    Pencil,
-    Plus,
-    Trash2,
-} from 'lucide-vue-next';
+import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Heading from '@/components/shared/Heading.vue';
+import { estVisible } from '@/components/types-projet/acces';
+import type { ClasseAcces } from '@/components/types-projet/acces';
+import ClassesAccessibles from '@/components/types-projet/ClassesAccessibles.vue';
+import MenuAccesTypeProjet from '@/components/types-projet/MenuAccesTypeProjet.vue';
 import { Badge } from '@/components/ui/badge';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
@@ -41,6 +39,8 @@ type TypeProjet = {
     nom: string;
     description: string | null;
     accessible: boolean;
+    // Classes ayant accès quand le type n'est pas ouvert à toutes
+    classes: number[];
     type: 'standard' | 'musee';
     sections: Section[];
 };
@@ -54,21 +54,10 @@ type Cours = {
 type Props = {
     cours: Cours;
     typesProjets: TypeProjet[];
+    classes: ClasseAcces[];
 };
 
 const props = defineProps<Props>();
-
-// ─── Toggle accessible ────────────────────────────────────────────────────────
-const toggleForm = useForm({});
-
-function toggleAccessible(tp: TypeProjet) {
-    toggleForm.patch(
-        typesProjetsRoutes.toggleAccessible.url({
-            cours: props.cours.id,
-            typeProjet: tp.id,
-        }),
-    );
-}
 
 // ─── Suppression TypeProjet ───────────────────────────────────────────────────
 const deleteForm = useForm({});
@@ -123,14 +112,14 @@ function supprimer(tp: TypeProjet) {
                                 {{ tp.nom }}
                                 <Badge
                                     :class="
-                                        tp.accessible
+                                        estVisible(tp)
                                             ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                                             : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                                     "
                                     class="text-xs"
                                 >
                                     {{
-                                        tp.accessible
+                                        estVisible(tp)
                                             ? $t(
                                                   'types_projet.index.badge_accessible',
                                               )
@@ -149,33 +138,11 @@ function supprimer(tp: TypeProjet) {
                         </div>
 
                         <div class="flex shrink-0 items-center gap-1">
-                            <BoutonTooltip
-                                size="sm"
-                                :variant="
-                                    tp.accessible ? 'outline' : 'secondary'
-                                "
-                                :texte="
-                                    tp.accessible
-                                        ? 'Masquer ce type de projet aux étudiants'
-                                        : 'Rendre ce type de projet accessible aux étudiants'
-                                "
-                                class="text-xs"
-                                :disabled="toggleForm.processing"
-                                @click="toggleAccessible(tp)"
-                            >
-                                <ChevronRight
-                                    v-if="!tp.accessible"
-                                    class="mr-1 h-3 w-3"
-                                />
-                                <ChevronDown v-else class="mr-1 h-3 w-3" />
-                                {{
-                                    tp.accessible
-                                        ? $t('types_projet.index.btn_hide')
-                                        : $t(
-                                              'types_projet.index.btn_make_accessible',
-                                          )
-                                }}
-                            </BoutonTooltip>
+                            <MenuAccesTypeProjet
+                                :cours-id="cours.id"
+                                :type-projet="tp"
+                                :classes="props.classes"
+                            />
 
                             <BoutonTooltip
                                 texte="Modifier ce type de projet"
@@ -221,6 +188,13 @@ function supprimer(tp: TypeProjet) {
                 </CardHeader>
 
                 <CardContent class="flex flex-col gap-4">
+                    <!-- Classes ayant accès -->
+                    <ClassesAccessibles
+                        class="border-t pt-3"
+                        :type-projet="tp"
+                        :classes="props.classes"
+                    />
+
                     <!-- Sections (résumé) -->
                     <div class="border-t pt-3">
                         <p

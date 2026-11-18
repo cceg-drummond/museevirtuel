@@ -78,19 +78,21 @@ class CoursProps
     }
 
     /**
-     * Retourne les types de projets du cours, triés par nom, avec leurs sections.
+     * Retourne les types de projets du cours, triés par nom, avec leurs sections et les classes y ayant accès.
      */
     private function typesProjets(Cours $cours): Collection
     {
         return TypeProjet::where('cours_id', $cours->id)
-            ->with(['sections'])
+            ->with(['sections', 'classes:classes.id'])
             ->orderBy('nom')
             ->get()
             ->map(fn (TypeProjet $tp) => [
                 'id' => $tp->id,
                 'nom' => $tp->nom,
                 'description' => $tp->description,
+                // « Tous » ; les classes précises sont dans `classes`
                 'accessible' => $tp->accessible,
+                'classes' => $tp->classes->pluck('id')->values(),
                 'sections' => $tp->sections->map(fn ($s) => [
                     'id' => $s->id,
                     'label' => $s->label,

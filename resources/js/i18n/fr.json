@@ -929,6 +929,20 @@
         "send": "Envoyer"
     },
     "types_projet": {
+        "acces": {
+            "btn_make_accessible": "Rendre accessible",
+            "btn_manage": "Modifier l’accès",
+            "btn_hide": "Masquer",
+            "menu_label": "Classes ayant accès",
+            "all": "Tous",
+            "class": "Classe {numero}",
+            "no_classes": "Aucune classe dans ce cours.",
+            "section_title": "Accessible aux classes",
+            "all_classes": "Toutes les classes, y compris celles ajoutées plus tard",
+            "none": "Aucune classe n’a accès pour l’instant.",
+            "tooltip_choose": "Choisir les classes qui ont accès à ce type de projet",
+            "tooltip_hide": "Masquer ce type de projet à toutes les classes"
+        },
         "index": {
             "page_title": "Types de projet",
             "heading_title": "Types de projet",

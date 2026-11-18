@@ -6,8 +6,6 @@ import {
     BookOpen,
     Calendar,
     Check,
-    ChevronDown,
-    ChevronRight,
     ClipboardList,
     Copy,
     Download,
@@ -28,6 +26,9 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
 import Heading from '@/components/shared/Heading.vue';
 import InputError from '@/components/shared/InputError.vue';
 import SectionCard from '@/components/shared/SectionCard.vue';
+import { estVisible } from '@/components/types-projet/acces';
+import ClassesAccessibles from '@/components/types-projet/ClassesAccessibles.vue';
+import MenuAccesTypeProjet from '@/components/types-projet/MenuAccesTypeProjet.vue';
 import { Badge } from '@/components/ui/badge';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
@@ -117,6 +118,8 @@ type TypeProjet = {
     nom: string;
     description: string | null;
     accessible: boolean;
+    // Classes ayant accès quand le type n'est pas ouvert à toutes
+    classes: number[];
     sections: TypeProjetSection[];
 };
 
@@ -339,15 +342,12 @@ function executeDeleteEtape(): void {
         return;
     }
 
-    deleteEtapeForm.delete(
-        `/cours/${props.cours.id}/echeancier/${etape.id}`,
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                handleDeleteEtapeDialogUpdate(false);
-            },
+    deleteEtapeForm.delete(`/cours/${props.cours.id}/echeancier/${etape.id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            handleDeleteEtapeDialogUpdate(false);
         },
-    );
+    });
 }
 function destroyAllEtapes() {
     destroyAllForm.delete(`/cours/${props.cours.id}/echeancier`, {
@@ -448,20 +448,6 @@ function formatSize(bytes: number): string {
 }
 
 // ─── Types de projet ──────────────────────────────────────────────────────────
-const toggleTpForm = useForm({});
-
-function toggleAccessibleTp(tp: TypeProjet) {
-    toggleTpForm.patch(
-        typesProjetsRoutes.toggleAccessible.url({
-            cours: props.cours.id,
-            typeProjet: tp.id,
-        }),
-        {
-            preserveScroll: true,
-        },
-    );
-}
-
 const deleteTpForm = useForm({});
 
 function supprimerTp(tp: TypeProjet) {
@@ -583,92 +569,86 @@ function submitTransfert() {
                         Classe
                     </Button>
                 </template>
+                <div
+                    v-if="classes.length === 0"
+                    class="py-4 text-center text-sm text-muted-foreground"
+                >
+                    {{ $t('cours.show.no_classes') }}
+                </div>
+                <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <div
-                        v-if="classes.length === 0"
-                        class="py-4 text-center text-sm text-muted-foreground"
+                        v-for="classe in classes"
+                        :key="classe.id"
+                        class="flex flex-col gap-3 rounded-lg border p-4"
                     >
-                        {{ $t('cours.show.no_classes') }}
-                    </div>
-                    <div
-                        v-else
-                        class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-                    >
-                        <div
-                            v-for="classe in classes"
-                            :key="classe.id"
-                            class="flex flex-col gap-3 rounded-lg border p-4"
-                        >
-                            <div class="flex items-start justify-between gap-2">
-                                <div>
-                                    <p class="text-sm font-medium">
-                                        {{
-                                            classe.nom ??
-                                            `Classe ${classe.numero}`
-                                        }}
-                                    </p>
-                                    <p
-                                        class="font-mono text-xs text-muted-foreground"
-                                    >
-                                        {{ classe.code }} · {{ classe.numero }}
-                                    </p>
-                                    <p
-                                        v-if="
-                                            classe.jour_semaine ||
-                                            classe.plage_horaire
-                                        "
-                                        class="text-xs text-muted-foreground"
-                                    >
-                                        {{
-                                            [
-                                                classe.jour_semaine,
-                                                classe.plage_horaire,
-                                            ]
-                                                .filter(Boolean)
-                                                .join(' · ')
-                                        }}
-                                    </p>
-                                </div>
-                                <div class="flex shrink-0 gap-2">
-                                    <BoutonTooltip
-                                        texte="Accéder au détail de cette section (groupes et étudiants)"
-                                        size="sm"
-                                        variant="outline"
-                                        as-child
-                                    >
-                                        <Link
-                                            :href="`/cours/${cours.id}/classes/${classe.id}`"
-                                        >
-                                            {{ $t('cours.show.classes_see') }}
-                                        </Link>
-                                    </BoutonTooltip>
-                                    <BoutonTooltip
-                                        texte="Supprimer cette section"
-                                        size="sm"
-                                        variant="destructive"
-                                        @click="confirmDeleteClasse(classe)"
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </BoutonTooltip>
-                                </div>
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="text-sm font-medium">
+                                    {{
+                                        classe.nom ?? `Classe ${classe.numero}`
+                                    }}
+                                </p>
+                                <p
+                                    class="font-mono text-xs text-muted-foreground"
+                                >
+                                    {{ classe.code }} · {{ classe.numero }}
+                                </p>
+                                <p
+                                    v-if="
+                                        classe.jour_semaine ||
+                                        classe.plage_horaire
+                                    "
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    {{
+                                        [
+                                            classe.jour_semaine,
+                                            classe.plage_horaire,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' · ')
+                                    }}
+                                </p>
                             </div>
-
-                            <!-- Compteurs -->
-                            <div
-                                class="flex gap-4 text-xs text-muted-foreground"
-                            >
-                                <span
-                                    >{{ classe.etudiants_count }} étudiant{{
-                                        classe.etudiants_count !== 1 ? 's' : ''
-                                    }}</span
+                            <div class="flex shrink-0 gap-2">
+                                <BoutonTooltip
+                                    texte="Accéder au détail de cette section (groupes et étudiants)"
+                                    size="sm"
+                                    variant="outline"
+                                    as-child
                                 >
-                                <span
-                                    >{{ classe.groupes_count }} groupe{{
-                                        classe.groupes_count !== 1 ? 's' : ''
-                                    }}</span
+                                    <Link
+                                        :href="`/cours/${cours.id}/classes/${classe.id}`"
+                                    >
+                                        {{ $t('cours.show.classes_see') }}
+                                    </Link>
+                                </BoutonTooltip>
+                                <BoutonTooltip
+                                    texte="Supprimer cette section"
+                                    size="sm"
+                                    variant="destructive"
+                                    @click="confirmDeleteClasse(classe)"
                                 >
+                                    <Trash2 class="h-4 w-4" />
+                                </BoutonTooltip>
                             </div>
                         </div>
+
+                        <!-- Compteurs -->
+                        <div class="flex gap-4 text-xs text-muted-foreground">
+                            <span
+                                >{{ classe.etudiants_count }} étudiant{{
+                                    classe.etudiants_count !== 1 ? 's' : ''
+                                }}</span
+                            >
+                            <span
+                                >{{ classe.groupes_count }} groupe{{
+                                    classe.groupes_count !== 1 ? 's' : ''
+                                }}</span
+                            >
+                        </div>
                     </div>
+                </div>
             </SectionCard>
 
             <!-- Documents du cours -->
@@ -697,64 +677,64 @@ function submitTransfert() {
                         </Button>
                     </div>
                 </template>
-                    <p
-                        v-if="docForm.errors.document"
-                        class="mb-3 text-sm text-destructive"
-                    >
-                        {{ docForm.errors.document }}
-                    </p>
+                <p
+                    v-if="docForm.errors.document"
+                    class="mb-3 text-sm text-destructive"
+                >
+                    {{ docForm.errors.document }}
+                </p>
 
+                <div
+                    v-if="documents.length === 0"
+                    class="py-4 text-center text-sm text-muted-foreground"
+                >
+                    {{ $t('classes.show.no_documents') }}
+                </div>
+
+                <div v-else class="flex flex-col divide-y">
                     <div
-                        v-if="documents.length === 0"
-                        class="py-4 text-center text-sm text-muted-foreground"
+                        v-for="doc in documents"
+                        :key="doc.id"
+                        class="flex items-center justify-between gap-3 py-3"
                     >
-                        {{ $t('classes.show.no_documents') }}
-                    </div>
-
-                    <div v-else class="flex flex-col divide-y">
-                        <div
-                            v-for="doc in documents"
-                            :key="doc.id"
-                            class="flex items-center justify-between gap-3 py-3"
-                        >
-                            <div class="flex min-w-0 items-center gap-3">
-                                <FileText
-                                    class="h-5 w-5 shrink-0 text-muted-foreground"
-                                />
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-medium">
-                                        {{ doc.nom_original }}
-                                    </p>
-                                    <p
-                                        class="text-xs text-muted-foreground uppercase"
-                                    >
-                                        {{ doc.type }} ·
-                                        {{ formatSize(doc.taille) }}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex shrink-0 gap-2">
-                                <BoutonTooltip
-                                    texte="Télécharger ce document"
-                                    size="sm"
-                                    variant="outline"
-                                    as-child
+                        <div class="flex min-w-0 items-center gap-3">
+                            <FileText
+                                class="h-5 w-5 shrink-0 text-muted-foreground"
+                            />
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-medium">
+                                    {{ doc.nom_original }}
+                                </p>
+                                <p
+                                    class="text-xs text-muted-foreground uppercase"
                                 >
-                                    <a :href="documentDownloadUrl(doc)">
-                                        <Download class="h-4 w-4" />
-                                    </a>
-                                </BoutonTooltip>
-                                <BoutonTooltip
-                                    texte="Supprimer ce document"
-                                    size="sm"
-                                    variant="destructive"
-                                    @click="confirmDeleteDocument(doc)"
-                                >
-                                    <Trash2 class="h-4 w-4" />
-                                </BoutonTooltip>
+                                    {{ doc.type }} ·
+                                    {{ formatSize(doc.taille) }}
+                                </p>
                             </div>
                         </div>
+                        <div class="flex shrink-0 gap-2">
+                            <BoutonTooltip
+                                texte="Télécharger ce document"
+                                size="sm"
+                                variant="outline"
+                                as-child
+                            >
+                                <a :href="documentDownloadUrl(doc)">
+                                    <Download class="h-4 w-4" />
+                                </a>
+                            </BoutonTooltip>
+                            <BoutonTooltip
+                                texte="Supprimer ce document"
+                                size="sm"
+                                variant="destructive"
+                                @click="confirmDeleteDocument(doc)"
+                            >
+                                <Trash2 class="h-4 w-4" />
+                            </BoutonTooltip>
+                        </div>
                     </div>
+                </div>
             </SectionCard>
 
             <!-- Objectifs pédagogiques -->
@@ -764,10 +744,7 @@ function submitTransfert() {
                 :icon="BookOpen"
                 :count="objectifs.length"
             >
-                    <CoursObjectifs
-                        :cours-id="cours.id"
-                        :objectifs="objectifs"
-                    />
+                <CoursObjectifs :cours-id="cours.id" :objectifs="objectifs" />
             </SectionCard>
 
             <!-- Références bibliographiques -->
@@ -777,10 +754,10 @@ function submitTransfert() {
                 :icon="BookMarked"
                 :count="references.length"
             >
-                    <CoursReferences
-                        :cours-id="cours.id"
-                        :references="references"
-                    />
+                <CoursReferences
+                    :cours-id="cours.id"
+                    :references="references"
+                />
             </SectionCard>
 
             <!-- Types de projet -->
@@ -798,102 +775,94 @@ function submitTransfert() {
                         </Link>
                     </Button>
                 </template>
+                <div
+                    v-if="typesProjets.length === 0"
+                    class="py-4 text-center text-sm text-muted-foreground"
+                >
+                    Aucun type de projet. Créez-en un pour commencer.
+                </div>
+                <div v-else class="flex flex-col divide-y">
                     <div
-                        v-if="typesProjets.length === 0"
-                        class="py-4 text-center text-sm text-muted-foreground"
+                        v-for="tp in typesProjets"
+                        :key="tp.id"
+                        class="flex items-start justify-between gap-3 py-3"
                     >
-                        Aucun type de projet. Créez-en un pour commencer.
-                    </div>
-                    <div v-else class="flex flex-col divide-y">
-                        <div
-                            v-for="tp in typesProjets"
-                            :key="tp.id"
-                            class="flex items-start justify-between gap-3 py-3"
-                        >
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="text-sm font-medium">{{
-                                        tp.nom
-                                    }}</span>
-                                    <Badge
-                                        :class="
-                                            tp.accessible
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
-                                        "
-                                        class="text-xs"
-                                    >
-                                        {{
-                                            tp.accessible
-                                                ? 'Accessible'
-                                                : 'Non accessible'
-                                        }}
-                                    </Badge>
-                                </div>
-                                <p
-                                    v-if="tp.description"
-                                    class="mt-0.5 text-xs text-muted-foreground"
-                                >
-                                    {{ tp.description }}
-                                </p>
-                            </div>
-                            <div class="flex shrink-0 items-center gap-1">
-                                <BoutonTooltip
-                                    size="sm"
-                                    :variant="
-                                        tp.accessible ? 'outline' : 'secondary'
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-sm font-medium">{{
+                                    tp.nom
+                                }}</span>
+                                <Badge
+                                    :class="
+                                        estVisible(tp)
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                            : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                                     "
-                                    :texte="
-                                        tp.accessible
-                                            ? 'Masquer ce type de projet aux étudiants'
-                                            : 'Rendre ce type de projet accessible aux étudiants'
-                                    "
-                                    class="h-7 text-xs"
-                                    :disabled="toggleTpForm.processing"
-                                    @click="toggleAccessibleTp(tp)"
+                                    class="text-xs"
                                 >
-                                    <ChevronRight
-                                        v-if="!tp.accessible"
-                                        class="mr-1 h-3 w-3"
-                                    />
-                                    <ChevronDown v-else class="mr-1 h-3 w-3" />
                                     {{
-                                        tp.accessible
-                                            ? 'Masquer'
-                                            : 'Rendre accessible'
+                                        estVisible(tp)
+                                            ? $t(
+                                                  'types_projet.index.badge_accessible',
+                                              )
+                                            : $t(
+                                                  'types_projet.index.badge_not_accessible',
+                                              )
                                     }}
-                                </BoutonTooltip>
-                                <BoutonTooltip
-                                    texte="Modifier ce type de projet"
-                                    size="icon"
-                                    variant="ghost"
-                                    class="h-7 w-7"
-                                    as-child
-                                >
-                                    <Link
-                                        :href="
-                                            typesProjetsRoutes.edit.url({
-                                                cours: cours.id,
-                                                typeProjet: tp.id,
-                                            })
-                                        "
-                                    >
-                                        <Pencil class="h-3.5 w-3.5" />
-                                    </Link>
-                                </BoutonTooltip>
-                                <BoutonTooltip
-                                    texte="Supprimer ce type de projet"
-                                    size="icon"
-                                    variant="ghost"
-                                    class="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                    :disabled="deleteTpForm.processing"
-                                    @click="supprimerTp(tp)"
-                                >
-                                    <Trash2 class="h-3.5 w-3.5" />
-                                </BoutonTooltip>
+                                </Badge>
                             </div>
+                            <p
+                                v-if="tp.description"
+                                class="mt-0.5 text-xs text-muted-foreground"
+                            >
+                                {{ tp.description }}
+                            </p>
+
+                            <!-- Classes ayant accès -->
+                            <ClassesAccessibles
+                                class="mt-2 border-t pt-2"
+                                :type-projet="tp"
+                                :classes="classes"
+                            />
+                        </div>
+                        <div class="flex shrink-0 items-center gap-1">
+                            <MenuAccesTypeProjet
+                                :cours-id="cours.id"
+                                :type-projet="tp"
+                                :classes="classes"
+                                bouton-class="h-7"
+                            />
+                            <BoutonTooltip
+                                texte="Modifier ce type de projet"
+                                size="icon"
+                                variant="ghost"
+                                class="h-7 w-7"
+                                as-child
+                            >
+                                <Link
+                                    :href="
+                                        typesProjetsRoutes.edit.url({
+                                            cours: cours.id,
+                                            typeProjet: tp.id,
+                                        })
+                                    "
+                                >
+                                    <Pencil class="h-3.5 w-3.5" />
+                                </Link>
+                            </BoutonTooltip>
+                            <BoutonTooltip
+                                texte="Supprimer ce type de projet"
+                                size="icon"
+                                variant="ghost"
+                                class="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                :disabled="deleteTpForm.processing"
+                                @click="supprimerTp(tp)"
+                            >
+                                <Trash2 class="h-3.5 w-3.5" />
+                            </BoutonTooltip>
                         </div>
                     </div>
+                </div>
             </SectionCard>
 
             <!-- Échéancier -->
@@ -921,134 +890,128 @@ function submitTransfert() {
                         </Button>
                     </div>
                 </template>
-                    <div
-                        v-if="echeancierEtapes.length === 0"
-                        class="py-4 text-center text-sm text-muted-foreground"
-                    >
-                        Aucune étape dans l'échéancier.
-                    </div>
-                    <div v-else class="space-y-6">
-                        <div v-for="semaine in semaines" :key="semaine">
-                            <p
-                                class="mb-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
+                <div
+                    v-if="echeancierEtapes.length === 0"
+                    class="py-4 text-center text-sm text-muted-foreground"
+                >
+                    Aucune étape dans l'échéancier.
+                </div>
+                <div v-else class="space-y-6">
+                    <div v-for="semaine in semaines" :key="semaine">
+                        <p
+                            class="mb-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
+                        >
+                            Semaine {{ semaine }}
+                        </p>
+                        <ul class="space-y-2">
+                            <li
+                                v-for="etape in echeancierParSemaine.get(
+                                    semaine,
+                                )"
+                                :key="etape.id"
+                                class="flex items-start gap-3"
                             >
-                                Semaine {{ semaine }}
-                            </p>
-                            <ul class="space-y-2">
-                                <li
-                                    v-for="etape in echeancierParSemaine.get(
-                                        semaine,
-                                    )"
-                                    :key="etape.id"
-                                    class="flex items-start gap-3"
-                                >
-                                    <Checkbox
-                                        :id="`etape-${etape.id}`"
-                                        :checked="etape.is_done"
-                                        :disabled="toggleLoadingId === etape.id"
-                                        class="mt-0.5 shrink-0"
-                                        @click.prevent="toggleEtape(etape)"
-                                    />
-                                    <template
-                                        v-if="editingEtape?.id === etape.id"
+                                <Checkbox
+                                    :id="`etape-${etape.id}`"
+                                    :checked="etape.is_done"
+                                    :disabled="toggleLoadingId === etape.id"
+                                    class="mt-0.5 shrink-0"
+                                    @click.prevent="toggleEtape(etape)"
+                                />
+                                <template v-if="editingEtape?.id === etape.id">
+                                    <div
+                                        class="flex flex-1 flex-wrap items-center gap-2"
                                     >
-                                        <div
-                                            class="flex flex-1 flex-wrap items-center gap-2"
-                                        >
-                                            <Input
-                                                v-model="editEtapeForm.etape"
-                                                class="h-7 flex-1 text-sm"
-                                                @keydown.enter.prevent="
-                                                    submitEditEtape
-                                                "
-                                                @keydown.escape="
-                                                    editingEtape = null
-                                                "
-                                            />
-                                            <div class="w-20 shrink-0">
-                                                <Label
-                                                    class="sr-only"
-                                                    for="edit-etape-semaine"
-                                                    >Semaine</Label
-                                                >
-                                                <NumberInput
-                                                    id="edit-etape-semaine"
-                                                    v-model="
-                                                        editEtapeForm.semaine
-                                                    "
-                                                    class="h-7 text-sm"
-                                                    :min="1"
-                                                    :max="15"
-                                                />
-                                            </div>
-                                            <select
-                                                v-model="editEtapeForm.periode"
-                                                class="h-7 rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
-                                            >
-                                                <option :value="null">—</option>
-                                                <option :value="1">P1</option>
-                                                <option :value="2">P2</option>
-                                            </select>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                class="h-7 w-7 p-0"
-                                                :disabled="
-                                                    editEtapeForm.processing
-                                                "
-                                                @click="submitEditEtape"
-                                            >
-                                                <Check
-                                                    class="h-4 w-4 text-green-600"
-                                                />
-                                            </Button>
-                                        </div>
-                                    </template>
-                                    <template v-else>
-                                        <label
-                                            :for="`etape-${etape.id}`"
-                                            class="flex flex-1 cursor-pointer items-baseline gap-2 text-sm leading-snug"
-                                            :class="
-                                                etape.is_done
-                                                    ? 'text-muted-foreground line-through'
-                                                    : ''
+                                        <Input
+                                            v-model="editEtapeForm.etape"
+                                            class="h-7 flex-1 text-sm"
+                                            @keydown.enter.prevent="
+                                                submitEditEtape
                                             "
-                                        >
-                                            {{ etape.etape }}
-                                            <span
-                                                v-if="etape.periode"
-                                                class="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground no-underline"
-                                                >P{{ etape.periode }}</span
+                                            @keydown.escape="
+                                                editingEtape = null
+                                            "
+                                        />
+                                        <div class="w-20 shrink-0">
+                                            <Label
+                                                class="sr-only"
+                                                for="edit-etape-semaine"
+                                                >Semaine</Label
                                             >
-                                        </label>
-                                        <div class="flex shrink-0 gap-1">
-                                            <BoutonTooltip
-                                                texte="Modifier cette étape"
-                                                size="icon-sm"
-                                                variant="ghost"
-                                                class="h-6 w-6"
-                                                @click="openEditEtape(etape)"
-                                            >
-                                                <Pencil class="h-3.5 w-3.5" />
-                                            </BoutonTooltip>
-                                            <BoutonTooltip
-                                                texte="Supprimer cette étape de l'échéancier"
-                                                size="icon-sm"
-                                                variant="ghost"
-                                                class="h-6 w-6 text-destructive hover:text-destructive"
-                                                :disabled="
-                                                    deleteEtapeForm.processing
-                                                "
-                                                @click="confirmDeleteEtape(etape)"
-                                            >
-                                                <Trash2 class="h-3.5 w-3.5" />
-                                            </BoutonTooltip>
+                                            <NumberInput
+                                                id="edit-etape-semaine"
+                                                v-model="editEtapeForm.semaine"
+                                                class="h-7 text-sm"
+                                                :min="1"
+                                                :max="15"
+                                            />
                                         </div>
-                                    </template>
-                                </li>
-                            </ul>
-                        </div>
+                                        <select
+                                            v-model="editEtapeForm.periode"
+                                            class="h-7 rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
+                                        >
+                                            <option :value="null">—</option>
+                                            <option :value="1">P1</option>
+                                            <option :value="2">P2</option>
+                                        </select>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            class="h-7 w-7 p-0"
+                                            :disabled="editEtapeForm.processing"
+                                            @click="submitEditEtape"
+                                        >
+                                            <Check
+                                                class="h-4 w-4 text-green-600"
+                                            />
+                                        </Button>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <label
+                                        :for="`etape-${etape.id}`"
+                                        class="flex flex-1 cursor-pointer items-baseline gap-2 text-sm leading-snug"
+                                        :class="
+                                            etape.is_done
+                                                ? 'text-muted-foreground line-through'
+                                                : ''
+                                        "
+                                    >
+                                        {{ etape.etape }}
+                                        <span
+                                            v-if="etape.periode"
+                                            class="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground no-underline"
+                                            >P{{ etape.periode }}</span
+                                        >
+                                    </label>
+                                    <div class="flex shrink-0 gap-1">
+                                        <BoutonTooltip
+                                            texte="Modifier cette étape"
+                                            size="icon-sm"
+                                            variant="ghost"
+                                            class="h-6 w-6"
+                                            @click="openEditEtape(etape)"
+                                        >
+                                            <Pencil class="h-3.5 w-3.5" />
+                                        </BoutonTooltip>
+                                        <BoutonTooltip
+                                            texte="Supprimer cette étape de l'échéancier"
+                                            size="icon-sm"
+                                            variant="ghost"
+                                            class="h-6 w-6 text-destructive hover:text-destructive"
+                                            :disabled="
+                                                deleteEtapeForm.processing
+                                            "
+                                            @click="confirmDeleteEtape(etape)"
+                                        >
+                                            <Trash2 class="h-3.5 w-3.5" />
+                                        </BoutonTooltip>
+                                    </div>
+                                </template>
+                            </li>
+                        </ul>
                     </div>
+                </div>
             </SectionCard>
 
             <!-- Visioconférences -->
@@ -1063,20 +1026,20 @@ function submitTransfert() {
                         Planifier
                     </Button>
                 </template>
-                    <div
-                        v-if="visioConferences.length === 0"
-                        class="text-sm text-muted-foreground"
-                    >
-                        Aucune visioconférence planifiée.
-                    </div>
-                    <div v-else class="flex flex-col gap-3">
-                        <VisioSession
-                            v-for="visio in visioConferences"
-                            :key="visio.id"
-                            :visio="visio"
-                            :can-manage="true"
-                        />
-                    </div>
+                <div
+                    v-if="visioConferences.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
+                    Aucune visioconférence planifiée.
+                </div>
+                <div v-else class="flex flex-col gap-3">
+                    <VisioSession
+                        v-for="visio in visioConferences"
+                        :key="visio.id"
+                        :visio="visio"
+                        :can-manage="true"
+                    />
+                </div>
             </SectionCard>
         </div>
 

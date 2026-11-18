@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -62,6 +64,36 @@ class TypeProjet extends Model
     public function cours(): BelongsTo
     {
         return $this->belongsTo(Cours::class);
+    }
+
+    /**
+     * Retourne les classes ayant accès à ce type de projet quand il n'est pas accessible à toutes.
+     */
+    public function classes(): BelongsToMany
+    {
+        return $this->belongsToMany(Classe::class, 'classe_type_projet', 'type_projet_id', 'classe_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Limite la requête aux types de projet accessibles pour la classe donnée.
+     *
+     * Accessible = ouvert à toutes les classes (booléen) ou à cette classe précise (pivot).
+     */
+    public function scopeAccessiblesPour(Builder $query, Classe $classe): void
+    {
+        $query->where(fn (Builder $q) => $q
+            ->where('accessible', true)
+            ->orWhereHas('classes', fn (Builder $c) => $c->where('classes.id', $classe->id)));
+    }
+
+    /**
+     * Indique si ce type de projet est accessible aux étudiants de la classe donnée.
+     */
+    public function isAccessiblePour(Classe $classe): bool
+    {
+        return $this->accessible
+            || $this->classes()->where('classes.id', $classe->id)->exists();
     }
 
     /**
