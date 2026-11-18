@@ -3,10 +3,12 @@ import { Link } from '@inertiajs/vue3';
 import { MessageSquare, Settings2, SpellCheck } from 'lucide-vue-next';
 import ConsentementVideo from '@/components/projets/ConsentementVideo.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
+import { vGrise } from '@/directives/grise';
 import { edit as editTypeProjet } from '@/routes/types-projets';
 
 defineProps<{
     peutEditer: boolean;
+    apercuEtudiant?: boolean;
     verrouille: boolean;
     hasVideoOrAudioSection: boolean;
     estEnseignant: boolean;
@@ -30,6 +32,7 @@ const emit = defineEmits<{
 <template>
     <BoutonTooltip
         v-if="peutEditer && !verrouille"
+        v-grise="apercuEtudiant"
         texte="Lancer la correction orthographique globale avec Antidote"
         variant="ghost"
         size="sm"
@@ -41,6 +44,7 @@ const emit = defineEmits<{
     </BoutonTooltip>
     <ConsentementVideo
         v-if="hasVideoOrAudioSection && !estEnseignant"
+        v-grise="apercuEtudiant"
         :params="{
             cours: coursId,
             groupe: groupeId,

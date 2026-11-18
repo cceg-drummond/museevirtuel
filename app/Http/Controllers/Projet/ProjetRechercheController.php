@@ -15,6 +15,7 @@ use App\Services\ProjetRechercheIndexProps;
 use App\Services\ProjetRechercheProps;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -57,11 +58,13 @@ class ProjetRechercheController extends Controller
      * Affiche l'éditeur du projet partagé (contenu et conclusions individuelles).
      *
      * Crée le projet à la première ouverture : c'est le point d'entrée où le groupe commence à le rédiger.
+     * Avec `?apercu=etudiant`, l'enseignant du cours voit la page telle qu'un membre du groupe la voit,
+     * en lecture seule.
      *
      * @throws HttpException
      * @throws AuthorizationException
      */
-    public function edit(Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet,
+    public function edit(Request $request, Cours $cours, Classe $classe, Groupe $groupe, TypeProjet $typeProjet,
         ProjetRechercheProps $projetRechercheProps): Response
     {
         $this->verifierChaineProjet($cours, $classe, $groupe, $typeProjet);
@@ -88,8 +91,12 @@ class ProjetRechercheController extends Controller
             return $this->renderMuseeShow($cours, $classe, $groupe, $typeProjet, $projet, $estEnseignant);
         }
 
+        // Réservé à l'enseignant du cours : pour tout autre utilisateur, le paramètre est ignoré.
+        $apercuEtudiant = $estEnseignant && $request->query('apercu') === 'etudiant';
+
         return Inertia::render('Projets/Edit',
-            $projetRechercheProps->pourEditeur($cours, $classe, $groupe, $typeProjet, $projet, $user, $estEnseignant));
+            $projetRechercheProps->pourEditeur($cours, $classe, $groupe, $typeProjet, $projet, $user,
+                $estEnseignant && ! $apercuEtudiant, $apercuEtudiant));
     }
 
     /**
