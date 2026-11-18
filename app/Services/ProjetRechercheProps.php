@@ -35,12 +35,15 @@ class ProjetRechercheProps
      * Charge les relations du projet en une passe (évite le N+1) et filtre
      * annotations, corrections et critères selon le rôle.
      *
+     * En aperçu étudiant, l'enseignant reçoit les droits qu'aurait un membre du groupe :
+     * la page affiche alors les mêmes contrôles, que le client grise et neutralise.
+     *
      * @return array<string, mixed>
      */
     public function pourEditeur(
         Cours $cours, Classe $classe, Groupe $groupe,
         TypeProjet $typeProjet, ProjetRecherche $projet,
-        User $user, bool $estEnseignant): array
+        User $user, bool $estEnseignant, bool $apercuEtudiant = false): array
     {
         // Précharger en une seule requête chacune des relations — évite le N+1
         $projet->load(['conclusions', 'commentaires', 'annotations', 'developpements', 'votes', 'typeProjet.sections.questionsBanque', 'typeProjet.sections.criteres', 'typeProjet.criteresGlobaux', 'typeProjet.taches', 'sectionContenus', 'sectionParagraphes', 'entrevueConcepts.lignes', 'sectionMedias', 'questionsChoisies', 'schemaVisuels', 'renvois.commentaires', 'critereCorrections']);
@@ -48,7 +51,7 @@ class ProjetRechercheProps
         $estMembre = ! $estEnseignant && $groupe->membres->contains('id', $user->id);
 
         // Condition commune : membre + non verrouillé + remise encore possible
-        $peutAgir = $estMembre && ! $projet->verrouille && $projet->peutEtreRemis();
+        $peutAgir = ($estMembre || $apercuEtudiant) && ! $projet->verrouille && $projet->peutEtreRemis();
 
         return [
             ...$this->contexte($cours, $classe, $groupe, $typeProjet),
@@ -60,6 +63,7 @@ class ProjetRechercheProps
             // L'enseignant en mode édition peut modifier le contenu comme un membre
             'peutEditer' => $peutAgir || ($estEnseignant && (bool) $projet->mode_edition_enseignant),
             'estEnseignant' => $estEnseignant,
+            'apercuEtudiant' => $apercuEtudiant,
             'peutRemettre' => $peutAgir,
             'commentaires' => $this->commentaires($projet),
             'annotationsParChamp' => $this->annotationsParChamp($projet, $estEnseignant),

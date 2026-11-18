@@ -8,6 +8,8 @@ import {
     CheckCircle2,
     ChevronDown,
     ChevronUp,
+    Eye,
+    EyeOff,
     Loader2,
     Lock,
     Maximize2,
@@ -68,7 +70,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
+import { vGrise } from '@/directives/grise';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { edit as editProjet } from '@/routes/projets';
 import { edit as editTypeProjet } from '@/routes/types-projets';
 import type { Auth } from '@/types/auth';
 
@@ -292,6 +296,8 @@ type Props = {
     conclusions: ConclusionMembre[];
     peutEditer: boolean;
     estEnseignant: boolean;
+    /** true = l'enseignant voit la page comme un membre du groupe, actions grisées. */
+    apercuEtudiant: boolean;
     correctionVisible: boolean;
     verrouille: boolean;
     modeEditionEnseignant: boolean;
@@ -340,6 +346,14 @@ const props = defineProps<Props>();
 const page = usePage();
 const userId = computed(() => (page.props.auth as Auth).user.id);
 const { t } = useI18n();
+
+/**
+ * Vrai si rien ne doit être modifié ni envoyé au serveur.
+ *
+ * En aperçu étudiant, l'enseignant reçoit les droits d'un membre pour que la page
+ * affiche les mêmes contrôles ; ce drapeau garantit qu'aucun ne modifie le projet.
+ */
+const lectureSeule = computed(() => !props.peutEditer || props.apercuEtudiant);
 
 /** Vrai si au moins une section de type vidéo ou audio est présente. */
 const hasVideoOrAudioSection = computed(() =>
@@ -551,11 +565,15 @@ const correctionsLocales = reactive<Record<number, CorrectionLocale[]>>({
 /** IDs des critères cochés personnellement par l'étudiant courant. */
 const cochesLocales = ref<Set<number>>(new Set(props.cochesUtilisateur));
 
-/** Vrai si l'utilisateur courant est un membre du groupe (peut cocher des critères). */
+/**
+ * Vrai si l'utilisateur courant est un membre du groupe (peut cocher des critères).
+ * En aperçu étudiant, l'enseignant voit les coches comme un membre, mais grisées.
+ */
 const estMembre = computed(
     () =>
         !props.estEnseignant &&
-        props.membres.some((m) => m.id === userId.value),
+        (props.apercuEtudiant ||
+            props.membres.some((m) => m.id === userId.value)),
 );
 
 /** Arguments de route communs pour CritereCorrection et CritereEtudiant. */
@@ -702,21 +720,21 @@ const baseUrl = computed(
 );
 
 function scheduleSharedSave() {
-    if (!props.peutEditer) {
-        return;
+
+    if(!lectureSeule.value){
+        saveStatus.value = 'saving';
+
+        if (debounceShared) {
+            clearTimeout(debounceShared);
+        }
+
+        debounceShared = setTimeout(() => saveShared(), 1500);
     }
 
-    saveStatus.value = 'saving';
-
-    if (debounceShared) {
-        clearTimeout(debounceShared);
-    }
-
-    debounceShared = setTimeout(() => saveShared(), 1500);
 }
 
 function scheduleConclusionSave(etudiantId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -735,7 +753,7 @@ function scheduleConclusionSave(etudiantId: number) {
 }
 
 async function saveShared() {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -761,7 +779,7 @@ async function saveShared() {
 }
 
 async function saveConclusion(etudiantId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -782,7 +800,7 @@ async function saveConclusion(etudiantId: number) {
 const debounceSections = new Map<number, ReturnType<typeof setTimeout>>();
 
 function scheduleSectionSave(sectionId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -800,7 +818,7 @@ function scheduleSectionSave(sectionId: number) {
 }
 
 async function saveSection(sectionId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -818,7 +836,7 @@ async function saveSection(sectionId: number) {
 }
 
 function scheduleDeveloppementSave(devId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -836,7 +854,7 @@ function scheduleDeveloppementSave(devId: number) {
 }
 
 async function saveDeveloppement(devId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -896,7 +914,7 @@ function clearAllDebounces() {
  * la liste de références et les exposants au prochain chargement.
  */
 async function flushAllPendingSaves(): Promise<void> {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1112,7 +1130,7 @@ function scheduleSectionParagrapheSave(
     paragrapheId: number,
     sectionId: number,
 ) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1131,7 +1149,7 @@ function scheduleSectionParagrapheSave(
 }
 
 async function saveSectionParagraphe(paragrapheId: number, sectionId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1224,7 +1242,7 @@ const debounceSectionConclusions = new Map<
 >();
 
 function scheduleSectionConclusionSave(sectionId: number, userId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1243,7 +1261,7 @@ function scheduleSectionConclusionSave(sectionId: number, userId: number) {
 }
 
 async function saveSectionConclusion(sectionId: number, userId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1269,7 +1287,7 @@ const debounceLignes = new Map<number, ReturnType<typeof setTimeout>>();
 const conceptEnCours = reactive<Record<number, boolean>>({});
 
 function scheduleConceptLabelSave(conceptId: number, sectionId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1287,7 +1305,7 @@ function scheduleConceptLabelSave(conceptId: number, sectionId: number) {
 }
 
 async function saveConceptLabel(conceptId: number, sectionId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1322,7 +1340,7 @@ function scheduleLigneSave(
     conceptId: number,
     sectionId: number,
 ) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -1344,7 +1362,7 @@ async function saveLigne(
     conceptId: number,
     sectionId: number,
 ) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -2286,7 +2304,7 @@ function renvoiContenuHtml(contenu: string | null): string {
  * Planifie la sauvegarde du contenu d'un renvoi après 1,5 s sans frappe.
  */
 function scheduleRenvoiSave(renvoiId: number) {
-    if (!props.peutEditer) {
+    if (lectureSeule.value) {
         return;
     }
 
@@ -2587,7 +2605,7 @@ async function supprimerCommentaireRenvoi(
                     </Button>
 
                     <ProjetSauvegardeIndicateur
-                        :visible="peutEditer"
+                        :visible="!lectureSeule"
                         :status="saveStatus"
                         :annotation-delete-error="annotationDeleteError"
                     />
@@ -2599,6 +2617,23 @@ async function supprimerCommentaireRenvoi(
                     "
                     :description="`${classe.code} — ${classe.nom_cours}`"
                 />
+
+                <!-- Bannière aperçu étudiant (enseignant) -->
+                <div
+                    v-if="apercuEtudiant"
+                    class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-800 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-200"
+                >
+                    <span class="flex items-center gap-2">
+                        <Eye class="h-4 w-4 shrink-0" />
+                        {{ t('projets.edit.student_preview_banner') }}
+                    </span>
+                    <Button variant="outline" size="sm" as-child>
+                        <Link :href="editProjet.url(routeArgsCritere)">
+                            <EyeOff class="mr-2 h-4 w-4" />
+                            {{ t('projets.edit.exit_student_preview') }}
+                        </Link>
+                    </Button>
+                </div>
 
                 <!-- Bannière document verrouillé (étudiant uniquement) -->
                 <div
@@ -2629,6 +2664,7 @@ async function supprimerCommentaireRenvoi(
 
                             <ProjetOutilsActions
                                 :peut-editer="peutEditer"
+                                :apercu-etudiant="apercuEtudiant"
                                 :verrouille="verrouille"
                                 :has-video-or-audio-section="
                                     hasVideoOrAudioSection
@@ -2667,6 +2703,27 @@ async function supprimerCommentaireRenvoi(
                                     "
                                     @toggle-verrouille="toggleVerrouille"
                                 />
+                                <BoutonTooltip
+                                    :texte="
+                                        t(
+                                            'projets.edit.student_preview_tooltip',
+                                        )
+                                    "
+                                    variant="ghost"
+                                    size="sm"
+                                    as-child
+                                >
+                                    <Link
+                                        :href="
+                                            editProjet.url(routeArgsCritere, {
+                                                query: { apercu: 'etudiant' },
+                                            })
+                                        "
+                                    >
+                                        <Eye class="h-4 w-4" />
+                                        {{ t('projets.edit.student_preview') }}
+                                    </Link>
+                                </BoutonTooltip>
                             </template>
                         </div>
                     </div>
@@ -2685,7 +2742,7 @@ async function supprimerCommentaireRenvoi(
                             :placeholder="
                                 t('projets.edit.page_titre_manuel_placeholder')
                             "
-                            :read-only="!peutEditer"
+                            :read-only="lectureSeule"
                             :est-enseignant="estEnseignant"
                             :corrections="
                                 annotations['page_titre_contenu'] ?? []
@@ -2753,7 +2810,7 @@ async function supprimerCommentaireRenvoi(
                             :placeholder="
                                 t('projets.edit.page_titre_manuel_placeholder')
                             "
-                            :read-only="!peutEditer"
+                            :read-only="lectureSeule"
                             :est-enseignant="estEnseignant"
                             :corrections="
                                 annotations['page_titre_contenu'] ?? []
@@ -2833,7 +2890,7 @@ async function supprimerCommentaireRenvoi(
                                 :placeholder="
                                     t('projets.edit.tdm_manuel_placeholder')
                                 "
-                                :read-only="!peutEditer"
+                                :read-only="lectureSeule"
                                 :est-enseignant="estEnseignant"
                                 :corrections="
                                     annotations['table_matieres_contenu'] ?? []
@@ -2901,6 +2958,7 @@ async function supprimerCommentaireRenvoi(
                                 :correction-visible="correctionVisible"
                                 :est-coche="cochesLocales.has(critere.id)"
                                 :peut-cocher="estMembre"
+                                :grise="apercuEtudiant"
                                 :route-args="routeArgsCritere"
                                 @updated-coche="
                                     (cochee) =>
@@ -2964,7 +3022,7 @@ async function supprimerCommentaireRenvoi(
                                 <RichEditor
                                     v-model="sectionContenus[section.id]"
                                     :placeholder="`Rédigez la section « ${section.label} »…`"
-                                    :read-only="!peutEditer"
+                                    :read-only="lectureSeule"
                                     :est-enseignant="estEnseignant"
                                     :corrections="
                                         annotations[`section_${section.id}`] ??
@@ -3073,11 +3131,12 @@ async function supprimerCommentaireRenvoi(
                                                     section.id
                                                 ]?.length ?? 0) > 1
                                             "
+                                            v-grise="apercuEtudiant"
                                             texte="Supprimer ce paragraphe"
                                             size="icon-sm"
                                             class="text-destructive"
                                             :disabled="
-                                                !!sectionParagrapheEnCours[
+                                                sectionParagrapheEnCours[
                                                     section.id
                                                 ]
                                             "
@@ -3114,7 +3173,11 @@ async function supprimerCommentaireRenvoi(
                                     v-show="!collapsedDev[para.id]"
                                     class="space-y-2"
                                 >
-                                    <div v-if="peutEditer" class="mb-1">
+                                    <div
+                                        v-if="peutEditer"
+                                        v-grise="apercuEtudiant"
+                                        class="mb-1"
+                                    >
                                         <Label
                                             class="text-xs text-muted-foreground"
                                             >Titre du paragraphe</Label
@@ -3137,7 +3200,7 @@ async function supprimerCommentaireRenvoi(
                                     <RichEditor
                                         :model-value="para.contenu ?? ''"
                                         :placeholder="`Rédigez le contenu du paragraphe ${para.ordre}…`"
-                                        :read-only="!peutEditer"
+                                        :read-only="lectureSeule"
                                         :est-enseignant="estEnseignant"
                                         :corrections="
                                             annotations[
@@ -3190,12 +3253,12 @@ async function supprimerCommentaireRenvoi(
                                             )
                                         "
                                         :est-reduit="
-                                            !!commentairesReduits[
+                                            commentairesReduits[
                                                 `section_paragraphe_${para.id}`
                                             ]
                                         "
                                         :is-saving="
-                                            !!commentairesSaving[
+                                            commentairesSaving[
                                                 `section_paragraphe_${para.id}`
                                             ]
                                         "
@@ -3227,7 +3290,11 @@ async function supprimerCommentaireRenvoi(
                                 </CardContent>
                             </Card>
 
-                            <div v-if="peutEditer" class="flex justify-center">
+                            <div
+                                v-if="peutEditer"
+                                v-grise="apercuEtudiant"
+                                class="flex justify-center"
+                            >
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -3303,7 +3370,7 @@ async function supprimerCommentaireRenvoi(
                                         ]
                                     "
                                 >
-                                    <template v-if="peutEditer">
+                                    <template v-if="!lectureSeule">
                                         <p
                                             class="mb-2 text-xs text-muted-foreground"
                                         >
@@ -3453,7 +3520,7 @@ async function supprimerCommentaireRenvoi(
                                             {{ concept.ordre }}
                                         </span>
                                         <input
-                                            v-if="peutEditer"
+                                            v-if="!lectureSeule"
                                             :value="concept.label"
                                             class="flex-1 rounded border-0 bg-transparent text-sm font-medium outline-none focus:ring-1 focus:ring-ring"
                                             placeholder="Nom du concept…"
@@ -3477,6 +3544,7 @@ async function supprimerCommentaireRenvoi(
                                     </div>
                                     <BoutonTooltip
                                         v-if="peutEditer"
+                                        v-grise="apercuEtudiant"
                                         texte="Supprimer ce concept"
                                         class="size-7 shrink-0 text-destructive opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
                                         :disabled="!!conceptEnCours[section.id]"
@@ -3529,7 +3597,7 @@ async function supprimerCommentaireRenvoi(
                                                 <!-- Dimension -->
                                                 <td class="py-1 pr-2 align-top">
                                                     <textarea
-                                                        v-if="peutEditer"
+                                                        v-if="!lectureSeule"
                                                         :value="
                                                             ligne.dimension ??
                                                             ''
@@ -3562,7 +3630,7 @@ async function supprimerCommentaireRenvoi(
                                                 <!-- Indicateur -->
                                                 <td class="py-1 pr-2 align-top">
                                                     <textarea
-                                                        v-if="peutEditer"
+                                                        v-if="!lectureSeule"
                                                         :value="
                                                             ligne.indicateur ??
                                                             ''
@@ -3610,7 +3678,7 @@ async function supprimerCommentaireRenvoi(
                                                             >
                                                             <textarea
                                                                 v-if="
-                                                                    peutEditer
+                                                                    !lectureSeule
                                                                 "
                                                                 :value="q"
                                                                 rows="2"
@@ -3640,6 +3708,7 @@ async function supprimerCommentaireRenvoi(
                                                                 v-if="
                                                                     peutEditer
                                                                 "
+                                                                v-grise="apercuEtudiant"
                                                                 texte="Supprimer cette question"
                                                                 class="size-6 shrink-0 text-destructive opacity-0 transition-opacity group-focus-within/q:opacity-100 group-hover/q:opacity-100"
                                                                 @click="
@@ -3657,6 +3726,7 @@ async function supprimerCommentaireRenvoi(
                                                         </div>
                                                         <Button
                                                             v-if="peutEditer"
+                                                            v-grise="apercuEtudiant"
                                                             variant="ghost"
                                                             size="sm"
                                                             class="h-6 gap-1 text-xs"
@@ -3687,6 +3757,7 @@ async function supprimerCommentaireRenvoi(
                                                 <!-- Supprimer ligne -->
                                                 <td
                                                     v-if="peutEditer"
+                                                    v-grise="apercuEtudiant"
                                                     class="py-1 pl-1 align-top"
                                                 >
                                                     <BoutonTooltip
@@ -3712,6 +3783,7 @@ async function supprimerCommentaireRenvoi(
                                     <!-- Bouton ajouter ligne -->
                                     <Button
                                         v-if="peutEditer"
+                                        v-grise="apercuEtudiant"
                                         variant="outline"
                                         size="sm"
                                         class="mt-2 gap-1 text-xs"
@@ -3726,7 +3798,11 @@ async function supprimerCommentaireRenvoi(
                             </Card>
 
                             <!-- Bouton ajouter concept -->
-                            <div v-if="peutEditer" class="flex justify-center">
+                            <div
+                                v-if="peutEditer"
+                                v-grise="apercuEtudiant"
+                                class="flex justify-center"
+                            >
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -3768,7 +3844,7 @@ async function supprimerCommentaireRenvoi(
                                         section: section.id,
                                     }"
                                     :medias="section.medias ?? []"
-                                    :readonly="!peutEditer"
+                                    :readonly="lectureSeule"
                                 />
                             </CardContent>
                         </Card>
@@ -3795,7 +3871,7 @@ async function supprimerCommentaireRenvoi(
                                         section: section.id,
                                     }"
                                     :concepts="section.concepts ?? []"
-                                    :readonly="!peutEditer"
+                                    :readonly="lectureSeule"
                                 />
                             </CardContent>
                         </Card>
@@ -3825,7 +3901,7 @@ async function supprimerCommentaireRenvoi(
                                         section: section.id,
                                     }"
                                     :medias="section.medias ?? []"
-                                    :readonly="!peutEditer"
+                                    :readonly="lectureSeule"
                                 />
                             </CardContent>
                         </Card>
@@ -3858,7 +3934,7 @@ async function supprimerCommentaireRenvoi(
                                     :questions-choisies="
                                         section.questionsChoisies ?? []
                                     "
-                                    :readonly="!peutEditer"
+                                    :readonly="lectureSeule"
                                 />
                             </CardContent>
                         </Card>
@@ -3888,7 +3964,7 @@ async function supprimerCommentaireRenvoi(
                                     }"
                                     :taches="section.taches ?? []"
                                     :membres="membres"
-                                    :readonly="!peutEditer"
+                                    :readonly="lectureSeule"
                                 />
                             </CardContent>
                         </Card>
@@ -3918,7 +3994,7 @@ async function supprimerCommentaireRenvoi(
                                         section: section.id,
                                     }"
                                     :schema-visuel="section.schemaVisuel"
-                                    :read-only="!peutEditer"
+                                    :read-only="lectureSeule"
                                 />
                             </CardContent>
                         </Card>
@@ -3971,6 +4047,7 @@ async function supprimerCommentaireRenvoi(
                                             cochesLocales.has(critere.id)
                                         "
                                         :peut-cocher="estMembre"
+                                        :grise="apercuEtudiant"
                                         :route-args="routeArgsCritere"
                                         @updated-coche="
                                             (cochee) =>
@@ -4043,7 +4120,7 @@ async function supprimerCommentaireRenvoi(
                                 <RichEditor
                                     v-model="form.introduction_amener"
                                     placeholder="Amener le sujet…"
-                                    :read-only="!peutEditer"
+                                    :read-only="lectureSeule"
                                     :est-enseignant="estEnseignant"
                                     :corrections="
                                         annotations['introduction_amener'] ?? []
@@ -4119,7 +4196,7 @@ async function supprimerCommentaireRenvoi(
                                 <RichEditor
                                     v-model="form.introduction_poser"
                                     placeholder="Poser le sujet…"
-                                    :read-only="!peutEditer"
+                                    :read-only="lectureSeule"
                                     :est-enseignant="estEnseignant"
                                     :corrections="
                                         annotations['introduction_poser'] ?? []
@@ -4195,7 +4272,7 @@ async function supprimerCommentaireRenvoi(
                                 <RichEditor
                                     v-model="form.introduction_diviser"
                                     placeholder="Diviser le sujet…"
-                                    :read-only="!peutEditer"
+                                    :read-only="lectureSeule"
                                     :est-enseignant="estEnseignant"
                                     :corrections="
                                         annotations['introduction_diviser'] ??
@@ -4296,6 +4373,7 @@ async function supprimerCommentaireRenvoi(
                                     v-if="
                                         peutEditer && developpements.length > 1
                                     "
+                                    v-grise="apercuEtudiant"
                                     :texte="t('projets.edit.delete_paragraph')"
                                     size="icon-sm"
                                     class="text-destructive"
@@ -4330,7 +4408,11 @@ async function supprimerCommentaireRenvoi(
                             v-show="!collapsedDev[dev.id]"
                             class="space-y-2"
                         >
-                            <div v-if="peutEditer" class="mb-1">
+                            <div
+                                v-if="peutEditer"
+                                v-grise="apercuEtudiant"
+                                class="mb-1"
+                            >
                                 <Label class="text-xs text-muted-foreground">{{
                                     t('projets.edit.paragraph_title_label')
                                 }}</Label>
@@ -4349,7 +4431,7 @@ async function supprimerCommentaireRenvoi(
                             <RichEditor
                                 :model-value="dev.contenu ?? ''"
                                 :placeholder="`Rédigez le contenu du paragraphe ${dev.ordre}…`"
-                                :read-only="!peutEditer"
+                                :read-only="lectureSeule"
                                 :est-enseignant="estEnseignant"
                                 :corrections="
                                     annotations[`developpement_${dev.id}`] ?? []
@@ -4427,7 +4509,11 @@ async function supprimerCommentaireRenvoi(
                     </Card>
 
                     <!-- Bouton ajouter un paragraphe (pas de limite) -->
-                    <div v-if="peutEditer" class="flex justify-center">
+                    <div
+                        v-if="peutEditer"
+                        v-grise="apercuEtudiant"
+                        class="flex justify-center"
+                    >
                         <Button
                             variant="outline"
                             size="sm"
@@ -4484,7 +4570,7 @@ async function supprimerCommentaireRenvoi(
                         <CardContent
                             v-show="!collapsedConclusion[item.etudiant.id]"
                         >
-                            <template v-if="peutEditer">
+                            <template v-if="!lectureSeule">
                                 <p class="mb-2 text-xs text-muted-foreground">
                                     {{ t('projets.edit.conclusion_hint') }}
                                 </p>
@@ -4608,7 +4694,7 @@ async function supprimerCommentaireRenvoi(
                                         :model-value="
                                             renvoiContenuHtml(renvoi.contenu)
                                         "
-                                        :read-only="!peutEditer"
+                                        :read-only="lectureSeule"
                                         :est-enseignant="estEnseignant"
                                         :corrections="
                                             annotations[
@@ -4724,6 +4810,7 @@ async function supprimerCommentaireRenvoi(
                                 </div>
                                 <BoutonTooltip
                                     v-if="aideReference && peutEditer"
+                                    v-grise="apercuEtudiant"
                                     texte="Modifier cette référence"
                                     class="mt-1 size-7 shrink-0"
                                     @click="ouvrirEditionRenvoi(renvoi)"
@@ -4732,6 +4819,7 @@ async function supprimerCommentaireRenvoi(
                                 </BoutonTooltip>
                                 <BoutonTooltip
                                     v-if="peutEditer"
+                                    v-grise="apercuEtudiant"
                                     texte="Supprimer cette référence"
                                     class="mt-1 size-7 shrink-0 text-destructive"
                                     @click="demanderSupprimerRenvoi(renvoi.id)"
@@ -4923,6 +5011,7 @@ async function supprimerCommentaireRenvoi(
                                 peutRemettre &&
                                 !votes.find((v) => v.user_id === userId)?.vote
                             "
+                            v-grise="apercuEtudiant"
                             class="flex justify-end"
                         >
                             <Button

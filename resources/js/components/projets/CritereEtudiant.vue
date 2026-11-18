@@ -8,6 +8,7 @@ import type {
     Critere,
     CorrectionLocale,
 } from '@/components/projets/CritereCorrection.vue';
+import { vGrise } from '@/directives/grise';
 
 const props = defineProps<{
     critere: Critere;
@@ -19,6 +20,8 @@ const props = defineProps<{
     estCoche: boolean;
     /** true = l'utilisateur courant est membre du groupe (peut basculer sa coche). */
     peutCocher: boolean;
+    /** true = aperçu étudiant de l'enseignant : la coche est visible mais grisée. */
+    grise?: boolean;
     routeArgs: {
         cours: number;
         classe: number;
@@ -69,7 +72,7 @@ const ptsObtenus = computed<number | null>(() => {
  * Indicateur local sans effet sur la correction officielle.
  */
 async function toggleCoche() {
-    if (!props.peutCocher || toggling.value) {
+    if (!props.peutCocher || props.grise || toggling.value) {
         return;
     }
 
@@ -124,6 +127,7 @@ async function toggleCoche() {
             <!-- Coche personnelle (indicateur local, sans effet sur la note) -->
             <button
                 v-if="peutCocher"
+                v-grise="grise"
                 type="button"
                 :class="[
                     'shrink-0 transition-colors',
