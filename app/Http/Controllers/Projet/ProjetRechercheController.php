@@ -74,9 +74,9 @@ class ProjetRechercheController extends Controller
         $estEnseignant = $user->isEnseignant()
             && $cours->enseignant_id === $user->id;
 
-        // Guard accessibilité : si le type de projet n'est pas accessible, les étudiants ne peuvent pas accéder
+        // Guard accessibilité : un étudiant n'accède qu'aux types ouverts à sa classe
         if (! $estEnseignant && ! $user->isAdmin()) {
-            abort_if(! $typeProjet->accessible, 403, __('projet.type_inaccessible'));
+            abort_if(! $typeProjet->isAccessiblePour($classe), 403, __('projet.type_inaccessible'));
         }
 
         $projet = ProjetRecherche::firstOrCreate([

@@ -12,7 +12,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Création et mise à jour d'un type de projet avec ses sections.
+ * Création et mise à jour d'un type de projet avec ses sections, et choix des classes y ayant accès.
  *
  * Les données reçues sont celles validées par StoreTypeProjetRequest / UpdateTypeProjetRequest.
  */
@@ -62,6 +62,43 @@ class TypeProjetService
 
             throw TransactionEchoueeException::depuis($e);
         }
+    }
+
+    /**
+     * Définit les classes ayant accès au type de projet.
+     *
+     * « Tous » ouvre le type à toutes les classes, y compris celles créées plus tard :
+     * le pivot est alors vidé pour ne garder qu'une seule source de vérité.
+     * Une liste vide masque le type à tous les étudiants.
+     *
+     * @param  array<int, int|string>  $classeIds
+     *
+     * @throws TransactionEchoueeException
+     */
+    public function definirAccessibilite(TypeProjet $typeProjet, bool $tous, array $classeIds): void
+    {
+        try {
+            DB::transaction(function () use ($typeProjet, $tous, $classeIds) {
+                $typeProjet->update(['accessible' => $tous]);
+                $typeProjet->classes()->sync($tous ? [] : array_map('intval', $classeIds));
+            });
+        } catch (QueryException $e) {
+            report($e);
+
+            throw TransactionEchoueeException::depuis($e);
+        }
+    }
+
+    /**
+     * Masque le type de projet s'il est visible pour au moins une classe, sinon l'ouvre à toutes.
+     *
+     * @throws TransactionEchoueeException
+     */
+    public function basculerAccessibilite(TypeProjet $typeProjet): void
+    {
+        $estVisible = $typeProjet->accessible || $typeProjet->classes()->exists();
+
+        $this->definirAccessibilite($typeProjet, ! $estVisible, []);
     }
 
     /**

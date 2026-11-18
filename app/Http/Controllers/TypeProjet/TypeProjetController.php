@@ -5,6 +5,7 @@ namespace App\Http\Controllers\TypeProjet;
 use App\Exceptions\TransactionEchoueeException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TypeProjet\StoreTypeProjetRequest;
+use App\Http\Requests\TypeProjet\UpdateAccessibiliteTypeProjetRequest;
 use App\Http\Requests\TypeProjet\UpdateTypeProjetRequest;
 use App\Models\Cours;
 use App\Models\TypeProjet;
@@ -30,13 +31,17 @@ class TypeProjetController extends Controller
         $this->authorize('update', $cours);
 
         $typesProjets = TypeProjet::where('cours_id', $cours->id)
-            ->with(['sections'])
+            ->with(['sections', 'classes:classes.id'])
             ->orderBy('nom')
-            ->get();
+            ->get()
+            ->map(fn (TypeProjet $typeProjet) => array_merge($typeProjet->toArray(), [
+                'classes' => $typeProjet->classes->pluck('id')->values(),
+            ]));
 
         return Inertia::render('TypeProjet/Index', [
             'cours' => $cours,
             'typesProjets' => $typesProjets,
+            'classes' => $cours->classes()->orderBy('numero')->get(['id', 'numero', 'nom']),
         ]);
     }
 
@@ -127,19 +132,46 @@ class TypeProjetController extends Controller
     /**
      * Inverse le statut d'accessibilité du type de projet.
      *
-     * Si `accessible = false`, les étudiants ne voient pas les projets associés.
+     * Un type visible (pour toutes les classes ou certaines) est masqué ; sinon il est ouvert à toutes.
      *
      * @throws HttpException si le type de projet n'appartient pas au cours
      * @throws AuthorizationException
      */
-    public function toggleAccessible(Cours $cours, TypeProjet $typeProjet): RedirectResponse
+    public function toggleAccessible(Cours $cours, TypeProjet $typeProjet,
+        TypeProjetService $typeProjetService): RedirectResponse
     {
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         $this->authorize('update', $typeProjet);
 
-        $typeProjet->update(['accessible' => ! $typeProjet->accessible]);
+        try {
+            $typeProjetService->basculerAccessibilite($typeProjet);
+        } catch (TransactionEchoueeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back();
+    }
+
+    /**
+     * Définit les classes du cours ayant accès au type de projet (toutes ou une sélection).
+     *
+     */
+    public function updateAccessibilite(UpdateAccessibiliteTypeProjetRequest $request, Cours $cours,
+        TypeProjet $typeProjet, TypeProjetService $typeProjetService): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        try {
+            $typeProjetService->definirAccessibilite(
+                $typeProjet,
+                $validated['tous'],
+                $validated['classes'] ?? [],
+            );
+        } catch (TransactionEchoueeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('type_projet.accessibilite.updated'));
     }
 
     /**

@@ -313,6 +313,9 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
     Route::patch('/cours/{cours}/types-projets/{typeProjet}/toggle-accessible', [TypeProjetController::class, 'toggleAccessible'])
         ->name('types-projets.toggle-accessible');
 
+    Route::put('/cours/{cours}/types-projets/{typeProjet}/accessibilite', [TypeProjetController::class, 'updateAccessibilite'])
+        ->name('types-projets.accessibilite.update');
+
     Route::delete('/cours/{cours}/types-projets/{typeProjet}', [TypeProjetController::class, 'destroy'])
         ->name('types-projets.destroy');
 
