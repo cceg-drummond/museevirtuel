@@ -9,6 +9,7 @@ import {
     ClipboardList,
     Copy,
     Download,
+    Eye,
     FileText,
     Pencil,
     Plus,
@@ -19,6 +20,10 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import {
+    apercu as apercuDocument,
+    download as downloadDocument,
+} from '@/actions/App/Http/Controllers/Cours/CoursDocumentController';
 import VisioSession from '@/components/classes/VisioSession.vue';
 import CoursObjectifs from '@/components/cours/CoursObjectifs.vue';
 import CoursReferences from '@/components/cours/CoursReferences.vue';
@@ -432,7 +437,7 @@ function executeDeleteDocument() {
 }
 
 function documentDownloadUrl(doc: Document): string {
-    return `/cours/${props.cours.id}/documents/${doc.id}/download`;
+    return downloadDocument.url({ cours: props.cours.id, document: doc.id });
 }
 
 function formatSize(bytes: number): string {
@@ -714,6 +719,25 @@ function submitTransfert() {
                             </div>
                         </div>
                         <div class="flex shrink-0 gap-2">
+                            <BoutonTooltip
+                                texte="Afficher ce document dans un nouvel onglet"
+                                size="sm"
+                                variant="outline"
+                                as-child
+                            >
+                                <a
+                                    :href="
+                                        apercuDocument.url({
+                                            cours: cours.id,
+                                            document: doc.id,
+                                        })
+                                    "
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Eye class="h-4 w-4" />
+                                </a>
+                            </BoutonTooltip>
                             <BoutonTooltip
                                 texte="Télécharger ce document"
                                 size="sm"

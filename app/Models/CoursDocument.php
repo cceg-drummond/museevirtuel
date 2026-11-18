@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\HasPublicFile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class CoursDocument extends Model
 {
@@ -22,6 +23,22 @@ class CoursDocument extends Model
     ];
 
     protected $appends = ['url'];
+
+    /**
+     * Supprime l'aperçu PDF converti avec le document : sans document, il n'est plus servi.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(fn (CoursDocument $document) => Storage::disk('local')->delete($document->cheminApercuPdf()));
+    }
+
+    /**
+     * Retourne le chemin, sur le disque privé « local », de la conversion PDF du document.
+     */
+    public function cheminApercuPdf(): string
+    {
+        return "apercus/cours-documents/{$this->id}.pdf";
+    }
 
     public function getUrlAttribute(): string
     {
