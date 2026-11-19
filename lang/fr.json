@@ -495,6 +495,8 @@
     "type_projet_section.label.max": "Le titre de la section ne peut pas dépasser :max caractères.",
     "type_projet_section.label.required": "Le titre de la section est obligatoire.",
     "type_projet_section.label.string": "Le titre de la section doit être un texte.",
+    "type_projet_section.niveau.enum": "Le niveau doit être chapitre, section ou sous-section.",
+    "type_projet_section.niveau.plan": "Ce niveau ne peut pas suivre le dernier élément du plan.",
     "type_projet_section.type.enum": "Le type de section sélectionné est invalide.",
     "type_projet_tache.description.max": "La description de la tâche ne peut pas dépasser :max caractères.",
     "type_projet_tache.description.string": "La description de la tâche doit être un texte.",
