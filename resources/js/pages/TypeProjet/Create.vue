@@ -176,7 +176,7 @@ function creer() {
             />
 
             <!-- Bouton créer -->
-            <div class="mb-2 flex justify-end">
+            <div class="mb-2 flex justify-end mt-4">
                 <Button :disabled="form.processing" @click="creer">
                     {{
                         form.processing
