@@ -78,11 +78,13 @@ class GroupePolicy
     /**
      * Détermine si l'utilisateur peut gérer les membres du groupe.
      *
-     * Réservé au créateur du groupe uniquement.
+     * Réservé au créateur du groupe, à l'enseignant du cours et aux admins.
      */
     public function manageMembers(User $user, Groupe $groupe): bool
     {
-        return $groupe->created_by === $user->id;
+        return $groupe->created_by === $user->id
+            || $user->isAdmin()
+            || ($user->isEnseignant() && $groupe->classe->cours->enseignant_id === $user->id);
     }
 
     /**

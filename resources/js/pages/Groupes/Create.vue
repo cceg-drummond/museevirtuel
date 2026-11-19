@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, Plus, X } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Heading from '@/components/shared/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -39,11 +39,20 @@ type Thematique = {
     periode_historique: string | null;
 };
 
+type Temoin = {
+    id: number;
+    prenom: string;
+    nom: string;
+    thematique_ids: number[];
+};
+
 type Props = {
     cours: Cours;
     classe: Classe;
     autresEtudiants: Etudiant[];
     thematiques: Thematique[];
+    /** Témoins approuvés — vide pour un étudiant, qui ne peut pas en assigner. */
+    temoins: Temoin[];
 };
 
 const props = defineProps<Props>();
@@ -51,6 +60,7 @@ const props = defineProps<Props>();
 const form = useForm({
     membres: [] as number[],
     thematiques: [] as number[],
+    personne_agee_id: null as number | null,
 });
 
 const membreSelectionne = ref<number | null>(null);
@@ -67,6 +77,23 @@ const thematiquesSelectionnees = computed(() =>
         form.thematiques.includes(thematique.id),
     ),
 );
+
+/** Témoins qui partagent au moins une thématique avec celles choisies pour le groupe. */
+const temoinsCompatibles = computed(() =>
+    props.temoins.filter((temoin) =>
+        temoin.thematique_ids.some((id) => form.thematiques.includes(id)),
+    ),
+);
+
+// Retirer une thématique peut rendre le témoin choisi incompatible : on le désélectionne.
+watch(temoinsCompatibles, (compatibles) => {
+    if (
+        form.personne_agee_id !== null &&
+        !compatibles.some((temoin) => temoin.id === form.personne_agee_id)
+    ) {
+        form.personne_agee_id = null;
+    }
+});
 
 function ajouterMembre(): void {
     if (
@@ -281,6 +308,65 @@ function submit(): void {
                         class="text-sm text-destructive"
                     >
                         {{ form.errors.thematiques }}
+                    </p>
+                </div>
+
+                <!-- Témoin : réservé à l'enseignant (liste vide pour un étudiant) -->
+                <div v-if="temoins.length > 0" class="grid gap-3">
+                    <Label for="temoin-selection">
+                        {{ $t('classes.groupes.witness') }}
+                    </Label>
+                    <div class="flex items-center gap-2">
+                        <Select
+                            v-model="form.personne_agee_id"
+                            :disabled="form.thematiques.length === 0"
+                        >
+                            <SelectTrigger id="temoin-selection" class="flex-1">
+                                <SelectValue
+                                    :placeholder="
+                                        $t(
+                                            'classes.groupes.witness_placeholder',
+                                        )
+                                    "
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="temoin in temoinsCompatibles"
+                                    :key="temoin.id"
+                                    :value="temoin.id"
+                                >
+                                    {{ temoin.prenom }} {{ temoin.nom }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="form.personne_agee_id === null"
+                            @click="form.personne_agee_id = null"
+                        >
+                            <X class="mr-2 h-4 w-4" />
+                            {{ $t('classes.groupes.witness_clear') }}
+                        </Button>
+                    </div>
+                    <p
+                        v-if="form.thematiques.length === 0"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ $t('classes.groupes.witness_choose_theme_first') }}
+                    </p>
+                    <p
+                        v-else-if="temoinsCompatibles.length === 0"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ $t('classes.groupes.witness_none_compatible') }}
+                    </p>
+                    <p
+                        v-if="form.errors.personne_agee_id"
+                        class="text-sm text-destructive"
+                    >
+                        {{ form.errors.personne_agee_id }}
                     </p>
                 </div>
 

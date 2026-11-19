@@ -20,6 +20,7 @@ import {
     SlidersHorizontal,
     Trash2,
     Video,
+    X,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -174,7 +175,8 @@ type Props = {
     estMembre: boolean;
     estEnseignant: boolean;
     estTemoin: boolean;
-    estCreateur: boolean;
+    /** Créateur du groupe, enseignant du cours ou admin. */
+    peutGererMembres: boolean;
     thematiquesDispo: Thematique[];
     etudiantsDispo: EtudiantDispo[];
     temoinsDisponibles: User[];
@@ -192,7 +194,7 @@ const page = usePage();
 const userId = computed(() => (page.props.auth as Auth).user.id);
 const { t } = useI18n();
 
-// ─── Gérer les membres (créateur seulement) ───────────────────────────────────
+// ─── Gérer les membres (créateur, enseignant, admin) ──────────────────────────
 const showMembresDialog = ref(false);
 const membresError = ref('');
 const membresForm = useForm({
@@ -226,6 +228,13 @@ function ajouterMembreSelectionne(): void {
     membreAjouterSelectionne.value = null;
 }
 
+/** Annule la sélection d'un étudiant à ajouter, avant l'envoi du formulaire. */
+function annulerAjoutMembre(id: number): void {
+    membresAjouter.value = membresAjouter.value.filter(
+        (membreId) => membreId !== id,
+    );
+}
+
 function retirerMembreSelectionne(): void {
     if (
         membreRetirerSelectionne.value !== null &&
@@ -235,6 +244,13 @@ function retirerMembreSelectionne(): void {
     }
 
     membreRetirerSelectionne.value = null;
+}
+
+/** Annule la sélection d'un membre à retirer, avant l'envoi du formulaire. */
+function annulerRetraitMembre(id: number): void {
+    membresRetirer.value = membresRetirer.value.filter(
+        (membreId) => membreId !== id,
+    );
 }
 
 function submitMembres() {
@@ -973,7 +989,7 @@ function formatSize(bytes: number): string {
                             />
                         </button>
                         <Button
-                            v-if="estCreateur"
+                            v-if="peutGererMembres"
                             size="sm"
                             variant="outline"
                             @click="openMembres"
@@ -1931,12 +1947,12 @@ function formatSize(bytes: number): string {
                         </div>
                         <div
                             v-if="membresAjouter.length > 0"
-                            class="flex flex-wrap gap-2"
+                            class="mt-1 flex flex-wrap gap-2"
                         >
                             <span
                                 v-for="id in membresAjouter"
                                 :key="id"
-                                class="rounded-full bg-muted px-3 py-1 text-sm"
+                                class="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-sm"
                             >
                                 {{
                                     etudiantsDispo.find(
@@ -1948,6 +1964,14 @@ function formatSize(bytes: number): string {
                                         (etudiant) => etudiant.id === id,
                                     )?.nom
                                 }}
+                                <button
+                                    type="button"
+                                    class="text-muted-foreground hover:text-foreground"
+                                    :aria-label="$t('common.remove')"
+                                    @click="annulerAjoutMembre(id)"
+                                >
+                                    <X class="size-3" />
+                                </button>
                             </span>
                         </div>
                     </div>
@@ -2011,7 +2035,7 @@ function formatSize(bytes: number): string {
                             <span
                                 v-for="id in membresRetirer"
                                 :key="id"
-                                class="rounded-full bg-destructive/10 px-3 py-1 text-sm text-destructive"
+                                class="flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1 text-sm text-destructive"
                             >
                                 {{
                                     groupe.membres.find(
@@ -2023,6 +2047,14 @@ function formatSize(bytes: number): string {
                                         (membre) => membre.id === id,
                                     )?.nom
                                 }}
+                                <button
+                                    type="button"
+                                    class="text-destructive/70 hover:text-destructive"
+                                    :aria-label="$t('common.remove')"
+                                    @click="annulerRetraitMembre(id)"
+                                >
+                                    <X class="size-3" />
+                                </button>
                             </span>
                         </div>
                     </div>

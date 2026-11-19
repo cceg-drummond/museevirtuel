@@ -3,7 +3,10 @@
 namespace App\Http\Requests\Groupe;
 
 use App\Models\Groupe;
+use App\Models\User;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Valide la création d'un groupe dans une classe.
@@ -22,7 +25,10 @@ class StoreGroupeRequest extends FormRequest
     }
 
     /**
-     * Retourne les règles de validation pour la création d'un groupe (membres et thématiques).
+     * Retourne les règles de validation pour la création d'un groupe (membres, thématiques et témoin).
+     *
+     * Le témoin est réservé à l'enseignant du cours et aux admins, et doit partager
+     * au moins une thématique avec le groupe.
      *
      * @return array<string, array<int, mixed>>
      */
@@ -33,6 +39,12 @@ class StoreGroupeRequest extends FormRequest
             'membres.*' => ['integer', 'exists:users,id', 'min:1'],
             'thematiques' => ['required', 'array', 'min:1', 'max:3'],
             'thematiques.*' => ['integer', 'exists:thematiques,id'],
+            'personne_agee_id' => [
+                Rule::prohibitedIf(fn () => $this->user()->cannot('update', $this->route('cours'))),
+                'nullable', 'integer',
+                Rule::exists('users', 'id')->where('role', 'personne_agee')->where('statut', 'actif'),
+                $this->partageUneThematique(...),
+            ],
         ];
     }
 
@@ -53,6 +65,23 @@ class StoreGroupeRequest extends FormRequest
             'thematiques.max' => __('groupe.thematiques.max'),
             'thematiques.*.integer' => __('groupe.thematiques.integer'),
             'thematiques.*.exists' => __('groupe.thematiques.exists'),
+            'personne_agee_id.prohibited' => __('groupe.personne_agee_id.prohibited'),
+            'personne_agee_id.integer' => __('groupe_temoin.personne_agee_id.integer'),
+            'personne_agee_id.exists' => __('groupe_temoin.personne_agee_id.exists'),
         ];
+    }
+
+    /**
+     * Refuse un témoin qui ne partage aucune thématique avec celles choisies pour le groupe.
+     */
+    private function partageUneThematique(string $attribute, mixed $value, Closure $fail): void
+    {
+        $partage = User::whereKey($value)
+            ->whereHas('thematiquesChoisies', fn ($query) => $query->whereIn('thematiques.id', (array) $this->input('thematiques')))
+            ->exists();
+
+        if (! $partage) {
+            $fail(__('groupe.personne_agee_id.thematique'));
+        }
     }
 }

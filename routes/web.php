@@ -528,9 +528,6 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
 Route::middleware(['auth', 'role:etudiant', 'cours.accessible'])->group(function () {
     Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/thematiques', [GroupeThematiqueController::class, 'update'])
         ->name('groupes.thematiques.update');
-
-    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/membres', [GroupeMembreController::class, 'update'])
-        ->name('groupes.membres.update');
 });
 
 // ─── Classes et Groupes (étudiant + enseignant + admin) ───────────────────────
@@ -538,6 +535,10 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
     // Détail d'une classe (section)
     Route::get('/cours/{cours}/classes/{classe}', [ClasseController::class, 'show'])
         ->name('classes.show');
+
+    // Membres du groupe — créateur, enseignant du cours et admins (GroupePolicy::manageMembers)
+    Route::put('/cours/{cours}/classes/{classe}/groupes/{groupe}/membres', [GroupeMembreController::class, 'update'])
+        ->name('groupes.membres.update');
 
     // Documents du cours — consultables aussi par les étudiants inscrits (CoursPolicy::viewDocuments)
     Route::get('/cours/{cours}/documents/{document}/download', [CoursDocumentController::class, 'download'])
