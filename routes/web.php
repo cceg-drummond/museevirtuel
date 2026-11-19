@@ -215,9 +215,6 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
     Route::post('/cours/{cours}/documents', [CoursDocumentController::class, 'store'])
         ->name('cours.documents.store');
 
-    Route::get('/cours/{cours}/documents/{document}/download', [CoursDocumentController::class, 'download'])
-        ->name('cours.documents.download');
-
     Route::delete('/cours/{cours}/documents/{document}', [CoursDocumentController::class, 'destroy'])
         ->name('cours.documents.destroy');
 
@@ -541,6 +538,13 @@ Route::middleware(['auth', 'role:etudiant,enseignant,admin', 'cours.accessible']
     // Détail d'une classe (section)
     Route::get('/cours/{cours}/classes/{classe}', [ClasseController::class, 'show'])
         ->name('classes.show');
+
+    // Documents du cours — consultables aussi par les étudiants inscrits (CoursPolicy::viewDocuments)
+    Route::get('/cours/{cours}/documents/{document}/download', [CoursDocumentController::class, 'download'])
+        ->name('cours.documents.download');
+
+    Route::get('/cours/{cours}/documents/{document}/apercu', [CoursDocumentController::class, 'apercu'])
+        ->name('cours.documents.apercu');
 
     // Médias du groupe
     Route::post('/cours/{cours}/classes/{classe}/groupes/{groupe}/medias', [GroupeMediaController::class, 'store'])

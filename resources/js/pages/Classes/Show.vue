@@ -7,7 +7,9 @@ import {
     CheckCircle2,
     ChevronDown,
     Circle,
+    Download,
     ExternalLink,
+    Eye,
     FileBarChart,
     FileText,
     ListChecks,
@@ -19,6 +21,10 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { accumulees as apercuNotesAccumulees } from '@/actions/App/Http/Controllers/Classe/ClasseNotesApercuController';
+import {
+    apercu as apercuDocument,
+    download as downloadDocument,
+} from '@/actions/App/Http/Controllers/Cours/CoursDocumentController';
 import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
 import Heading from '@/components/shared/Heading.vue';
 import InputError from '@/components/shared/InputError.vue';
@@ -1038,13 +1044,10 @@ function executeDeleteGroupe() {
                         Aucun document disponible pour l'instant.
                     </div>
                     <div v-else class="flex flex-col divide-y">
-                        <a
+                        <div
                             v-for="doc in documents"
                             :key="doc.id"
-                            :href="doc.url"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="-mx-6 flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50"
+                            class="flex items-center gap-3 py-3"
                         >
                             <FileText
                                 class="h-4 w-4 shrink-0 text-muted-foreground"
@@ -1057,7 +1060,45 @@ function executeDeleteGroupe() {
                             >
                                 {{ doc.type.toUpperCase() }}
                             </span>
-                        </a>
+                            <div class="flex shrink-0 gap-2">
+                                <BoutonTooltip
+                                    texte="Afficher ce document dans un nouvel onglet"
+                                    size="sm"
+                                    variant="outline"
+                                    as-child
+                                >
+                                    <a
+                                        :href="
+                                            apercuDocument.url({
+                                                cours: cours.id,
+                                                document: doc.id,
+                                            })
+                                        "
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <Eye class="h-4 w-4" />
+                                    </a>
+                                </BoutonTooltip>
+                                <BoutonTooltip
+                                    texte="Télécharger ce document"
+                                    size="sm"
+                                    variant="outline"
+                                    as-child
+                                >
+                                    <a
+                                        :href="
+                                            downloadDocument.url({
+                                                cours: cours.id,
+                                                document: doc.id,
+                                            })
+                                        "
+                                    >
+                                        <Download class="h-4 w-4" />
+                                    </a>
+                                </BoutonTooltip>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
