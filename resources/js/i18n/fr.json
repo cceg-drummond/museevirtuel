@@ -192,6 +192,8 @@
             "members": "Membres",
             "manage": "Gérer",
             "thematic": "Thématiques",
+            "witness": "Témoin",
+            "no_witness": "Aucun témoin",
             "edit": "Modifier",
             "no_thematic": "Aucune thématique sélectionnée.",
             "photos": "Photos",

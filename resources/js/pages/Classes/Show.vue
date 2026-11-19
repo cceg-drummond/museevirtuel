@@ -432,13 +432,6 @@ function executeDeleteGroupe() {
                                             })
                                         }}
                                     </p>
-                                    <p
-                                        v-if="groupe.temoin"
-                                        class="text-xs text-muted-foreground"
-                                    >
-                                        Témoin : {{ groupe.temoin.prenom }}
-                                        {{ groupe.temoin.nom }}
-                                    </p>
                                 </div>
                                 <div class="flex shrink-0 gap-2">
                                     <BoutonTooltip
@@ -504,6 +497,28 @@ function executeDeleteGroupe() {
                                         {{ th.nom }}
                                     </span>
                                 </div>
+                            </div>
+
+                            <!-- Témoin -->
+                            <div>
+                                <p
+                                    class="mb-1 text-xs font-medium text-muted-foreground"
+                                >
+                                    {{ $t('groupes.show.witness') }}
+                                </p>
+                                <span
+                                    v-if="groupe.temoin"
+                                    class="rounded-full bg-muted px-2 py-0.5 text-xs"
+                                >
+                                    {{ groupe.temoin.prenom }}
+                                    {{ groupe.temoin.nom }}
+                                </span>
+                                <span
+                                    v-else
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    {{ $t('groupes.show.no_witness') }}
+                                </span>
                             </div>
                         </div>
                     </div>

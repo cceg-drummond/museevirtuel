@@ -193,6 +193,8 @@
             "members": "Members",
             "manage": "Manage",
             "thematic": "Thematic areas",
+            "witness": "Witness",
+            "no_witness": "No witness",
             "edit": "Edit",
             "no_thematic": "No thematic areas selected.",
             "photos": "Photos",
