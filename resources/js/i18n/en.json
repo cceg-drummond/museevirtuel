@@ -1026,6 +1026,7 @@
             "hint_auto": "The export generates this element automatically.",
             "hint_manuel": "Students will need to include this element manually.",
             "structure_title": "Project structure",
+            "info_intro_conclusion": "Good to know: the introduction and conclusion are already included in the students' project. You don't need to create them yourself.",
             "label_has_introduction": "Include an introduction block (introduce/state/divide)",
             "hint_has_introduction": "Displays three structured introduction fields when no sections are defined.",
             "label_has_conclusion_individuelle": "Include an individual conclusion per member",
