@@ -790,6 +790,7 @@
         "delete": "Delete",
         "edit": "Edit",
         "add": "Add",
+        "remove": "Remove",
         "close": "Close",
         "confirm": "Confirm",
         "loading": "Loading…",

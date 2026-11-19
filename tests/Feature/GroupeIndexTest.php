@@ -491,3 +491,142 @@ test('un étudiant ne peut pas assigner de témoin', function () {
 
     expect(Groupe::count())->toBe(0);
 });
+
+// ─── Étudiants disponibles ────────────────────────────────────────────────────
+
+test("l'enseignant est renvoyé vers la classe quand tous les étudiants sont déjà en groupe", function () {
+    $ctx = creerScenarioGroupeIndex();
+    $groupe = Groupe::create(['classe_id' => $ctx['classe']->id, 'created_by' => $ctx['etudiant']->id]);
+    $groupe->membres()->attach($ctx['etudiant']->id);
+
+    $this->actingAs($ctx['enseignant'])
+        ->get(route('groupes.create', [$ctx['cours'], $ctx['classe']]))
+        ->assertRedirect(route('classes.show', [$ctx['cours'], $ctx['classe']]))
+        ->assertSessionHas('error', __('groupe.aucun_etudiant_disponible'));
+});
+
+test("l'enseignant membre d'un groupe par erreur voit aussi le message plutôt que ce groupe", function () {
+    $ctx = creerScenarioGroupeIndex();
+    // Données laissées par l'ancien code, qui ajoutait toujours le créateur comme membre.
+    $groupe = Groupe::create(['classe_id' => $ctx['classe']->id, 'created_by' => $ctx['enseignant']->id]);
+    $groupe->membres()->attach([$ctx['etudiant']->id, $ctx['enseignant']->id]);
+
+    $this->actingAs($ctx['enseignant'])
+        ->get(route('groupes.create', [$ctx['cours'], $ctx['classe']]))
+        ->assertRedirect(route('classes.show', [$ctx['cours'], $ctx['classe']]))
+        ->assertSessionHas('error');
+});
+
+test('un étudiant sans groupe accède au formulaire même si tous les autres sont en groupe', function () {
+    $ctx = creerScenarioGroupeIndex();
+    $autre = User::factory()->create(['role' => 'etudiant']);
+    $ctx['classe']->etudiants()->attach($autre->id);
+    $groupe = Groupe::create(['classe_id' => $ctx['classe']->id, 'created_by' => $autre->id]);
+    $groupe->membres()->attach($autre->id);
+
+    $this->actingAs($ctx['etudiant'])
+        ->get(route('groupes.create', [$ctx['cours'], $ctx['classe']]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Groupes/Create')->has('autresEtudiants', 0));
+});
+
+// ─── Gestion des membres : créateur, enseignant du cours, admin ───────────────
+
+/**
+ * Crée un groupe d'un étudiant et un second étudiant libre dans la classe.
+ *
+ * @return array{groupe: Groupe, libre: User}
+ */
+function creerGroupeAvecEtudiantLibre(array $ctx, User $createur): array
+{
+    $libre = User::factory()->create(['role' => 'etudiant']);
+    $ctx['classe']->etudiants()->attach($libre->id);
+
+    $groupe = Groupe::create(['classe_id' => $ctx['classe']->id, 'created_by' => $createur->id]);
+    $groupe->membres()->attach($ctx['etudiant']->id);
+
+    return compact('groupe', 'libre');
+}
+
+test("l'enseignant qui a créé le groupe peut y ajouter un membre", function () {
+    $ctx = creerScenarioGroupeIndex();
+    ['groupe' => $groupe, 'libre' => $libre] = creerGroupeAvecEtudiantLibre($ctx, $ctx['enseignant']);
+
+    $this->actingAs($ctx['enseignant'])
+        ->from(route('groupes.show', [$ctx['cours'], $ctx['classe'], $groupe]))
+        ->put(route('groupes.membres.update', [$ctx['cours'], $ctx['classe'], $groupe]), [
+            'ajouter' => [$libre->id],
+            'retirer' => [],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('groupes.show', [$ctx['cours'], $ctx['classe'], $groupe]));
+
+    expect($groupe->membres()->pluck('users.id')->all())->toContain($libre->id);
+});
+
+test("l'enseignant du cours peut gérer les membres d'un groupe créé par un étudiant", function () {
+    $ctx = creerScenarioGroupeIndex();
+    ['groupe' => $groupe, 'libre' => $libre] = creerGroupeAvecEtudiantLibre($ctx, $ctx['etudiant']);
+
+    $this->actingAs($ctx['enseignant'])
+        ->put(route('groupes.membres.update', [$ctx['cours'], $ctx['classe'], $groupe]), [
+            'ajouter' => [$libre->id],
+            'retirer' => [],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($groupe->membres()->pluck('users.id')->all())->toContain($libre->id);
+});
+
+test("un admin peut gérer les membres d'un groupe", function () {
+    $ctx = creerScenarioGroupeIndex();
+    ['groupe' => $groupe, 'libre' => $libre] = creerGroupeAvecEtudiantLibre($ctx, $ctx['etudiant']);
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->put(route('groupes.membres.update', [$ctx['cours'], $ctx['classe'], $groupe]), [
+            'ajouter' => [$libre->id],
+            'retirer' => [],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($groupe->membres()->pluck('users.id')->all())->toContain($libre->id);
+});
+
+test("un enseignant d'un autre cours ne peut pas gérer les membres", function () {
+    $ctx = creerScenarioGroupeIndex();
+    ['groupe' => $groupe, 'libre' => $libre] = creerGroupeAvecEtudiantLibre($ctx, $ctx['etudiant']);
+    $autreEnseignant = User::factory()->create(['role' => 'enseignant']);
+
+    $this->actingAs($autreEnseignant)
+        ->put(route('groupes.membres.update', [$ctx['cours'], $ctx['classe'], $groupe]), [
+            'ajouter' => [$libre->id],
+            'retirer' => [],
+        ])
+        ->assertForbidden();
+});
+
+test('un membre qui n a pas créé le groupe ne peut pas gérer les membres', function () {
+    $ctx = creerScenarioGroupeIndex();
+    ['groupe' => $groupe, 'libre' => $libre] = creerGroupeAvecEtudiantLibre($ctx, $ctx['enseignant']);
+
+    $this->actingAs($ctx['etudiant'])
+        ->put(route('groupes.membres.update', [$ctx['cours'], $ctx['classe'], $groupe]), [
+            'ajouter' => [$libre->id],
+            'retirer' => [],
+        ])
+        ->assertForbidden();
+});
+
+test('la page du groupe indique qui peut gérer les membres', function () {
+    $ctx = creerScenarioGroupeIndex();
+    ['groupe' => $groupe] = creerGroupeAvecEtudiantLibre($ctx, $ctx['enseignant']);
+
+    $this->actingAs($ctx['enseignant'])
+        ->get(route('groupes.show', [$ctx['cours'], $ctx['classe'], $groupe]))
+        ->assertInertia(fn ($page) => $page->where('peutGererMembres', true));
+
+    $this->actingAs($ctx['etudiant'])
+        ->get(route('groupes.show', [$ctx['cours'], $ctx['classe'], $groupe]))
+        ->assertInertia(fn ($page) => $page->where('peutGererMembres', false));
+});

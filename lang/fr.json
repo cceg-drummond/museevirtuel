@@ -169,6 +169,7 @@
     "etudiant_reference.url.url": "L'adresse de la référence doit être une URL valide.",
     "groupe.personne_agee_id.prohibited": "Seul l'enseignant du cours peut assigner un témoin.",
     "groupe.personne_agee_id.thematique": "Le témoin choisi ne partage aucune thématique avec le groupe.",
+    "groupe.aucun_etudiant_disponible": "Tous les étudiants de la classe sont déjà dans un groupe : il n'en reste plus pour former un nouveau groupe.",
     "groupe.membres.array": "Les membres doivent être fournis sous forme de liste.",
     "groupe.membres.exists": "Un des membres sélectionnés n'existe pas.",
     "groupe.membres.integer": "Un des membres sélectionnés est invalide.",

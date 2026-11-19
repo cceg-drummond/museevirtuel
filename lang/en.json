@@ -169,6 +169,7 @@
     "etudiant_reference.url.url": "The reference URL must be a valid URL.",
     "groupe.personne_agee_id.prohibited": "Only the course teacher can assign a witness.",
     "groupe.personne_agee_id.thematique": "The selected witness shares no theme with the group.",
+    "groupe.aucun_etudiant_disponible": "All students in this class are already in a group: none are left to form a new group.",
     "groupe.membres.array": "The members must be provided as a list.",
     "groupe.membres.exists": "One of the selected members does not exist.",
     "groupe.membres.integer": "One of the selected members is invalid.",

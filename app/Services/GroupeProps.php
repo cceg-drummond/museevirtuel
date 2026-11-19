@@ -39,7 +39,7 @@ class GroupeProps
             'estMembre' => $groupe->membres->contains('id', $user->id),
             'estEnseignant' => $estEnseignant,
             'estTemoin' => $groupe->personne_agee_id === $user->id,
-            'estCreateur' => $groupe->created_by === $user->id,
+            'peutGererMembres' => $user->can('manageMembers', $groupe),
             'thematiquesDispo' => Thematique::visiblesPar($cours->enseignant)->get(['id', 'nom', 'periode_historique']),
             'etudiantsDispo' => $this->etudiantsDispo($classe, $groupe),
             ...$this->temoins($groupe, $estEnseignant || $user->isAdmin()),

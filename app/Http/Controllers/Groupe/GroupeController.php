@@ -38,6 +38,7 @@ class GroupeController extends Controller
      * existant de l'étudiant.
      *
      * Seuls l'enseignant du cours et les admins reçoivent la liste des témoins à assigner.
+     * S'il ne reste aucun étudiant sans groupe, ils sont renvoyés vers la classe avec un message.
      *
      * @throws HttpException si la classe n'appartient pas au cours
      * @throws AuthorizationException si l'utilisateur n'est pas autorisé dans la classe
@@ -49,6 +50,12 @@ class GroupeController extends Controller
         $this->authorize('create', [Groupe::class, $classe]);
 
         $user = auth()->user();
+        $dejaGroupes = $classe->etudiantsDejaGroupes();
+
+        if (! $user->isEtudiant() && ! $classe->etudiants()->whereNotIn('users.id', $dejaGroupes)->exists()) {
+            return redirect()->route('classes.show', [$cours, $classe])
+                ->with('error', __('groupe.aucun_etudiant_disponible'));
+        }
 
         $monGroupe = $classe->groupes()
             ->whereHas('membres', fn ($q) => $q->where('users.id', $user->id))
@@ -57,8 +64,6 @@ class GroupeController extends Controller
         if ($monGroupe) {
             return redirect()->route('groupes.show', [$cours, $classe, $monGroupe]);
         }
-
-        $dejaGroupes = $classe->etudiantsDejaGroupes();
 
         $autresEtudiants = $classe->etudiants()
             ->where('users.id', '!=', $user->id)
