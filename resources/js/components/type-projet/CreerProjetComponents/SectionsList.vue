@@ -49,14 +49,6 @@ const { t } = useI18n();
                     {{ t('types_projet.edit.sections_hint') }}
                 </p>
             </div>
-            <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                @click="emit('add')"
-            >
-                {{ t('types_projet.edit.add_section') }}
-            </Button>
         </div>
 
         <Card v-if="props.form.sections.length === 0">
@@ -141,5 +133,15 @@ const { t } = useI18n();
                 </div>
             </CardContent>
         </Card>
+        <div class="flex justify-end">
+            <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                @click="emit('add')"
+            >
+                {{ t('types_projet.edit.add_section') }}
+            </Button>
+        </div>
     </div>
 </template>
