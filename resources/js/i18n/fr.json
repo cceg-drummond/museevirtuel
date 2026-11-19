@@ -1025,6 +1025,7 @@
             "hint_auto": "L'export génère cet élément automatiquement.",
             "hint_manuel": "Les étudiants devront inclure cet élément manuellement.",
             "structure_title": "Structure du projet",
+            "info_intro_conclusion": "Bon à savoir : l'introduction et la conclusion sont déjà prévues dans le projet des étudiants. Vous n'avez pas à les créer vous-même.",
             "label_has_introduction": "Inclure un bloc introduction (amener/poser/diviser)",
             "hint_has_introduction": "Affiche trois champs d'introduction structurés quand aucune section n'est définie.",
             "label_has_conclusion_individuelle": "Inclure une conclusion individuelle par membre",

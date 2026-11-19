@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft } from 'lucide-vue-next';
+import { ArrowLeft, Info } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Heading from '@/components/shared/Heading.vue';
@@ -9,6 +9,7 @@ import GeneralInformationCard from '@/components/type-projet/CreerProjetComponen
 import ProjectTypeCard from '@/components/type-projet/CreerProjetComponents/ProjectTypeCard.vue';
 import SubmissionSettingsCard from '@/components/type-projet/CreerProjetComponents/SubmissionSettingsCard.vue';
 import SectionsList from '@/components/type-projet/CreerProjetComponents/SectionsList.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import AppLayout from '@/layouts/AppLayout.vue';
 import typesProjets from '@/routes/types-projets';
 
@@ -133,7 +134,7 @@ function creer() {
     <AppLayout>
         <Head :title="$t('types_projet.create.page_title')" />
 
-        <div class="mx-auto mt-2 flex max-w-2xl flex-col gap-6">
+        <div class="mx-auto mt-2 flex max-w-2xl flex-col gap-3">
             <!-- En-tête -->
             <div>
                 <Link
@@ -143,8 +144,17 @@ function creer() {
                     <ArrowLeft class="h-3.5 w-3.5" />
                     {{ $t('types_projet.create.back') }}
                 </Link>
-                <Heading :title="$t('types_projet.create.heading_title')" />
+                <h1 class="text-xl font-bold">{{$t('types_projet.create.heading_title')}}</h1>
             </div>
+
+            <Alert
+                class="border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-200"
+            >
+                <Info />
+                <AlertDescription class="text-sky-800 dark:text-sky-200">
+                    {{ $t('types_projet.edit.info_intro_conclusion') }}
+                </AlertDescription>
+            </Alert>
 
             <!-- Informations générales -->
             <GeneralInformationCard :form="form" :errors="form.errors" />
