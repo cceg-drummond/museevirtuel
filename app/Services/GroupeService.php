@@ -9,6 +9,7 @@ use App\Models\Groupe;
 use App\Models\Thematique;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,9 +22,7 @@ use Illuminate\Validation\ValidationException;
 class GroupeService
 {
     /**
-     * Crée un groupe dans la classe avec son créateur, ses membres et ses thématiques.
-     *
-     * Les membres non inscrits dans la classe ou déjà dans un autre groupe sont ignorés.
+     * Crée un groupe dans la classe avec son créateur, ses membres, ses thématiques et son témoin.
      *
      * @param  array<int, int|string>  $membres
      * @param  array<int, int|string>  $thematiques
@@ -31,7 +30,8 @@ class GroupeService
      * @throws ValidationException
      * @throws TransactionEchoueeException
      */
-    public function creer(User $createur, Cours $cours, Classe $classe, array $membres, array $thematiques): Groupe
+    public function creer(User $createur, Cours $cours, Classe $classe,
+        array $membres, array $thematiques, ?int $personneAgeeId = null): Groupe
     {
         $inclutCreateur = $createur->isEtudiant();
         $dejaDansGroupe = $inclutCreateur && $classe->groupes()
@@ -48,10 +48,8 @@ class GroupeService
             ->map(fn ($id) => (int) $id)
             ->toArray();
 
-        // Exclure les membres déjà dans un autre groupe de la même classe
         $membresInscrits = array_diff($membresInscrits, $classe->etudiantsDejaGroupes());
 
-        // Un utilisateur non étudiant crée le groupe sans devenir membre étudiant.
         $tousLesMembres = array_values(array_unique(array_merge(
             $inclutCreateur ? [(int) $createur->id] : [],
             $membresInscrits,
@@ -59,17 +57,52 @@ class GroupeService
 
         $this->verifierTailleEquipe($cours, count($tousLesMembres), inclutCreateur: $inclutCreateur);
 
-        $thematiquesValides = $this->thematiquesValides($cours, $thematiques);
+        return $this->enregistrer([
+            'classe_id' => $classe->id,
+            'created_by' => $createur->id,
+            'personne_agee_id' => $personneAgeeId,
+        ], $tousLesMembres, $this->thematiquesValides($cours, $thematiques));
+    }
 
+    /**
+     * Retourne les témoins approuvés, avec les thématiques qu'ils ont choisies.
+     *
+     * Sert à la page de création : le client ne propose que ceux qui partagent
+     * une thématique avec le groupe, au fur et à mesure que l'enseignant les choisit.
+     *
+     * @return Collection<int, array{id: int, prenom: string, nom: string, thematique_ids: array<int, int>}>
+     */
+    public function temoinsAssignables(): Collection
+    {
+        return User::temoinsApprouves()
+            ->with('thematiquesChoisies:id')
+            ->orderBy('nom')
+            ->get(['id', 'prenom', 'nom'])
+            ->map(fn (User $temoin) => [
+                'id' => $temoin->id,
+                'prenom' => $temoin->prenom,
+                'nom' => $temoin->nom,
+                'thematique_ids' => $temoin->thematiquesChoisies->pluck('id')->all(),
+            ]);
+    }
+
+    /**
+     * Crée le groupe et rattache ses membres et thématiques dans une seule transaction.
+     *
+     * @param  array<string, mixed>  $attributs
+     * @param  array<int, int>  $membres
+     * @param  array<int, int>  $thematiques
+     *
+     * @throws TransactionEchoueeException
+     */
+    private function enregistrer(array $attributs, array $membres, array $thematiques): Groupe
+    {
         try {
-            $groupe = DB::transaction(function () use ($createur, $classe, $tousLesMembres, $thematiquesValides) {
-                $nouveau = Groupe::create([
-                    'classe_id' => $classe->id,
-                    'created_by' => $createur->id,
-                ]);
+            $groupe = DB::transaction(function () use ($attributs, $membres, $thematiques) {
+                $nouveau = Groupe::create($attributs);
 
-                $nouveau->membres()->attach($tousLesMembres);
-                $nouveau->thematiques()->attach($thematiquesValides);
+                $nouveau->membres()->attach($membres);
+                $nouveau->thematiques()->attach($thematiques);
 
                 return $nouveau;
             });

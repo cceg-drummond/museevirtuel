@@ -388,3 +388,106 @@ test('updateThematiques refuse de supprimer la dernière thematique', function (
         ])
         ->assertSessionHasErrors('thematiques');
 });
+
+// ─── Témoin à la création ─────────────────────────────────────────────────────
+
+/**
+ * Crée une personne âgée (témoin) ayant choisi les thématiques données.
+ *
+ * @param  array<int, int>  $thematiqueIds
+ */
+function creerTemoin(array $thematiqueIds, string $statut = 'actif'): User
+{
+    $temoin = User::factory()->create(['role' => 'personne_agee', 'statut' => $statut]);
+    $temoin->thematiquesChoisies()->attach($thematiqueIds);
+
+    return $temoin;
+}
+
+test("l'enseignant reçoit les témoins approuvés avec leurs thématiques", function () {
+    $ctx = creerScenarioGroupeIndex();
+    $thematique = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    $approuve = creerTemoin([$thematique->id]);
+    creerTemoin([$thematique->id], 'en_attente');
+
+    $this->actingAs($ctx['enseignant'])
+        ->get(route('groupes.create', [$ctx['cours'], $ctx['classe']]))
+        ->assertInertia(fn ($page) => $page
+            ->has('temoins', 1)
+            ->where('temoins.0.id', $approuve->id)
+            ->where('temoins.0.thematique_ids', [$thematique->id])
+        );
+});
+
+test('un étudiant ne reçoit aucun témoin sur la page de création', function () {
+    $ctx = creerScenarioGroupeIndex();
+    $thematique = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    creerTemoin([$thematique->id]);
+
+    $this->actingAs($ctx['etudiant'])
+        ->get(route('groupes.create', [$ctx['cours'], $ctx['classe']]))
+        ->assertInertia(fn ($page) => $page->has('temoins', 0));
+});
+
+test("l'enseignant peut assigner un témoin qui partage une thématique du groupe", function () {
+    $ctx = creerScenarioGroupeIndex();
+    $thematique = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    $temoin = creerTemoin([$thematique->id]);
+
+    $this->actingAs($ctx['enseignant'])
+        ->post(route('groupes.store', [$ctx['cours'], $ctx['classe']]), [
+            'membres' => [$ctx['etudiant']->id],
+            'thematiques' => [$thematique->id],
+            'personne_agee_id' => $temoin->id,
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(Groupe::query()->latest('id')->firstOrFail()->personne_agee_id)->toBe($temoin->id);
+});
+
+test('un témoin sans thématique commune avec le groupe est refusé', function () {
+    $ctx = creerScenarioGroupeIndex();
+    $thematique = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    $autre = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    $temoin = creerTemoin([$autre->id]);
+
+    $this->actingAs($ctx['enseignant'])
+        ->post(route('groupes.store', [$ctx['cours'], $ctx['classe']]), [
+            'membres' => [$ctx['etudiant']->id],
+            'thematiques' => [$thematique->id],
+            'personne_agee_id' => $temoin->id,
+        ])
+        ->assertSessionHasErrors('personne_agee_id');
+
+    expect(Groupe::count())->toBe(0);
+});
+
+test('un témoin non approuvé est refusé', function () {
+    $ctx = creerScenarioGroupeIndex();
+    $thematique = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    $temoin = creerTemoin([$thematique->id], 'en_attente');
+
+    $this->actingAs($ctx['enseignant'])
+        ->post(route('groupes.store', [$ctx['cours'], $ctx['classe']]), [
+            'membres' => [$ctx['etudiant']->id],
+            'thematiques' => [$thematique->id],
+            'personne_agee_id' => $temoin->id,
+        ])
+        ->assertSessionHasErrors('personne_agee_id');
+});
+
+test('un étudiant ne peut pas assigner de témoin', function () {
+    $ctx = creerScenarioGroupeIndex();
+    $thematique = Thematique::factory()->create(['enseignant_id' => $ctx['enseignant']->id]);
+    $temoin = creerTemoin([$thematique->id]);
+
+    $this->actingAs($ctx['etudiant'])
+        ->post(route('groupes.store', [$ctx['cours'], $ctx['classe']]), [
+            'membres' => [],
+            'thematiques' => [$thematique->id],
+            'personne_agee_id' => $temoin->id,
+        ])
+        ->assertSessionHasErrors('personne_agee_id');
+
+    expect(Groupe::count())->toBe(0);
+});

@@ -138,6 +138,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Filtre les témoins (personnes âgées) dont le compte a été approuvé.
+     */
+    public function scopeTemoinsApprouves(Builder $query): Builder
+    {
+        return $query->where('role', 'personne_agee')->where('statut', 'actif');
+    }
+
+    /**
      * Filtre les utilisateurs dont le compte est actif.
      */
     public function scopeActif(Builder $query): Builder

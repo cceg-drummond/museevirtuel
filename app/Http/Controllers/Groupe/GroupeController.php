@@ -37,10 +37,13 @@ class GroupeController extends Controller
      * Affiche le formulaire de création d'un groupe ou redirige vers le groupe
      * existant de l'étudiant.
      *
+     * Seuls l'enseignant du cours et les admins reçoivent la liste des témoins à assigner.
+     *
      * @throws HttpException si la classe n'appartient pas au cours
      * @throws AuthorizationException si l'utilisateur n'est pas autorisé dans la classe
      */
-    public function create(Cours $cours, Classe $classe): Response|RedirectResponse
+    public function create(Cours $cours, Classe $classe,
+        GroupeService $groupeService): Response|RedirectResponse
     {
         abort_if($classe->cours_id !== $cours->id, 404);
         $this->authorize('create', [Groupe::class, $classe]);
@@ -70,6 +73,7 @@ class GroupeController extends Controller
             'classe' => $classe->only('id', 'code', 'cours_id'),
             'autresEtudiants' => $autresEtudiants,
             'thematiques' => $thematiques,
+            'temoins' => $user->can('update', $cours) ? $groupeService->temoinsAssignables() : [],
         ]);
     }
 
@@ -92,6 +96,7 @@ class GroupeController extends Controller
                 $classe,
                 $validated['membres'] ?? [],
                 $validated['thematiques'] ?? [],
+                $validated['personne_agee_id'] ?? null,
             );
         } catch (TransactionEchoueeException $e) {
             return back()->with('error', $e->getMessage());

@@ -74,8 +74,7 @@ class GroupeProps
             return ['temoinsDisponibles' => collect(), 'tousLesTemoins' => collect()];
         }
 
-        $tousLesTemoins = User::where('role', 'personne_agee')
-            ->where('statut', 'actif')
+        $tousLesTemoins = User::temoinsApprouves()
             ->with('thematiquesChoisies:id')
             ->orderBy('nom')
             ->get(['id', 'prenom', 'nom']);
