@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\NiveauSection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,7 @@ class TypeProjetSection extends Model
         'label',
         'description',
         'ordre',
+        'niveau',
         'type',
         'musee_contraintes',
         'musee_layout',
@@ -33,6 +35,7 @@ class TypeProjetSection extends Model
     protected function casts(): array
     {
         return [
+            'niveau' => NiveauSection::class,
             'musee_contraintes' => 'array',
             'musee_layout' => 'array',
             'musee_canevas' => 'array',

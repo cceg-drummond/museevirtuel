@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\TypeProjet;
 
+use App\Enums\NiveauSection;
 use App\Enums\TypeSection;
 use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
+use App\Rules\PlanSectionsValide;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,11 +44,12 @@ class UpdateTypeProjetRequest extends FormRequest
             'has_conclusion_individuelle' => ['boolean'],
             'ponderation' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'is_sommatif' => ['boolean'],
-            'sections' => ['nullable', 'array'],
+            'sections' => ['nullable', 'array', new PlanSectionsValide],
             'sections.*.id' => ['nullable', 'integer'],
             'sections.*.label' => ['required', 'string', 'max:200'],
             'sections.*.description' => ['nullable', 'string', 'max:1000'],
             'sections.*.type' => ['nullable', Rule::enum(TypeSection::class)],
+            'sections.*.niveau' => ['nullable', Rule::enum(NiveauSection::class)],
         ];
     }
 
@@ -84,6 +87,7 @@ class UpdateTypeProjetRequest extends FormRequest
             'sections.*.description.string' => __('type_projet.sections.description.string'),
             'sections.*.description.max' => __('type_projet.sections.description.max'),
             'sections.*.type.enum' => __('type_projet.sections.type.enum'),
+            'sections.*.niveau.enum' => __('type_projet.sections.niveau.enum'),
         ];
     }
 }
