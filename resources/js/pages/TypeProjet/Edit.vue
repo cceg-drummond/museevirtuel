@@ -33,6 +33,7 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
@@ -669,8 +670,9 @@ const totalPointsGlobal = computed(() => {
                                             form.errors[`sections.${idx}.label`]
                                         "
                                     />
-                                    <Input
+                                    <Textarea
                                         v-model="form.sections[idx].description"
+                                        :rows="2"
                                         :placeholder="
                                             $t(
                                                 'types_projet.edit.section_instruction_placeholder',

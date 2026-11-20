@@ -7,6 +7,7 @@ import PlanSectionControles from '@/components/type-projet/PlanSectionControles.
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
     ajouterEnfant,
     decalerBloc,
@@ -120,8 +121,9 @@ function ajouterChapitre() {
                         <InputError
                             :message="props.errors[`sections.${idx}.label`]"
                         />
-                        <Input
+                        <Textarea
                             v-model="section.description"
+                            :rows="2"
                             :placeholder="
                                 t(
                                     'types_projet.edit.section_instruction_placeholder',
