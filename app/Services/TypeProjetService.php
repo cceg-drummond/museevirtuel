@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NiveauSection;
 use App\Enums\TypeSection;
 use App\Exceptions\TransactionEchoueeException;
 use App\Models\Cours;
@@ -243,6 +244,7 @@ class TypeProjetService
             'description' => $section['description'] ?? null,
             'type' => $section['type'] ?? TypeSection::Texte->value,
             'ordre' => $index + 1,
+            'niveau' => $section['niveau'] ?? NiveauSection::Chapitre->value,
         ];
     }
 }

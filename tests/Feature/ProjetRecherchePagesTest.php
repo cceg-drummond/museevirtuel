@@ -141,7 +141,7 @@ test("l'aperçu nettoie les marques d'annotation et filtre les conclusions vides
             ->where('renvois', [['id' => $renvoi->id, 'numero' => 1, 'contenu' => 'Source']])
             ->has('sections', 4)
             ->where('sections.0', [
-                'id' => $texte->id, 'label' => 'Intro', 'description' => 'D', 'ordre' => 1, 'type' => 'texte',
+                'id' => $texte->id, 'label' => 'Intro', 'description' => 'D', 'ordre' => 1, 'niveau' => 0, 'type' => 'texte',
                 'contenu' => $propre, 'paragraphes' => null, 'conclusionsParMembre' => null, 'concepts' => null,
             ])
             ->where('sections.1.contenu', null)

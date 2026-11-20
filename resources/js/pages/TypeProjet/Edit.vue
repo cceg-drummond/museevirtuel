@@ -9,16 +9,22 @@ import {
     Table2,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 import { useI18n } from 'vue-i18n';
-import critereRoutes from '@/routes/types-projets/criteres';
 import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
-import CritereForm from '@/components/type-projet/EditProjetComponents/CritereForm.vue';
-import type { Critere } from '@/components/type-projet/EditProjetComponents/CritereForm.vue';
-import CritereTable from '@/components/type-projet/EditProjetComponents/CritereTable.vue';
 import InfoTooltip from '@/components/shared/InfoTooltip.vue';
 import InputError from '@/components/shared/InputError.vue';
+import GeneralInformationCard from '@/components/type-projet/CreerProjetComponents/GeneralInformationCard.vue';
+import SubmissionSettingsCard from '@/components/type-projet/CreerProjetComponents/SubmissionSettingsCard.vue';
+import type { Critere } from '@/components/type-projet/EditProjetComponents/CritereForm.vue';
+import CritereForm from '@/components/type-projet/EditProjetComponents/CritereForm.vue';
+import CritereTable from '@/components/type-projet/EditProjetComponents/CritereTable.vue';
+import EditHeader from '@/components/type-projet/EditProjetComponents/EditHeader.vue';
+import EvaluationCard from '@/components/type-projet/EditProjetComponents/EvaluationCard.vue';
+import SectionModesDialog from '@/components/type-projet/EditProjetComponents/SectionModesDialog.vue';
+import SectionTypeSelector from '@/components/type-projet/EditProjetComponents/SectionTypeSelector.vue';
+import PlanSectionControles from '@/components/type-projet/PlanSectionControles.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -28,14 +34,19 @@ import {
 } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
-import GeneralInformationCard from '@/components/type-projet/CreerProjetComponents/GeneralInformationCard.vue';
-import SubmissionSettingsCard from '@/components/type-projet/CreerProjetComponents/SubmissionSettingsCard.vue';
-import EditHeader from '@/components/type-projet/EditProjetComponents/EditHeader.vue';
-import EvaluationCard from '@/components/type-projet/EditProjetComponents/EvaluationCard.vue';
-import SectionModesDialog from '@/components/type-projet/EditProjetComponents/SectionModesDialog.vue';
-import SectionTypeSelector from '@/components/type-projet/EditProjetComponents/SectionTypeSelector.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import {
+    ajouterEnfant,
+    decalerBloc,
+    deplacerBloc,
+    NIVEAU_CHAPITRE,
+    nombreDescendants,
+    numerotation,
+    supprimerBloc,
+} from '@/lib/planSections';
+import type { NiveauSection } from '@/lib/planSections';
 import typesProjets from '@/routes/types-projets';
+import critereRoutes from '@/routes/types-projets/criteres';
 
 const { t } = useI18n();
 
@@ -48,6 +59,7 @@ type SectionFormItem = {
     label: string;
     description: string;
     type: SectionType;
+    niveau: NiveauSection;
 };
 
 type Section = {
@@ -55,6 +67,7 @@ type Section = {
     label: string;
     description: string | null;
     ordre: number;
+    niveau: NiveauSection;
     type: SectionType;
     criteres: Critere[];
 };
@@ -170,19 +183,45 @@ const form = useForm({
         label: s.label,
         description: s.description ?? '',
         type: s.type ?? 'texte',
+        niveau: s.niveau ?? NIVEAU_CHAPITRE,
     })),
 });
 
+/** Numéro de chaque élément du plan (« 2.1.3 »), recalculé à chaque changement. */
+const numeros = computed(() => numerotation(form.sections));
+
+/** Décalage visuel par niveau : la hiérarchie se lit d'un coup d'œil. */
+const retraits: Record<NiveauSection, string> = {
+    0: '',
+    1: 'ml-6',
+    2: 'ml-12',
+};
+
 /**
- * Ajoute une nouvelle section vide à la fin de la liste.
+ * Retourne un élément vide du plan, avec une clé locale neuve (niveau fixé par l'appelant).
  */
-function ajouterSection() {
-    form.sections.push({
-        _uid: ++_uidCounter,
-        label: '',
-        description: '',
-        type: 'texte',
-    });
+function elementVide(): Omit<SectionFormItem, 'niveau'> {
+    return { _uid: ++_uidCounter, label: '', description: '', type: 'texte' };
+}
+
+/**
+ * Ajoute un chapitre vide à la fin du plan.
+ */
+function ajouterChapitre() {
+    form.sections.push({ ...elementVide(), niveau: NIVEAU_CHAPITRE });
+}
+
+/**
+ * Déplace tout le bloc après un glisser-déposer de son premier élément.
+ *
+ * Attend le tick suivant : la bibliothèque remplace d'abord le tableau du v-model.
+ */
+function apresGlisser(evenement: { oldIndex?: number; newIndex?: number }) {
+    const { oldIndex, newIndex } = evenement;
+
+    if (oldIndex !== undefined && newIndex !== undefined) {
+        nextTick(() => deplacerBloc(form.sections, oldIndex, newIndex));
+    }
 }
 
 // ─── Confirmation avant suppression ───────────────────────────────────────────
@@ -195,13 +234,20 @@ const {
 } = useConfirmDelete();
 
 /**
- * Supprime la section à l'index donné (après confirmation).
+ * Supprime l'élément à l'index donné et tout ce qu'il contient (après confirmation).
  */
 function supprimerSection(idx: number) {
+    const descendants = nombreDescendants(form.sections, idx);
+
     demanderSupprimer({
         titre: t('types_projet.edit.confirm_delete_section_titre'),
-        description: t('types_projet.edit.confirm_delete_section_desc'),
-        action: () => form.sections.splice(idx, 1),
+        description:
+            descendants > 0
+                ? t('types_projet.edit.confirm_delete_bloc_desc', {
+                      n: descendants,
+                  })
+                : t('types_projet.edit.confirm_delete_section_desc'),
+        action: () => supprimerBloc(form.sections, idx),
     });
 }
 
@@ -555,6 +601,8 @@ const totalPointsGlobal = computed(() => {
                     </p>
                 </div>
 
+                <InputError :message="form.errors.sections" />
+
                 <!-- Message vide -->
                 <Card v-if="form.sections.length === 0">
                     <CardContent
@@ -570,29 +618,48 @@ const totalPointsGlobal = computed(() => {
                     handle=".drag-handle"
                     :animation="150"
                     class="flex flex-col gap-3"
+                    @update="apresGlisser"
                 >
                     <Card
                         v-for="(section, idx) in form.sections"
                         :key="section._uid"
-                        class="border"
+                        :class="['border', retraits[section.niveau]]"
                     >
                         <CardContent class="grid gap-4 pt-5">
-                            <!-- Numéro + label + supprimer -->
-                            <div class="flex items-start gap-2">
+                            <!-- Niveau + numéro + changement de niveau + ajout d'enfant -->
+                            <div class="flex items-center gap-2">
                                 <GripVertical
-                                    class="drag-handle mt-2.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+                                    class="drag-handle h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
                                 />
-                                <span
-                                    class="mt-2 w-5 shrink-0 text-center text-xs font-medium text-muted-foreground"
-                                >
-                                    {{ idx + 1 }}
-                                </span>
+                                <PlanSectionControles
+                                    class="flex-1"
+                                    :plan="form.sections"
+                                    :index="idx"
+                                    :numero="numeros[idx]"
+                                    @remonter="
+                                        decalerBloc(form.sections, idx, -1)
+                                    "
+                                    @descendre="
+                                        decalerBloc(form.sections, idx, 1)
+                                    "
+                                    @ajouter-enfant="
+                                        ajouterEnfant(
+                                            form.sections,
+                                            idx,
+                                            elementVide(),
+                                        )
+                                    "
+                                />
+                            </div>
+
+                            <!-- Label + consigne + supprimer -->
+                            <div class="flex items-start gap-2">
                                 <div class="flex-1 space-y-1.5">
                                     <Input
                                         v-model="form.sections[idx].label"
                                         :placeholder="
                                             $t(
-                                                'types_projet.edit.section_title_placeholder',
+                                                `types_projet.edit.titre_placeholder_${section.niveau}`,
                                             )
                                         "
                                         required
@@ -630,7 +697,7 @@ const totalPointsGlobal = computed(() => {
                             />
 
                             <!-- ─── Critères de la section (collapsible) ───────── -->
-                            <div v-if="section.id" class="ml-11">
+                            <div v-if="section.id">
                                 <Collapsible>
                                     <CollapsibleTrigger
                                         class="group flex w-full items-center justify-between rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
@@ -845,13 +912,13 @@ const totalPointsGlobal = computed(() => {
                     </Card>
                 </VueDraggable>
 
-                <!-- Bouton ajouter une section -->
+                <!-- Bouton ajouter un chapitre -->
                 <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     class="self-start"
-                    @click="ajouterSection"
+                    @click="ajouterChapitre"
                 >
                     <Plus class="mr-2 h-3.5 w-3.5" />
                     {{ $t('types_projet.edit.add_section') }}

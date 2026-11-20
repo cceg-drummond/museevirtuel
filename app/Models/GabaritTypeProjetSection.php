@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\NiveauSection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $label
  * @property string $type texte, paragraphes, individuel, entrevue…
  * @property int $ordre
+ * @property NiveauSection $niveau
  */
 class GabaritTypeProjetSection extends Model
 {
@@ -23,7 +25,20 @@ class GabaritTypeProjetSection extends Model
         'label',
         'type',
         'ordre',
+        'niveau',
     ];
+
+    /**
+     * Retourne les casts de colonnes pour l'hydratation automatique.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'niveau' => NiveauSection::class,
+        ];
+    }
 
     /**
      * Type de projet du gabarit auquel appartient cette section.

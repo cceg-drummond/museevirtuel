@@ -36,14 +36,12 @@ import { useI18n } from 'vue-i18n';
 import AntidoteGlobalModal from '@/components/projets/AntidoteGlobalModal.vue';
 import type { GlobalSection } from '@/components/projets/AntidoteGlobalModal.vue';
 import CommentaireEnseignant from '@/components/projets/CommentaireEnseignant.vue';
-import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
 import CritereCorrection from '@/components/projets/CritereCorrection.vue';
 import type {
     Critere as TypeProjetCritere,
     CorrectionLocale,
 } from '@/components/projets/CritereCorrection.vue';
 import CritereEtudiant from '@/components/projets/CritereEtudiant.vue';
-import Heading from '@/components/shared/Heading.vue';
 import ProjetActionsEnseignant from '@/components/projets/ProjetActionsEnseignant.vue';
 import ProjetCollapsibleCard from '@/components/projets/ProjetCollapsibleCard.vue';
 import ProjetConsultationExports from '@/components/projets/ProjetConsultationExports.vue';
@@ -57,6 +55,8 @@ import SectionEntrevueCC from '@/components/projets/SectionEntrevueCC.vue';
 import SectionSchemaVisuel from '@/components/projets/SectionSchemaVisuel.vue';
 import SectionTache from '@/components/projets/SectionTache.vue';
 import SectionVideo from '@/components/projets/SectionVideo.vue';
+import ConfirmationModal from '@/components/shared/ConfirmationModal.vue';
+import Heading from '@/components/shared/Heading.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,6 +72,8 @@ import { Separator } from '@/components/ui/separator';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
 import { vGrise } from '@/directives/grise';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { numerotation } from '@/lib/planSections';
+import type { NiveauSection } from '@/lib/planSections';
 import { edit as editProjet } from '@/routes/projets';
 import { edit as editTypeProjet } from '@/routes/types-projets';
 import type { Auth } from '@/types/auth';
@@ -240,6 +242,7 @@ type Section = {
     label: string;
     description: string | null;
     ordre: number;
+    niveau: NiveauSection;
     type:
         | 'texte'
         | 'paragraphes'
@@ -342,6 +345,27 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+/** Numéro de chaque section du plan (« 2.1.3 »), indexé par id de section. */
+const numerosSections = computed<Record<number, string>>(() => {
+    const numeros = numerotation(props.sections);
+
+    return Object.fromEntries(props.sections.map((s, i) => [s.id, numeros[i]]));
+});
+
+/** Décalage visuel des cartes par niveau : la hiérarchie du plan se lit d'un coup d'œil. */
+const retraitsSections: Record<NiveauSection, string> = {
+    0: '',
+    1: 'ml-6',
+    2: 'ml-12',
+};
+
+/**
+ * Titre affiché d'une section, précédé de son numéro dans le plan.
+ */
+function titreSection(section: Section): string {
+    return `${numerosSections.value[section.id]} ${section.label}`;
+}
 
 const page = usePage();
 const userId = computed(() => (page.props.auth as Auth).user.id);
@@ -2970,9 +2994,14 @@ async function supprimerCommentaireRenvoi(
 
                 <!-- ─── Sections dynamiques (définies par le professeur) ─────── -->
                 <template v-if="props.sections.length > 0">
-                    <template
+                    <!-- Le retrait par niveau reprend la hiérarchie chapitre → section → sous-section -->
+                    <div
                         v-for="section in props.sections"
                         :key="section.id"
+                        :class="[
+                            'flex flex-col gap-3',
+                            retraitsSections[section.niveau],
+                        ]"
                     >
                         <!-- ── Type texte : zone de rédaction unique ─────────────── -->
                         <Card v-if="section.type === 'texte'">
@@ -2981,7 +3010,7 @@ async function supprimerCommentaireRenvoi(
                             >
                                 <CardTitle class="flex flex-col gap-0.5">
                                     <span class="text-base font-semibold">{{
-                                        section.label
+                                        titreSection(section)
                                     }}</span>
                                     <span
                                         v-if="section.description"
@@ -3119,7 +3148,7 @@ async function supprimerCommentaireRenvoi(
                                         >
                                             {{
                                                 para.titre ||
-                                                `${section.label} — paragraphe ${para.ordre}`
+                                                `${titreSection(section)} — paragraphe ${para.ordre}`
                                             }}
                                         </span>
                                     </CardTitle>
@@ -3333,7 +3362,7 @@ async function supprimerCommentaireRenvoi(
                                             {{ membre.prenom[0]
                                             }}{{ membre.nom[0] }}
                                         </span>
-                                        {{ section.label }} —
+                                        {{ titreSection(section) }} —
                                         {{ membre.prenom }}
                                         {{ membre.nom }}
                                     </CardTitle>
@@ -3824,7 +3853,7 @@ async function supprimerCommentaireRenvoi(
                             <CardHeader>
                                 <CardTitle class="flex flex-col gap-0.5">
                                     <span class="text-base font-semibold">{{
-                                        section.label
+                                        titreSection(section)
                                     }}</span>
                                     <span
                                         v-if="section.description"
@@ -3858,7 +3887,7 @@ async function supprimerCommentaireRenvoi(
                         >
                             <CardHeader>
                                 <CardTitle class="text-base font-semibold">{{
-                                    section.label
+                                    titreSection(section)
                                 }}</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -3881,7 +3910,7 @@ async function supprimerCommentaireRenvoi(
                             <CardHeader>
                                 <CardTitle class="flex flex-col gap-0.5">
                                     <span class="text-base font-semibold">{{
-                                        section.label
+                                        titreSection(section)
                                     }}</span>
                                     <span
                                         v-if="section.description"
@@ -3911,7 +3940,7 @@ async function supprimerCommentaireRenvoi(
                             <CardHeader>
                                 <CardTitle class="flex flex-col gap-0.5">
                                     <span class="text-base font-semibold">{{
-                                        section.label
+                                        titreSection(section)
                                     }}</span>
                                     <span
                                         v-if="section.description"
@@ -3944,7 +3973,7 @@ async function supprimerCommentaireRenvoi(
                             <CardHeader>
                                 <CardTitle class="flex flex-col gap-0.5">
                                     <span class="text-base font-semibold">{{
-                                        section.label
+                                        titreSection(section)
                                     }}</span>
                                     <span
                                         v-if="section.description"
@@ -3974,7 +4003,7 @@ async function supprimerCommentaireRenvoi(
                             <CardHeader>
                                 <CardTitle class="flex flex-col gap-0.5">
                                     <span class="text-base font-semibold">{{
-                                        section.label
+                                        titreSection(section)
                                     }}</span>
                                     <span
                                         v-if="section.description"
@@ -4059,7 +4088,7 @@ async function supprimerCommentaireRenvoi(
                                     />
                                 </template>
                         </ProjetCollapsibleCard>
-                    </template>
+                    </div>
                 </template>
 
                 <!-- ─── Introduction (fallback si aucune section définie et option activée) ──────── -->

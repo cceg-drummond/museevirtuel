@@ -2,7 +2,9 @@
 
 namespace App\Actions;
 
+use App\Enums\NiveauSection;
 use App\Helpers\HtmlHelper;
+use App\Helpers\PlanHelper;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -73,7 +75,7 @@ class ExportProjetPdf
     }
 
     /**
-     * Retourne les sections du type de projet avec leur contenu nettoyé.
+     * Retourne les sections du type de projet avec leur niveau, leur numéro dans le plan et leur contenu nettoyé.
      *
      * Les conclusions des sections de type individuel sont indexées par user_id.
      */
@@ -86,8 +88,13 @@ class ExportProjetPdf
             ->groupBy('section_id')
             ->map(fn ($conclusions) => $conclusions->keyBy('user_id')->map(fn ($c) => $this->nettoyer($c->contenu)));
 
-        return ($projet->typeProjet?->sections ?? collect())->map(fn ($s) => [
+        $sections = $projet->typeProjet?->sections ?? collect();
+        $numeros = PlanHelper::numerotation($sections->pluck('niveau'));
+
+        return $sections->values()->map(fn ($s, int $index) => [
             'label' => $s->label,
+            'niveau' => $s->niveau?->value ?? NiveauSection::Chapitre->value,
+            'numero' => $numeros[$index],
             'type' => $s->type ?? 'texte',
             'contenu' => $this->nettoyer($contenusParSection->get($s->id)?->contenu),
             'paragraphes' => ($paragraphesParSection->get($s->id) ?? collect())

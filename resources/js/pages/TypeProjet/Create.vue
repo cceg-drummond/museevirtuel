@@ -3,14 +3,14 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, Info } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Heading from '@/components/shared/Heading.vue';
-import { Button } from '@/components/ui/button';
 import GeneralInformationCard from '@/components/type-projet/CreerProjetComponents/GeneralInformationCard.vue';
 import ProjectTypeCard from '@/components/type-projet/CreerProjetComponents/ProjectTypeCard.vue';
-import SubmissionSettingsCard from '@/components/type-projet/CreerProjetComponents/SubmissionSettingsCard.vue';
 import SectionsList from '@/components/type-projet/CreerProjetComponents/SectionsList.vue';
+import SubmissionSettingsCard from '@/components/type-projet/CreerProjetComponents/SubmissionSettingsCard.vue';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { NiveauSection } from '@/lib/planSections';
 import typesProjets from '@/routes/types-projets';
 
 const { t } = useI18n();
@@ -33,6 +33,7 @@ type SectionFormItem = {
     label: string;
     description: string;
     type: SectionType;
+    niveau: NiveauSection;
 };
 
 const sectionTypes = computed<
@@ -88,20 +89,6 @@ const form = useForm({
     has_conclusion_individuelle: false,
     sections: [] as SectionFormItem[],
 });
-
-/**
- * Ajoute une nouvelle section vide à la fin de la liste.
- */
-function ajouterSection() {
-    form.sections.push({ label: '', description: '', type: 'texte' });
-}
-
-/**
- * Supprime la section à l'index donné.
- */
-function supprimerSection(idx: number) {
-    form.sections.splice(idx, 1);
-}
 
 /**
  * Réinitialise les champs non-applicables lors du changement de type.
@@ -168,11 +155,9 @@ function creer() {
             <!-- Liste des sections -->
             <SectionsList
                 v-if="form.type === 'standard'"
-                :form="form"
+                v-model:sections="form.sections"
                 :errors="form.errors"
                 :section-types="sectionTypes"
-                @add="ajouterSection"
-                @remove="supprimerSection"
             />
 
             <!-- Bouton créer -->

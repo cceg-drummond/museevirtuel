@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\TypeProjet;
 
+use App\Enums\NiveauSection;
 use App\Enums\TypeSection;
 use App\Http\Requests\Concerns\AutoriseGestionTypeProjet;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -40,7 +42,29 @@ class SaveTypeProjetSectionRequest extends FormRequest
             'label' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string', 'max:1000'],
             'type' => ['nullable', Rule::enum(TypeSection::class)],
+            // Changer le niveau d'un élément au milieu du plan pourrait le rendre incohérent :
+            // seule la synchronisation complète (UpdateTypeProjetRequest) le permet.
+            'niveau' => [
+                Rule::excludeIf($this->route('section') !== null),
+                'nullable', Rule::enum(NiveauSection::class), $this->suitLeDernierElement(...),
+            ],
         ];
+    }
+
+    /**
+     * Refuse un niveau qui descend de plus d'un cran sous le dernier élément du plan.
+     *
+     * La section créée est ajoutée en fin de plan ; un plan vide doit commencer par un chapitre.
+     */
+    private function suitLeDernierElement(string $attribute, mixed $value, Closure $fail): void
+    {
+        $niveau = NiveauSection::tryFrom((int) $value);
+        $dernier = $this->route('typeProjet')->sections()->reorder()->orderByDesc('ordre')->value('niveau');
+        $maximum = $dernier === null ? NiveauSection::Chapitre->value : $dernier->value + 1;
+
+        if ($niveau !== null && $niveau->value > $maximum) {
+            $fail(__('type_projet_section.niveau.plan'));
+        }
     }
 
     /**
@@ -57,6 +81,7 @@ class SaveTypeProjetSectionRequest extends FormRequest
             'description.string' => __('type_projet_section.description.string'),
             'description.max' => __('type_projet_section.description.max'),
             'type.enum' => __('type_projet_section.type.enum'),
+            'niveau.enum' => __('type_projet_section.niveau.enum'),
         ];
     }
 }

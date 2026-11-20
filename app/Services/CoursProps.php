@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NiveauSection;
 use App\Http\Resources\VisioConferenceResource;
 use App\Models\Cours;
 use App\Models\TypeProjet;
@@ -98,6 +99,7 @@ class CoursProps
                     'label' => $s->label,
                     'description' => $s->description,
                     'ordre' => $s->ordre,
+                    'niveau' => $s->niveau?->value ?? NiveauSection::Chapitre->value,
                 ])->values(),
             ])->values();
     }

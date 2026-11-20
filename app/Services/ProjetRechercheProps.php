@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NiveauSection;
 use App\Helpers\HtmlHelper;
 use App\Models\Classe;
 use App\Models\ConsentementVideo;
@@ -126,6 +127,7 @@ class ProjetRechercheProps
             'label' => $s['label'],
             'description' => $s['description'],
             'ordre' => $s['ordre'],
+            'niveau' => $s['niveau'],
             'type' => $s['type'],
             'contenu' => $s['type'] === 'texte' ? HtmlHelper::stripAnnotationMarks($s['contenu']) : null,
             'paragraphes' => $s['type'] === 'paragraphes' ? $this->paragraphesApercu($s['paragraphes'] ?? []) : null,
@@ -195,6 +197,7 @@ class ProjetRechercheProps
             'label' => $s->label,
             'description' => $s->description,
             'ordre' => $s->ordre,
+            'niveau' => $s->niveau?->value ?? NiveauSection::Chapitre->value,
             'type' => $s->type ?? 'texte',
             'contenu' => null,
             'paragraphes' => null,

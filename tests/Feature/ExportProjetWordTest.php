@@ -108,12 +108,12 @@ test("l'export Word contient page titre, table des matières, sections et réfé
         'Travail présenté à', 'Marie Prof', 'Département des sciences humaines', 'Cégep de Drummondville', 'Le '.now()->translatedFormat('j F Y'),
         'TABLE DES MATIÈRES',
     ]))
-        ->and(texteExportWord($xml))->toContain('Introduction|Texte annoté intro')
-        ->and(texteExportWord($xml))->toContain('Développement|Premier titre|Premier|Paragraphe 2|Second')
-        ->and(texteExportWord($xml))->toContain('Conclusion|Ana Roy|Conclusion Ana|Léo Gay|(Section non rédigée)')
-        ->and(texteExportWord($xml))->toContain("Vide|(Section non rédigée)|Références|1.\tSource & cie")
-        // Correctifs appliqués au champ TOC de PhpWord
-        ->and($xml)->toContain('TOC \o "1-2"')
+        ->and(texteExportWord($xml))->toContain('1 Introduction|Texte annoté intro')
+        ->and(texteExportWord($xml))->toContain('2 Développement|Premier titre|Premier|Paragraphe 2|Second')
+        ->and(texteExportWord($xml))->toContain('3 Conclusion|Ana Roy|Conclusion Ana|Léo Gay|(Section non rédigée)')
+        ->and(texteExportWord($xml))->toContain("4 Vide|(Section non rédigée)|Références|1.\tSource & cie")
+        // Correctifs appliqués au champ TOC de PhpWord (niveaux 1 à 4 : chapitre → paragraphe d'une sous-section)
+        ->and($xml)->toContain('TOC \o "1-4"')
         ->and($xml)->not->toMatch('/PAGEREF \d+ \\\\h/');
 });
 
@@ -138,7 +138,7 @@ test("l'export Word ne met pas de titre par membre quand le groupe n'a qu'un mem
 
     $xml = documentXmlExportWord($this->actingAs($e1)->get(urlExportWord($cours, $classe, $groupe, $tp)));
 
-    expect(texteExportWord($xml))->toBe('Conclusion|Seule');
+    expect(texteExportWord($xml))->toBe('1 Conclusion|Seule');
 });
 
 test("le fichier Word est nommé d'après le numéro du groupe dans sa classe, comme le PDF", function () {

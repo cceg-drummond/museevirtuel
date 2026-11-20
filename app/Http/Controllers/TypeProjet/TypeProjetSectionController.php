@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\TypeProjet;
 
+use App\Actions\SupprimerBlocSection;
+use App\Enums\NiveauSection;
 use App\Enums\TypeSection;
 use App\Exceptions\TransactionEchoueeException;
 use App\Http\Controllers\Controller;
@@ -17,7 +19,7 @@ use Illuminate\Http\RedirectResponse;
 class TypeProjetSectionController extends Controller
 {
     /**
-     * Ajoute une section au type de projet.
+     * Ajoute une section en fin de plan du type de projet (chapitre par défaut).
      *
      * Les données sont validées par SaveTypeProjetSectionRequest.
      */
@@ -32,6 +34,7 @@ class TypeProjetSectionController extends Controller
             'description' => $data['description'] ?? null,
             'type' => $data['type'] ?? TypeSection::Texte->value,
             'ordre' => $ordre,
+            'niveau' => $data['niveau'] ?? NiveauSection::Chapitre->value,
         ]);
 
         return back()->with('success', __('type_projet_section.created'));
@@ -68,18 +71,22 @@ class TypeProjetSectionController extends Controller
     }
 
     /**
-     * Supprime une section du type de projet.
+     * Supprime une section du type de projet avec ses sections et sous-sections.
      *
      * @throws AuthorizationException
      */
-    public function destroy(Cours $cours, TypeProjet $typeProjet, TypeProjetSection $section, OrdreElements $ordres): RedirectResponse
-    {
+    public function destroy(
+        Cours $cours,
+        TypeProjet $typeProjet,
+        TypeProjetSection $section,
+        SupprimerBlocSection $supprimerBlocSection,
+    ): RedirectResponse {
         abort_if($typeProjet->cours_id !== $cours->id, 404);
         $this->authorize('update', $typeProjet);
         abort_if($section->type_projet_id !== $typeProjet->id, 404);
 
         try {
-            $ordres->supprimer($section, $typeProjet->sections());
+            $supprimerBlocSection->execute($section);
         } catch (TransactionEchoueeException $e) {
             return back()->with('error', $e->getMessage());
         }
