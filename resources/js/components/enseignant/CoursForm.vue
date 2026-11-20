@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 type Cours = {
@@ -199,7 +200,7 @@ function submit(): void {
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ $t('enseignant.index.modal_description') }}</Label
-                    ><Input
+                    ><Textarea
                         v-model="form.description"
                         :placeholder="
                             $t('enseignant.index.modal_description_placeholder')

@@ -5,6 +5,7 @@ import InputError from '@/components/shared/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 type Thematique = {
@@ -94,7 +95,7 @@ function submit(): void {
                     <Label for="desc-theme">{{
                         $t('enseignant.index.modal_thematic_description')
                     }}</Label
-                    ><Input
+                    ><Textarea
                         id="desc-theme"
                         v-model="form.description"
                         :placeholder="
