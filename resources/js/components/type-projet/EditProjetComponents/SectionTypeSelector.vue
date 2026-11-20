@@ -21,7 +21,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <div class="ml-11">
+    <div>
         <div class="mb-2 flex items-center gap-1">
             <p class="text-xs font-medium text-muted-foreground">
                 {{ $t('types_projet.edit.input_mode_label') }}

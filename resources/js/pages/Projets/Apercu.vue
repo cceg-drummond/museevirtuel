@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Download, Eye } from 'lucide-vue-next';
-import Heading from '@/components/shared/Heading.vue';
+import { computed } from 'vue';
 import ApercuSection from '@/components/projets/ApercuSection.vue';
+import Heading from '@/components/shared/Heading.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { numerotation } from '@/lib/planSections';
+import type { NiveauSection } from '@/lib/planSections';
 
 type Membre = {
     id: number;
@@ -40,6 +43,7 @@ type Section = {
     label: string;
     description: string | null;
     ordre: number;
+    niveau: NiveauSection;
     type: 'texte' | 'paragraphes' | 'individuel';
     contenu: string | null;
     paragraphes: Paragraphe[] | null;
@@ -63,6 +67,9 @@ const props = defineProps<{
     renvois: Renvoi[];
     estEnseignant: boolean;
 }>();
+
+/** Numéro de chaque section dans le plan, dans l'ordre des sections. */
+const numeros = computed(() => numerotation(props.sections));
 
 /** Construit l'URL de base pour les routes du projet de ce groupe. */
 const baseUrl = `/cours/${props.classe.cours_id}/classes/${props.groupe.classe_id}/groupes/${props.groupe.id}/projets/${props.typeProjet.id}`;
@@ -158,10 +165,11 @@ const baseUrl = `/cours/${props.classe.cours_id}/classes/${props.groupe.classe_i
                 </p>
 
                 <ApercuSection
-                    v-for="section in sections"
+                    v-for="(section, idx) in sections"
                     :key="section.id"
                     :section="section"
                     :membres="membres"
+                    :numero="numeros[idx]"
                 />
             </template>
 

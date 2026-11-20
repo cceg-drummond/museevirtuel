@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { NiveauSection } from '@/lib/planSections';
+
 type Membre = {
     id: number;
     prenom: string;
@@ -22,6 +24,7 @@ type Section = {
     label: string;
     description: string | null;
     ordre: number;
+    niveau: NiveauSection;
     type: 'texte' | 'paragraphes' | 'individuel';
     contenu: string | null;
     paragraphes: Paragraphe[] | null;
@@ -31,7 +34,16 @@ type Section = {
 defineProps<{
     section: Section;
     membres: Membre[];
+    /** Numéro de la section dans le plan (« 2.1.3 »). */
+    numero: string;
 }>();
+
+/** Balise et taille du titre par niveau, comme les titres d'un document. */
+const titres: Record<NiveauSection, { balise: string; classes: string }> = {
+    0: { balise: 'h2', classes: 'border-b pb-2 text-xl font-semibold' },
+    1: { balise: 'h3', classes: 'text-lg font-semibold' },
+    2: { balise: 'h4', classes: 'text-base font-semibold' },
+};
 
 function nomMembre(userId: number, membres: Membre[]): string {
     const membre = membres.find((item) => item.id === userId);
@@ -42,9 +54,12 @@ function nomMembre(userId: number, membres: Membre[]): string {
 
 <template>
     <section class="space-y-3">
-        <h2 class="border-b pb-2 text-xl font-semibold">
-            {{ section.label }}
-        </h2>
+        <component
+            :is="titres[section.niveau].balise"
+            :class="titres[section.niveau].classes"
+        >
+            {{ numero }} {{ section.label }}
+        </component>
         <p
             v-if="section.description"
             class="text-xs text-muted-foreground italic"
@@ -65,19 +80,14 @@ function nomMembre(userId: number, membres: Membre[]): string {
 
         <template v-else-if="section.type === 'paragraphes'">
             <template
-                v-if="
-                    section.paragraphes && section.paragraphes.length > 0
-                "
+                v-if="section.paragraphes && section.paragraphes.length > 0"
             >
                 <article
                     v-for="paragraph in section.paragraphes"
                     :key="paragraph.id"
                     class="space-y-2"
                 >
-                    <h3
-                        v-if="paragraph.titre"
-                        class="text-base font-semibold"
-                    >
+                    <h3 v-if="paragraph.titre" class="text-base font-semibold">
                         {{ paragraph.titre }}
                     </h3>
                     <div
@@ -104,9 +114,7 @@ function nomMembre(userId: number, membres: Membre[]): string {
                     :key="conclusion.userId"
                     class="space-y-2"
                 >
-                    <h3
-                        class="text-sm font-semibold text-muted-foreground"
-                    >
+                    <h3 class="text-sm font-semibold text-muted-foreground">
                         {{ nomMembre(conclusion.userId, membres) }}
                     </h3>
                     <div

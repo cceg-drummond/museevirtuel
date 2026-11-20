@@ -2,13 +2,17 @@
 
 use App\Enums\NiveauSection;
 use App\Enums\TypeCours;
+use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\GabaritCours;
 use App\Models\GabaritTypeProjet;
 use App\Models\GabaritTypeProjetSection;
+use App\Models\Groupe;
+use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Models\User;
+use App\Services\ProjetRechercheProps;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -280,6 +284,18 @@ test('un réordonnancement qui casserait le plan est refusé sans rien modifier'
 
     expect($chapitre->fresh()->ordre)->toBe(1)
         ->and($section->fresh()->ordre)->toBe(2);
+});
+
+test('les sections envoyées à l\'éditeur du projet exposent leur niveau', function () {
+    $typeProjet = typeProjetPourNiveaux();
+    planAvecNiveaux($typeProjet, [0, 1, 2]);
+    $classe = Classe::create(['cours_id' => $typeProjet->cours_id]);
+    $groupe = Groupe::create(['classe_id' => $classe->id, 'created_by' => $typeProjet->enseignant_id]);
+    $projet = ProjetRecherche::create(['groupe_id' => $groupe->id, 'type_projet_id' => $typeProjet->id]);
+
+    $sections = app(ProjetRechercheProps::class)->sections($projet->load('typeProjet.sections'));
+
+    expect(array_column($sections, 'niveau'))->toBe([0, 1, 2]);
 });
 
 test('le niveau d\'une section de gabarit est enregistré et relu comme enum', function () {
