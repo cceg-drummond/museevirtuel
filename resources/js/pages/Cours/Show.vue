@@ -56,6 +56,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { NiveauSection } from '@/lib/planSections';
 import typesProjetsRoutes from '@/routes/types-projets';
 
 type Classe = {
@@ -116,6 +117,7 @@ type TypeProjetSection = {
     label: string;
     description: string | null;
     ordre: number;
+    niveau: NiveauSection;
 };
 
 type TypeProjet = {

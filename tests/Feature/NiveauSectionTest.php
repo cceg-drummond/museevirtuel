@@ -1,7 +1,11 @@
 <?php
 
+use App\Actions\ExportProjetPdf;
+use App\Actions\ExportProjetWord;
+use App\Actions\TransfererCoursAction;
 use App\Enums\NiveauSection;
 use App\Enums\TypeCours;
+use App\Helpers\PlanHelper;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Models\GabaritCours;
@@ -12,8 +16,10 @@ use App\Models\ProjetRecherche;
 use App\Models\TypeProjet;
 use App\Models\TypeProjetSection;
 use App\Models\User;
+use App\Services\AppliquerGabaritService;
 use App\Services\ProjetRechercheProps;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\View;
 
 uses(RefreshDatabase::class);
 
@@ -296,6 +302,117 @@ test('les sections envoyées à l\'éditeur du projet exposent leur niveau', fun
     $sections = app(ProjetRechercheProps::class)->sections($projet->load('typeProjet.sections'));
 
     expect(array_column($sections, 'niveau'))->toBe([0, 1, 2]);
+});
+
+// ─── Numérotation et exports ──────────────────────────────────────────────────
+
+/**
+ * Projet d'un groupe d'un membre dont le type a le plan Chapitre 1 > Méthode > Terrain, puis Chapitre 2.
+ *
+ * @return array{projet: ProjetRecherche, groupe: Groupe}
+ */
+function projetExportNiveaux(): array
+{
+    $typeProjet = typeProjetPourNiveaux();
+    $typeProjet->update(['generer_table_matieres' => true]);
+
+    foreach ([['Chapitre un', 0], ['Méthode', 1], ['Terrain', 2], ['Chapitre deux', 0]] as $index => [$label, $niveau]) {
+        TypeProjetSection::create([
+            'type_projet_id' => $typeProjet->id, 'label' => $label, 'ordre' => $index + 1, 'niveau' => $niveau, 'type' => 'texte',
+        ]);
+    }
+
+    $etudiant = User::factory()->create(['role' => 'etudiant']);
+    $classe = Classe::create(['cours_id' => $typeProjet->cours_id]);
+    $groupe = Groupe::create(['classe_id' => $classe->id, 'created_by' => $etudiant->id]);
+    $groupe->membres()->attach($etudiant->id);
+    $projet = ProjetRecherche::create(['groupe_id' => $groupe->id, 'type_projet_id' => $typeProjet->id]);
+
+    return ['projet' => $projet, 'groupe' => $groupe->fresh()];
+}
+
+test('la numérotation du plan suit les niveaux', function (array $niveaux, array $numeros) {
+    expect(PlanHelper::numerotation($niveaux))->toBe($numeros);
+})->with([
+    'chapitres seuls' => [[0, 0, 0], ['1', '2', '3']],
+    'sections repartent à 1 sous chaque chapitre' => [[0, 1, 1, 0, 1], ['1', '1.1', '1.2', '2', '2.1']],
+    'sous-sections' => [[0, 1, 2, 2, 1, 2], ['1', '1.1', '1.1.1', '1.1.2', '1.2', '1.2.1']],
+    'enums et null' => [[NiveauSection::Chapitre, NiveauSection::Section, null], ['1', '1.1', '2']],
+]);
+
+test('l\'export PDF numérote les titres et n\'ouvre une page que pour les chapitres', function () {
+    ['projet' => $projet, 'groupe' => $groupe] = projetExportNiveaux();
+
+    $donnees = null;
+    View::composer('projets.export', function ($view) use (&$donnees) {
+        $donnees = $view->getData();
+    });
+    (new ExportProjetPdf)->execute($projet, $groupe);
+
+    $html = view('projets.export', $donnees)->render();
+
+    expect($donnees['sections']->pluck('numero')->all())->toBe(['1', '1.1', '1.1.1', '2'])
+        ->and($donnees['sections']->pluck('niveau')->all())->toBe([0, 1, 2, 0])
+        ->and($html)->toContain('<h2 class="titre-niveau-1">1.1 Méthode</h2>')
+        ->and($html)->toContain('<h2 class="titre-niveau-2">1.1.1 Terrain</h2>')
+        ->and(substr_count($html, 'class="section section--suite"'))->toBe(2)
+        ->and(substr_count($html, 'class="section "'))->toBe(2);
+});
+
+test('l\'export Word donne à chaque section un titre numéroté du niveau correspondant', function () {
+    ['projet' => $projet, 'groupe' => $groupe] = projetExportNiveaux();
+
+    ob_start();
+    (new ExportProjetWord)->execute($projet, $groupe)->sendContent();
+    $fichier = tempnam(sys_get_temp_dir(), 'test_niveaux_');
+    file_put_contents($fichier, ob_get_clean());
+    $zip = new ZipArchive;
+    $zip->open($fichier);
+    $xml = $zip->getFromName('word/document.xml');
+    $zip->close();
+    unlink($fichier);
+
+    // Un paragraphe Word (<w:p>…</w:p>) qui porte à la fois le style de titre et le texte attendu
+    $titre = fn (int $niveau, string $texte) => '/<w:p\b(?:(?!<\/w:p>).)*w:val="Heading'.$niveau.'"(?:(?!<\/w:p>).)*>'.preg_quote($texte, '/').'</s';
+
+    expect($xml)->toMatch($titre(1, '1 Chapitre un'))
+        ->and($xml)->toMatch($titre(2, '1.1 Méthode'))
+        ->and($xml)->toMatch($titre(3, '1.1.1 Terrain'))
+        ->and($xml)->toMatch($titre(1, '2 Chapitre deux'))
+        ->and($xml)->toContain('TOC \o "1-4"')
+        // Un seul saut de page entre les sections : avant le chapitre 2
+        ->and(substr_count($xml, '<w:br w:type="page"/>'))->toBe(1);
+});
+
+// ─── Copie du plan ────────────────────────────────────────────────────────────
+
+test('appliquer un gabarit copie le niveau de ses sections', function () {
+    $gabarit = GabaritCours::create(['slug' => 'gabarit_niveaux', 'type_cours' => TypeCours::Dep->value, 'nom' => 'Gabarit']);
+    $gabaritTypeProjet = GabaritTypeProjet::create(['gabarit_cours_id' => $gabarit->id, 'nom' => 'Projet']);
+    foreach ([0, 1, 2] as $index => $niveau) {
+        GabaritTypeProjetSection::create([
+            'gabarit_type_projet_id' => $gabaritTypeProjet->id, 'label' => "Élément {$index}", 'type' => 'texte', 'ordre' => $index + 1, 'niveau' => $niveau,
+        ]);
+    }
+    $enseignant = User::factory()->create(['role' => 'enseignant']);
+    $cours = Cours::create(['nom_cours' => 'Histoire', 'code' => '330-GAB', 'groupe' => 'A', 'enseignant_id' => $enseignant->id]);
+
+    app(AppliquerGabaritService::class)->appliquer($cours, 'gabarit_niveaux');
+
+    $niveaux = TypeProjet::where('cours_id', $cours->id)->first()->sections->pluck('niveau')->all();
+
+    expect($niveaux)->toBe([NiveauSection::Chapitre, NiveauSection::Section, NiveauSection::SousSection]);
+});
+
+test('transférer un cours copie le niveau des sections de ses types de projet', function () {
+    $typeProjet = typeProjetPourNiveaux();
+    planAvecNiveaux($typeProjet, [0, 1, 2, 0]);
+
+    $nouveau = app(TransfererCoursAction::class)->execute(Cours::find($typeProjet->cours_id), 2027, 'automne');
+
+    $niveaux = TypeProjet::where('cours_id', $nouveau->id)->first()->sections->pluck('niveau')->all();
+
+    expect($niveaux)->toBe([NiveauSection::Chapitre, NiveauSection::Section, NiveauSection::SousSection, NiveauSection::Chapitre]);
 });
 
 test('le niveau d\'une section de gabarit est enregistré et relu comme enum', function () {

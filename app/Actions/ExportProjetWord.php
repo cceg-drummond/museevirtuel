@@ -2,7 +2,9 @@
 
 namespace App\Actions;
 
+use App\Enums\NiveauSection;
 use App\Helpers\HtmlHelper;
+use App\Helpers\PlanHelper;
 use App\Models\Groupe;
 use App\Models\ProjetRecherche;
 use App\Models\ProjetRenvoi;
@@ -24,10 +26,11 @@ class ExportProjetWord
      * Structure générée à partir des sections typées du TypeProjet :
      *  - Page titre
      *  - Table des matières (champ TOC Word, mise à jour à l'ouverture)
-     *  - Une section Word par TypeProjetSection :
-     *      • texte       → Heading 1 + contenu HTML
-     *      • paragraphes → Heading 1 + sous-sections Heading 2 (titre + contenu)
-     *      • individuel  → Heading 1 + un Heading 2 par membre (si > 1 membre)
+     *  - Un titre numéroté par TypeProjetSection, de niveau Heading 1 (chapitre), 2 (section) ou 3 (sous-section) :
+     *      • texte       → titre + contenu HTML
+     *      • paragraphes → titre + un sous-titre (niveau suivant) par paragraphe
+     *      • individuel  → titre + un sous-titre (niveau suivant) par membre (si > 1 membre)
+     *  - Chaque chapitre commence sur une nouvelle page ; ses sections le suivent.
      */
     public function execute(ProjetRecherche $projet, Groupe $groupe): StreamedResponse
     {
@@ -76,6 +79,9 @@ class ExportProjetWord
         // comme entrées de TOC lors de la mise à jour du champ.
         $word->addTitleStyle(1, ['bold' => true, 'size' => 14], ['spaceAfter' => 200, 'spaceBefore' => 240]);
         $word->addTitleStyle(2, ['bold' => true, 'size' => 12], ['spaceAfter' => 160, 'spaceBefore' => 160]);
+        // Niveaux 3 et 4 : sous-sections, et paragraphes ou membres d'une sous-section
+        $word->addTitleStyle(3, ['bold' => true, 'italic' => true, 'size' => 12], ['spaceAfter' => 120, 'spaceBefore' => 160]);
+        $word->addTitleStyle(4, ['italic' => true, 'size' => 12], ['spaceAfter' => 120, 'spaceBefore' => 120]);
 
         return $word;
     }
@@ -120,7 +126,7 @@ class ExportProjetWord
     }
 
     /**
-     * Ajoute la table des matières : champ TOC Word (Heading 1 et 2) si le type de projet
+     * Ajoute la table des matières : champ TOC Word (Heading 1 à 4) si le type de projet
      * le demande, sinon le contenu rédigé manuellement par l'étudiant (s'il existe).
      */
     private function ajouterTableMatieres(PhpWord $word, ProjetRecherche $projet): void
@@ -134,7 +140,7 @@ class ExportProjetWord
             );
             $tocSection->addTextBreak(1);
             // Champ TOC automatique : se met à jour à l'ouverture du fichier dans Word
-            $tocSection->addTOC(['size' => 11], null, 1, 2);
+            $tocSection->addTOC(['size' => 11], null, 1, 4);
         } elseif (! empty($projet->table_matieres_contenu)) {
             $this->addHtmlContent($this->newSection($word, false), $projet->table_matieres_contenu);
         }
@@ -159,7 +165,9 @@ class ExportProjetWord
     }
 
     /**
-     * Ajoute chaque TypeProjetSection : Heading 1 puis contenu selon le type, avec un saut de page entre elles.
+     * Ajoute chaque TypeProjetSection : titre numéroté selon son niveau puis contenu selon le type.
+     *
+     * Un saut de page précède chaque chapitre (sauf le premier) ; sections et sous-sections suivent leur chapitre.
      *
      * @param  Collection<int, TypeProjetSection>  $sections
      * @param  Collection<int, User>  $membres
@@ -174,20 +182,24 @@ class ExportProjetWord
             ->groupBy('section_id')
             ->map(fn ($conc) => $conc->keyBy('user_id'));
 
+        $numeros = PlanHelper::numerotation($sections->pluck('niveau'));
+
         foreach ($sections->values() as $position => $typeSection) {
             /** @var TypeProjetSection $typeSection */
-            if ($position > 0) {
+            $niveauTitre = ($typeSection->niveau?->value ?? NiveauSection::Chapitre->value) + 1;
+
+            if ($position > 0 && $niveauTitre === 1) {
                 $contenu->addPageBreak();
             }
 
-            $contenu->addTitle($typeSection->label, 1);
+            $contenu->addTitle("{$numeros[$position]} {$typeSection->label}", $niveauTitre);
             $contenu->addTextBreak(1);
 
             match ($typeSection->type ?? 'texte') {
                 'paragraphes' => $this->renderParagraphes($contenu,
-                    $paragraphesParSection->get($typeSection->id) ?? collect()),
+                    $paragraphesParSection->get($typeSection->id) ?? collect(), $niveauTitre + 1),
                 'individuel' => $this->renderIndividuel($contenu, $membres,
-                    $conclusionsParUser->get($typeSection->id) ?? collect(), $membres->count()),
+                    $conclusionsParUser->get($typeSection->id) ?? collect(), $membres->count(), $niveauTitre + 1),
                 default => $this->addHtmlContent($contenu,
                     $contenusParSection->get($typeSection->id)?->contenu),
             };
@@ -274,19 +286,20 @@ class ExportProjetWord
     }
 
     /**
-     * Ajoute les paragraphes d'une section de type 'paragraphes' comme sous-sections (Heading 2).
+     * Ajoute les paragraphes d'une section de type 'paragraphes' comme sous-titres du niveau donné.
      * Tous les paragraphes partagent la même section Word pour éviter les sauts de page inutiles.
      *
      * @param  Collection  $paragraphes
+     * @param  int  $niveauTitre  niveau Heading des titres de paragraphe (un cran sous la section)
      */
-    private function renderParagraphes(Section $section, $paragraphes): void
+    private function renderParagraphes(Section $section, $paragraphes, int $niveauTitre): void
     {
         if ($paragraphes->isEmpty()) {
             $this->addHtmlContent($section, null);
         } else {
             foreach ($paragraphes->sortBy('ordre') as $paragraphe) {
                 $titre = $paragraphe->titre ?: "Paragraphe {$paragraphe->ordre}";
-                $section->addTitle($titre, 2);
+                $section->addTitle($titre, $niveauTitre);
                 $section->addTextBreak(1);
                 $this->addHtmlContent($section, $paragraphe->contenu);
             }
@@ -299,13 +312,19 @@ class ExportProjetWord
      *
      * @param  Collection  $membres
      * @param  Collection  $conclusionsParUser  keyBy user_id
+     * @param  int  $niveauTitre  niveau Heading des noms de membres (un cran sous la section)
      */
-    private function renderIndividuel(Section $section, $membres, $conclusionsParUser, int $nbMembres): void
-    {
+    private function renderIndividuel(
+        Section $section,
+        $membres,
+        $conclusionsParUser,
+        int $nbMembres,
+        int $niveauTitre,
+    ): void {
         foreach ($membres as $membre) {
             /** @var User $membre */
             if ($nbMembres > 1) {
-                $section->addTitle("{$membre->prenom} {$membre->nom}", 2);
+                $section->addTitle("{$membre->prenom} {$membre->nom}", $niveauTitre);
                 $section->addTextBreak(1);
             }
 

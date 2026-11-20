@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NiveauSection;
 use App\Models\Cours;
 use App\Models\CoursObjectif;
 use App\Models\CoursReference;
@@ -105,6 +106,8 @@ class AppliquerGabaritService
                 'label' => $s->label,
                 'type' => $s->type,
                 'ordre' => $s->ordre,
+                // insert() contourne les casts du modèle : on passe la valeur brute de l'enum
+                'niveau' => $s->niveau?->value ?? NiveauSection::Chapitre->value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ])->all();

@@ -199,6 +199,7 @@ class TransfererCoursAction
                 'label' => $section->label,
                 'description' => $section->description,
                 'ordre' => $section->ordre,
+                'niveau' => $section->niveau,
                 'type' => $section->type,
             ]);
         }

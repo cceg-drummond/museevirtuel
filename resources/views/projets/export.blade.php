@@ -127,6 +127,25 @@
             padding-bottom: 6pt;
         }
 
+        /* Seul un chapitre ouvre une nouvelle page : ses sections et sous-sections le suivent */
+        .section--suite {
+            page-break-before: auto;
+            padding-top: 0;
+        }
+
+        .section h2.titre-niveau-1 {
+            font-size: 13pt;
+            text-transform: none;
+            border-bottom: none;
+        }
+
+        .section h2.titre-niveau-2 {
+            font-size: 12pt;
+            text-transform: none;
+            border-bottom: none;
+            font-style: italic;
+        }
+
         .section h3 {
             font-size: 12pt;
             font-weight: bold;
@@ -215,9 +234,14 @@
         @if($sections->isNotEmpty())
             {{-- TOC dynamique : reflète les sections TypeProjet --}}
             @foreach($sections as $section)
-                @php $sectionKey = 'section-'.$loop->index; @endphp
-                <div class="toc-entry">
-                    <span class="toc-label">{{ $section['label'] }}</span>
+                @php
+                    $sectionKey = 'section-'.$loop->index;
+                    // Retrait de la TDM : 20px par niveau, et un cran de plus pour les sous-entrées
+                    $retrait = $section['niveau'] * 20;
+                    $retraitSous = $retrait + 20;
+                @endphp
+                <div class="toc-entry" style="padding-left: {{ $retrait }}px">
+                    <span class="toc-label">{{ $section['numero'] }} {{ $section['label'] }}</span>
                     <span class="toc-dots">
                         @if(!empty($tocPageNums[$sectionKey]))
                             ……… {{ $tocPageNums[$sectionKey] }}
@@ -229,7 +253,7 @@
                 @if($section['type'] === 'paragraphes')
                     @foreach($section['paragraphes'] as $para)
                         @php $subKey = 'subsection-'.$loop->parent->index.'-'.$loop->index; @endphp
-                        <div class="toc-entry toc-entry--sub">
+                        <div class="toc-entry toc-entry--sub" style="padding-left: {{ $retraitSous }}px">
                             <span class="toc-label">{{ $para['titre'] ?: '(sans titre)' }}</span>
                             <span class="toc-dots">
                                 @if(!empty($tocPageNums[$subKey]))
@@ -243,7 +267,7 @@
                 @elseif($section['type'] === 'individuel')
                     @foreach($membresObjets as $membre)
                         @php $subKey = 'member-'.$loop->parent->index.'-'.$loop->index; @endphp
-                        <div class="toc-entry toc-entry--sub">
+                        <div class="toc-entry toc-entry--sub" style="padding-left: {{ $retraitSous }}px">
                             <span class="toc-label">{{ $membre->prenom }} {{ $membre->nom }}</span>
                             <span class="toc-dots">
                                 @if(!empty($tocPageNums[$subKey]))
@@ -286,8 +310,8 @@
     {{-- ─── Sections dynamiques ou Introduction classique ─────────────── --}}
     @if($sections->isNotEmpty())
         @foreach($sections as $section)
-            <div class="section" id="section-{{ $loop->index }}">
-                <h2>{{ $section['label'] }}</h2>
+            <div class="section {{ $section['niveau'] > 0 ? 'section--suite' : '' }}" id="section-{{ $loop->index }}">
+                <h2 class="titre-niveau-{{ $section['niveau'] }}">{{ $section['numero'] }} {{ $section['label'] }}</h2>
                 @if(($section['type'] ?? 'texte') === 'paragraphes')
                     {{-- Sections de type paragraphes : chaque paragraphe est une sous-section --}}
                     @if($section['paragraphes']->isEmpty())
