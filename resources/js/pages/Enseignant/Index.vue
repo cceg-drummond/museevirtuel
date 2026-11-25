@@ -1,201 +1,103 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
-    Calendar,
-    ChevronDown,
-    ExternalLink,
-    Lock,
-    Pencil,
+    FolderKanban,
+    Layers,
+    Landmark,
     Plus,
-    Search,
-    Send,
-    Trash2,
-    Unlock,
+    School,
+    UserCheck,
     Users,
     Video,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Heading from '@/components/shared/Heading.vue';
-import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
+import SectionCours from '@/components/enseignant/SectionCours.vue';
+import SectionTemoins from '@/components/enseignant/SectionTemoins.vue';
+import SectionThematiques from '@/components/enseignant/SectionThematiques.vue';
+import AnneauStatuts from '@/components/enseignant/tableau-bord/AnneauStatuts.vue';
+import BandeauIllustration from '@/components/enseignant/tableau-bord/BandeauIllustration.vue';
+import CarteIndicateur from '@/components/enseignant/tableau-bord/CarteIndicateur.vue';
+import CarteListe from '@/components/enseignant/tableau-bord/CarteListe.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { index as enseignantIndex } from '@/routes/enseignant';
+import { create as createCours } from '@/routes/enseignant/cours';
 import { show as showTemoin } from '@/routes/enseignant/temoins';
+import { index as projetsGroupe } from '@/routes/projets';
+import type { BreadcrumbItem } from '@/types';
+import type {
+    CoursEnseignant,
+    IndicateursEnseignant,
+    ProchaineVisio,
+    StatutProjet,
+    Temoin,
+    ThematiqueEnseignant,
+    TravailRemis,
+} from '@/types/enseignant';
 
-type Cours = {
-    id: number;
-    nom_cours: string;
-    description: string | null;
-    code: string;
-    groupe: string;
-    annee: number;
-    session: 'hiver' | 'ete' | 'automne';
-    is_verrouille: boolean;
-    etudiants_count: number;
-    type_cours: 'dep' | 'cours_complementaire' | 'cours_complet' | null;
-    taille_equipe_min: number | null;
-    taille_equipe_max: number | null;
-};
-
-type Thematique = {
-    id: number;
-    nom: string;
-    description: string | null;
-    periode_historique: string | null;
-};
-
-type TravailRemis = {
-    id: number;
-    titre_projet: string | null;
-    remis_le: string;
-    classe: {
-        id: number;
-        numero: number;
-        cours_id: number;
-    };
-    membres: { id: number; prenom: string; nom: string }[];
-};
-
-type TemoinEnAttente = {
-    id: number;
-    prenom: string;
-    nom: string;
-    email: string;
-    description: string;
-    created_at: string;
-    thematiques_choisies: { id: number; nom: string }[];
-};
-
-type TemoinApprouve = TemoinEnAttente;
-
-type ProchaineVisio = {
-    id: number;
-    titre: string;
-    scheduled_at: string;
-    started_at: string | null;
-    jitsi_room: string;
-    cours: { id: number; nom_cours: string; code: string; groupe: string };
-    groupe_numero: number | null;
-    animateur: { prenom: string; nom: string };
-};
-
-type Props = {
-    cours: Cours[];
-    thematiques: Thematique[];
+const props = defineProps<{
+    cours: CoursEnseignant[];
+    thematiques: ThematiqueEnseignant[];
     travauxRemis: TravailRemis[];
-    temoinsEnAttente: TemoinEnAttente[];
-    temoinsApprouves: TemoinApprouve[];
+    temoinsEnAttente: Temoin[];
+    temoinsApprouves: Temoin[];
     prochainesVisios: ProchaineVisio[];
-};
+    indicateurs: IndicateursEnseignant;
+    statutProjets: StatutProjet[];
+}>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const page = usePage();
 
-// ─── Sections repliables ──────────────────────────────────────────────────────
-const ouvert = ref({
-    visios: true,
-    cours: true,
-    thematiques: true,
-    temoins: true,
-    travaux: true,
-});
+// Nombre d'éléments affichés dans les listes courtes du tableau de bord
+const TAILLE_LISTE = 4;
 
-const afficherApprouves = ref(false);
-const rechercheTexte = ref('');
-const filtreThematiqueId = ref<number | null>(null);
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    { title: t('sidebar.home'), href: enseignantIndex.url() },
+    {
+        title: t('enseignant.index.dashboard.breadcrumb'),
+        href: enseignantIndex.url(),
+    },
+]);
 
-const props = defineProps<Props>();
+const totalProjets = computed(() =>
+    props.statutProjets.reduce((somme, statut) => somme + statut.total, 0),
+);
+const projetsEnRetard = computed(
+    () =>
+        props.statutProjets.find((statut) => statut.valeur === 'en_retard')
+            ?.total ?? 0,
+);
 
-function sessionLabel(session: string): string {
-    const labels: Record<string, string> = {
-        hiver: 'Hiver',
-        ete: 'Été',
-        automne: 'Automne',
+/**
+ * Formate le jour abrégé et le numéro du jour d'une visio pour l'encadré de date.
+ */
+function jourVisio(iso: string): { jour: string; numero: string } {
+    const date = new Date(iso);
+
+    return {
+        jour: date.toLocaleDateString(locale.value, { weekday: 'short' }),
+        numero: date.toLocaleDateString(locale.value, { day: 'numeric' }),
     };
-
-    return labels[session] ?? session;
 }
 
-const deleteCoursForm = useForm({});
-
-function deleteCours(unCours: Cours): void {
-    if (
-        !confirm(
-            t('enseignant.index.confirm_delete_course', {
-                nom: unCours.nom_cours,
-            }),
-        )
-    ) {
-        return;
-    }
-
-    deleteCoursForm.delete(`/cours/${unCours.id}`);
-}
-
-const verrouillageForm = useForm({});
-
-function toggleVerrouillage(unCours: Cours): void {
-    verrouillageForm.patch(`/cours/${unCours.id}/verrouillage`);
-}
-
-const deleteThematiqueForm = useForm({});
-
-function deleteThematique(thematique: Thematique): void {
-    if (
-        !confirm(
-            t('enseignant.index.confirm_delete_thematic', {
-                nom: thematique.nom,
-            }),
-        )
-    ) {
-        return;
-    }
-
-    deleteThematiqueForm.delete(`/thematiques/${thematique.id}`);
-}
-
-function filtrerTemoins(liste: TemoinEnAttente[]): TemoinEnAttente[] {
-    const texte = rechercheTexte.value.trim().toLowerCase();
-
-    return liste.filter((t) => {
-        const matchTexte =
-            texte === '' ||
-            `${t.prenom} ${t.nom} ${t.email}`.toLowerCase().includes(texte);
-        const matchThematique =
-            filtreThematiqueId.value === null ||
-            t.thematiques_choisies.some(
-                (th) => th.id === filtreThematiqueId.value,
-            );
-
-        return matchTexte && matchThematique;
+/**
+ * Formate l'heure de début d'une visio.
+ */
+function heureVisio(iso: string): string {
+    return new Date(iso).toLocaleTimeString(locale.value, {
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
-const temoinsEnAttenteFiltres = computed(() =>
-    filtrerTemoins(props.temoinsEnAttente),
-);
-const temoinsApprouvesFiltres = computed(() =>
-    filtrerTemoins(props.temoinsApprouves),
-);
-const nombreTemoinsAffiches = computed(() =>
-    afficherApprouves.value
-        ? temoinsApprouvesFiltres.value.length
-        : temoinsEnAttenteFiltres.value.length,
-);
-
-function voirTemoin(temoin: TemoinEnAttente) {
-    router.visit(showTemoin.url(temoin.id));
-}
-
-function formatDateVisio(iso: string): string {
-    return new Date(iso).toLocaleString('fr-CA', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    });
-}
-
-function rejoindreVisio(jitsiRoom: string) {
+/**
+ * Ouvre la salle Jitsi d'une visio déjà démarrée dans un nouvel onglet.
+ */
+function rejoindreVisio(jitsiRoom: string): void {
     window.open(
         `https://meet.jit.si/${jitsiRoom}`,
         '_blank',
@@ -205,789 +107,285 @@ function rejoindreVisio(jitsiRoom: string) {
 </script>
 
 <template>
-    <AppLayout>
-        <Head :title="$t('enseignant.index.page_title')" />
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <Head :title="t('enseignant.index.page_title')" />
 
-        <div class="flex flex-col gap-6 p-6">
-            <Heading
-                :title="$t('enseignant.index.heading_title')"
-                :description="$t('enseignant.index.heading_description')"
-            />
+        <div class="flex flex-col gap-5 p-6">
+            <!-- ─── En-tête ─────────────────────────────────────────────── -->
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">
+                        {{
+                            t('enseignant.index.dashboard.greeting', {
+                                prenom: page.props.auth.user.prenom,
+                            })
+                        }}
+                    </h1>
+                    <p class="mt-1 text-muted-foreground">
+                        {{ t('enseignant.index.dashboard.subtitle') }}
+                    </p>
+                </div>
+                <Button as-child>
+                    <Link :href="createCours.url()">
+                        <Plus class="h-4 w-4" />
+                        {{ t('enseignant.index.new_course') }}
+                    </Link>
+                </Button>
+            </div>
 
-            <!-- ─── Mes cours ──────────────────────────────────────────────── -->
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between">
-                    <button
-                        type="button"
-                        class="flex flex-1 cursor-pointer items-center gap-2 text-left select-none"
-                        @click="ouvert.cours = !ouvert.cours"
-                    >
-                        <CardTitle>{{
-                            $t('enseignant.index.my_courses')
-                        }}</CardTitle>
-                        <span class="text-sm font-normal text-muted-foreground">
-                            ({{ cours.length }})
-                        </span>
-                        <ChevronDown
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            :class="{ '-rotate-180': ouvert.cours }"
-                        />
-                    </button>
-                    <Button size="sm" as-child>
-                        <Link href="/enseignant/cours/create">
-                            <Plus class="mr-2 h-4 w-4" />
-                            {{ $t('enseignant.index.new_course') }}
-                        </Link>
-                    </Button>
-                </CardHeader>
-                <CardContent v-show="ouvert.cours">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-left">
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_code',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_group',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        Session
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_course_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th
-                                        class="pr-4 pb-3 text-center font-medium"
-                                    >
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_students',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_actions',
-                                            )
-                                        }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="unCours in cours"
-                                    :key="unCours.id"
-                                    class="border-b last:border-0"
-                                >
-                                    <td class="py-3 pr-4 font-mono text-xs">
-                                        {{ unCours.code }}
-                                    </td>
-                                    <td class="py-3 pr-4 font-mono text-xs">
-                                        {{ unCours.groupe }}
-                                    </td>
-                                    <td
-                                        class="py-3 pr-4 text-xs text-muted-foreground"
-                                    >
-                                        {{ sessionLabel(unCours.session) }}
-                                        {{ unCours.annee }}
-                                    </td>
-                                    <td class="py-3 pr-4">
-                                        {{ unCours.nom_cours }}
-                                    </td>
-                                    <td class="py-3 pr-4 text-center">
-                                        {{ unCours.etudiants_count }}
-                                    </td>
-                                    <td class="py-3">
-                                        <div class="flex gap-2">
-                                            <BoutonTooltip
-                                                texte="Accéder au détail de ce cours"
-                                                size="sm"
-                                                variant="outline"
-                                                as-child
-                                            >
-                                                <Link
-                                                    :href="`/cours/${unCours.id}`"
-                                                >
-                                                    <ExternalLink
-                                                        class="h-4 w-4"
-                                                    />
-                                                </Link>
-                                            </BoutonTooltip>
-                                            <BoutonTooltip
-                                                texte="Modifier les informations de ce cours"
-                                                size="sm"
-                                                variant="outline"
-                                                as-child
-                                            >
-                                                <Link
-                                                    :href="`/enseignant/cours/${unCours.id}/edit`"
-                                                >
-                                                    <Pencil class="h-4 w-4" />
-                                                </Link>
-                                            </BoutonTooltip>
-                                            <BoutonTooltip
-                                                :texte="
-                                                    unCours.is_verrouille
-                                                        ? 'Déverrouiller — rendre accessible aux étudiants'
-                                                        : 'Verrouiller — masquer aux étudiants'
-                                                "
-                                                size="sm"
-                                                :variant="
-                                                    unCours.is_verrouille
-                                                        ? 'default'
-                                                        : 'outline'
-                                                "
-                                                @click="
-                                                    toggleVerrouillage(unCours)
-                                                "
-                                            >
-                                                <Lock
-                                                    v-if="unCours.is_verrouille"
-                                                    class="h-4 w-4"
-                                                />
-                                                <Unlock
-                                                    v-else
-                                                    class="h-4 w-4"
-                                                />
-                                            </BoutonTooltip>
-                                            <BoutonTooltip
-                                                texte="Supprimer ce cours définitivement"
-                                                size="sm"
-                                                variant="destructive"
-                                                @click="deleteCours(unCours)"
-                                            >
-                                                <Trash2 class="h-4 w-4" />
-                                            </BoutonTooltip>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="cours.length === 0">
-                                    <td
-                                        colspan="6"
-                                        class="py-6 text-center text-muted-foreground"
-                                    >
-                                        {{ $t('enseignant.index.no_courses') }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+            <BandeauIllustration />
 
-            <!-- ─── Mes thématiques ────────────────────────────────────────── -->
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between">
-                    <button
-                        type="button"
-                        class="flex flex-1 cursor-pointer items-center gap-2 text-left select-none"
-                        @click="ouvert.thematiques = !ouvert.thematiques"
+            <!-- ─── Indicateurs ─────────────────────────────────────────── -->
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <CarteIndicateur
+                    :icone="BookOpen"
+                    :libelle="t('enseignant.index.dashboard.kpi_courses')"
+                    :valeur="indicateurs.cours"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_courses_detail', {
+                            n: indicateurs.coursVerrouilles,
+                        })
+                    "
+                />
+                <CarteIndicateur
+                    :icone="School"
+                    :libelle="t('enseignant.index.dashboard.kpi_classes')"
+                    :valeur="indicateurs.classes"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_classes_detail', {
+                            n: indicateurs.etudiants,
+                        })
+                    "
+                />
+                <CarteIndicateur
+                    :icone="Users"
+                    :libelle="t('enseignant.index.dashboard.kpi_groups')"
+                    :valeur="indicateurs.groupes"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_groups_detail', {
+                            n: indicateurs.groupesAvecTemoin,
+                        })
+                    "
+                />
+                <CarteIndicateur
+                    :icone="FolderKanban"
+                    :libelle="t('enseignant.index.dashboard.kpi_projects')"
+                    :valeur="totalProjets"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_projects_detail', {
+                            n: projetsEnRetard,
+                        })
+                    "
+                    :alerte="projetsEnRetard > 0"
+                />
+                <CarteIndicateur
+                    :icone="UserCheck"
+                    :libelle="t('enseignant.index.dashboard.kpi_elders')"
+                    :valeur="indicateurs.temoinsApprouves"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_elders_detail', {
+                            n: indicateurs.temoinsEnAttente,
+                        })
+                    "
+                    :alerte="indicateurs.temoinsEnAttente > 0"
+                />
+                <CarteIndicateur
+                    :icone="Video"
+                    :libelle="t('enseignant.index.dashboard.kpi_visios')"
+                    :valeur="indicateurs.visiosAVenir"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_visios_detail', {
+                            n: indicateurs.visiosCetteSemaine,
+                        })
+                    "
+                />
+                <CarteIndicateur
+                    :icone="Landmark"
+                    :libelle="t('enseignant.index.dashboard.kpi_museum')"
+                    :valeur="indicateurs.publicationsMusee"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_museum_detail', {
+                            n: indicateurs.publicationsAApprouver,
+                        })
+                    "
+                    :alerte="indicateurs.publicationsAApprouver > 0"
+                />
+                <CarteIndicateur
+                    :icone="Layers"
+                    :libelle="t('enseignant.index.dashboard.kpi_thematics')"
+                    :valeur="thematiques.length"
+                    :detail="
+                        t('enseignant.index.dashboard.kpi_thematics_detail')
+                    "
+                />
+            </div>
+
+            <!-- ─── Statuts et listes courtes ───────────────────────────── -->
+            <div class="grid gap-4 lg:grid-cols-2">
+                <Card class="gap-2">
+                    <CardHeader>
+                        <CardTitle class="text-base">
+                            {{ t('enseignant.index.dashboard.project_status') }}
+                        </CardTitle>
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                t(
+                                    'enseignant.index.dashboard.project_status_subtitle',
+                                )
+                            }}
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        <AnneauStatuts :statuts="statutProjets" />
+                    </CardContent>
+                </Card>
+
+                <CarteListe
+                    :titre="t('enseignant.index.recent_submissions')"
+                    :vide="travauxRemis.length === 0"
+                    :message-vide="t('enseignant.index.no_submissions')"
+                >
+                    <li
+                        v-for="travail in travauxRemis.slice(0, TAILLE_LISTE)"
+                        :key="travail.id"
+                        class="flex items-center gap-3 py-2.5"
                     >
-                        <BookOpen class="h-5 w-5" />
-                        <CardTitle>{{
-                            $t('enseignant.index.my_thematic')
-                        }}</CardTitle>
-                        <span class="text-sm font-normal text-muted-foreground">
-                            ({{ thematiques.length }})
-                        </span>
-                        <ChevronDown
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            :class="{ '-rotate-180': ouvert.thematiques }"
-                        />
-                    </button>
-                    <Button size="sm" as-child>
-                        <Link href="/enseignant/thematiques/create">
-                            <Plus class="mr-2 h-4 w-4" />
-                            {{ $t('enseignant.index.new_thematic') }}
-                        </Link>
-                    </Button>
-                </CardHeader>
-                <CardContent v-show="ouvert.thematiques">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-left">
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_thematic_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_historical_period',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_description',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_actions',
-                                            )
-                                        }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="thematique in thematiques"
-                                    :key="thematique.id"
-                                    class="border-b last:border-0"
-                                >
-                                    <td class="py-3 pr-4 font-medium">
-                                        {{ thematique.nom }}
-                                    </td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        {{
-                                            thematique.periode_historique ?? '—'
-                                        }}
-                                    </td>
-                                    <td
-                                        class="max-w-xs truncate py-3 pr-4 text-muted-foreground"
-                                    >
-                                        {{ thematique.description ?? '—' }}
-                                    </td>
-                                    <td class="py-3">
-                                        <div class="flex gap-2">
-                                            <BoutonTooltip
-                                                texte="Modifier cette thématique"
-                                                size="sm"
-                                                variant="outline"
-                                                as-child
-                                            >
-                                                <Link
-                                                    :href="`/enseignant/thematiques/${thematique.id}/edit`"
-                                                >
-                                                    <Pencil class="h-4 w-4" />
-                                                </Link>
-                                            </BoutonTooltip>
-                                            <BoutonTooltip
-                                                texte="Supprimer cette thématique"
-                                                size="sm"
-                                                variant="destructive"
-                                                @click="
-                                                    deleteThematique(thematique)
-                                                "
-                                            >
-                                                <Trash2 class="h-4 w-4" />
-                                            </BoutonTooltip>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="thematiques.length === 0">
-                                    <td
-                                        colspan="4"
-                                        class="py-6 text-center text-muted-foreground"
-                                    >
-                                        {{ $t('enseignant.index.no_thematic') }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-            <!-- ─── Témoins ───────────────────────────────────────── -->
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between">
-                    <button
-                        type="button"
-                        class="flex flex-1 cursor-pointer items-center gap-2 text-left select-none"
-                        @click="ouvert.temoins = !ouvert.temoins"
-                    >
-                        <Users class="h-5 w-5" />
-                        <CardTitle>{{
-                            $t('administration.index.temoins_table')
-                        }}</CardTitle>
-                        <span class="text-sm font-normal text-muted-foreground">
-                            ({{ nombreTemoinsAffiches }})
-                        </span>
-                        <ChevronDown
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            :class="{ '-rotate-180': ouvert.temoins }"
-                        />
-                    </button>
-                    <!-- Toggle afficher approuvés -->
-                    <label
-                        class="flex cursor-pointer items-center gap-2 text-sm"
-                        @click.stop
-                    >
-                        <span class="text-muted-foreground">{{
-                            $t('enseignant.index.temoins_show_approved')
-                        }}</span>
-                        <button
-                            type="button"
-                            role="switch"
-                            :aria-checked="afficherApprouves"
-                            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                            :class="
-                                afficherApprouves ? 'bg-green-500' : 'bg-input'
-                            "
-                            @click.stop="afficherApprouves = !afficherApprouves"
-                        >
-                            <span
-                                class="inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform"
-                                :class="
-                                    afficherApprouves
-                                        ? 'translate-x-5'
-                                        : 'translate-x-1'
-                                "
-                            />
-                        </button>
-                    </label>
-                </CardHeader>
-                <CardContent v-show="ouvert.temoins">
-                    <!-- Barre de filtre -->
-                    <div class="mb-4 flex flex-wrap gap-3">
-                        <div class="relative min-w-48 flex-1">
-                            <Search
-                                class="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground"
-                            />
-                            <Input
-                                v-model="rechercheTexte"
-                                class="pl-8"
-                                :placeholder="
-                                    $t(
-                                        'enseignant.index.temoins_filter_search_placeholder',
-                                    )
-                                "
-                            />
-                        </div>
-                        <select
-                            v-model="filtreThematiqueId"
-                            class="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
-                        >
-                            <option :value="null">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold">
+                                {{ travail.titre_projet ?? '—' }}
+                            </p>
+                            <p class="truncate text-xs text-muted-foreground">
                                 {{
-                                    $t(
-                                        'enseignant.index.temoins_filter_all_thematiques',
-                                    )
+                                    t('classes.groupes.group_number', {
+                                        n: travail.classe.numero,
+                                    })
                                 }}
-                            </option>
-                            <option
-                                v-for="th in props.thematiques"
-                                :key="th.id"
-                                :value="th.id"
+                                ·
+                                {{
+                                    new Date(
+                                        travail.remis_le,
+                                    ).toLocaleDateString(locale)
+                                }}
+                            </p>
+                        </div>
+                        <Button size="sm" variant="outline" as-child>
+                            <Link
+                                :href="
+                                    projetsGroupe.url({
+                                        cours: travail.classe.cours_id,
+                                        classe: travail.classe_id,
+                                        groupe: travail.classe.id,
+                                    })
+                                "
                             >
-                                {{ th.nom }}
-                            </option>
-                        </select>
-                    </div>
+                                {{ t('enseignant.index.view_project') }}
+                            </Link>
+                        </Button>
+                    </li>
+                </CarteListe>
 
-                    <div class="overflow-x-auto">
-                        <!-- Tableau : témoins en attente -->
-                        <table v-if="!afficherApprouves" class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-left">
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_first_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_last_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_email',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_theme',
-                                            )
-                                        }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="temoin in temoinsEnAttenteFiltres"
-                                    :key="temoin.id"
-                                    class="cursor-pointer border-b last:border-0 hover:bg-muted/50"
-                                    @click="voirTemoin(temoin)"
-                                >
-                                    <td class="py-3 pr-4">
-                                        {{ temoin.prenom }}
-                                    </td>
-                                    <td class="py-3 pr-4">{{ temoin.nom }}</td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        {{ temoin.email }}
-                                    </td>
-                                    <td class="py-3">
-                                        <span
-                                            v-if="
-                                                temoin.thematiques_choisies
-                                                    .length
-                                            "
-                                        >
-                                            {{
-                                                temoin.thematiques_choisies
-                                                    .map((th) => th.nom)
-                                                    .join(', ')
-                                            }}
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="text-muted-foreground"
-                                            >—</span
-                                        >
-                                    </td>
-                                </tr>
-                                <tr v-if="temoinsEnAttenteFiltres.length === 0">
-                                    <td
-                                        colspan="4"
-                                        class="py-6 text-center text-muted-foreground"
-                                    >
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_no_pending',
-                                            )
-                                        }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <!-- Tableau : témoins approuvés -->
-                        <table v-else class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-left">
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_first_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_last_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_email',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'administration.index.temoins_header_theme',
-                                            )
-                                        }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="temoin in temoinsApprouvesFiltres"
-                                    :key="temoin.id"
-                                    class="cursor-pointer border-b last:border-0 hover:bg-muted/50"
-                                    @click="voirTemoin(temoin)"
-                                >
-                                    <td class="py-3 pr-4">
-                                        {{ temoin.prenom }}
-                                    </td>
-                                    <td class="py-3 pr-4">{{ temoin.nom }}</td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        {{ temoin.email }}
-                                    </td>
-                                    <td class="py-3">
-                                        <span
-                                            v-if="
-                                                temoin.thematiques_choisies
-                                                    .length
-                                            "
-                                        >
-                                            {{
-                                                temoin.thematiques_choisies
-                                                    .map((th) => th.nom)
-                                                    .join(', ')
-                                            }}
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="text-muted-foreground"
-                                            >—</span
-                                        >
-                                    </td>
-                                </tr>
-                                <tr v-if="temoinsApprouvesFiltres.length === 0">
-                                    <td
-                                        colspan="4"
-                                        class="py-6 text-center text-muted-foreground"
-                                    >
-                                        {{
-                                            $t(
-                                                'enseignant.index.temoins_no_approved',
-                                            )
-                                        }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <!-- ─── Travaux remis récemment ────────────────────────────── -->
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between">
-                    <button
-                        type="button"
-                        class="flex cursor-pointer items-center gap-2 text-left select-none"
-                        @click="ouvert.travaux = !ouvert.travaux"
+                <CarteListe
+                    :titre="t('enseignant.index.dashboard.elders_to_validate')"
+                    :vide="temoinsEnAttente.length === 0"
+                    :message-vide="t('enseignant.index.dashboard.no_elders')"
+                >
+                    <li
+                        v-for="temoin in temoinsEnAttente.slice(
+                            0,
+                            TAILLE_LISTE,
+                        )"
+                        :key="temoin.id"
+                        class="flex items-center gap-3 py-2.5"
                     >
-                        <Send class="h-5 w-5" />
-                        <CardTitle>{{
-                            $t('enseignant.index.recent_submissions')
-                        }}</CardTitle>
-                        <span class="text-sm font-normal text-muted-foreground">
-                            ({{ travauxRemis.length }})
-                        </span>
-                        <ChevronDown
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            :class="{ '-rotate-180': ouvert.travaux }"
-                        />
-                    </button>
-                </CardHeader>
-                <CardContent v-show="ouvert.travaux">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-left">
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_group_name',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_project_title',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_members',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_submitted_at',
-                                            )
-                                        }}
-                                    </th>
-                                    <th class="pb-3 font-medium">
-                                        {{
-                                            $t(
-                                                'enseignant.index.table_header_actions',
-                                            )
-                                        }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="travail in travauxRemis"
-                                    :key="travail.id"
-                                    class="border-b last:border-0"
+                        <div
+                            class="grid size-8 shrink-0 place-items-center rounded-full border bg-muted text-xs font-semibold"
+                        >
+                            {{ temoin.prenom.charAt(0)
+                            }}{{ temoin.nom.charAt(0) }}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold">
+                                {{ temoin.prenom }} {{ temoin.nom }}
+                            </p>
+                            <div class="flex flex-wrap gap-1">
+                                <span
+                                    v-for="th in temoin.thematiques_choisies"
+                                    :key="th.id"
+                                    class="rounded-full border bg-muted px-2 text-[11px] text-muted-foreground"
                                 >
-                                    <td class="py-3 pr-4 font-medium">
-                                        {{
-                                            $t('classes.groupes.group_number', {
-                                                n: travail.classe.numero,
-                                            })
-                                        }}
-                                    </td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        {{ travail.titre_projet ?? '—' }}
-                                    </td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        {{
-                                            travail.membres
-                                                .map(
-                                                    (m) =>
-                                                        `${m.prenom} ${m.nom}`,
-                                                )
-                                                .join(', ')
-                                        }}
-                                    </td>
-                                    <td class="py-3 pr-4 tabular-nums">
-                                        +
-                                        {{
-                                            new Date(
-                                                travail.remis_le,
-                                            ).toLocaleDateString()
-                                        }}
-                                    </td>
-                                    <td class="py-3">
-                                        <BoutonTooltip
-                                            texte="Accéder aux projets de ce groupe"
-                                            size="sm"
-                                            variant="outline"
-                                            as-child
-                                        >
-                                            <Link
-                                                :href="`/cours/${travail.classe.cours_id}/classes/${travail.classe.id}/projets`"
-                                            >
-                                                <ExternalLink class="h-4 w-4" />
-                                                {{
-                                                    $t(
-                                                        'enseignant.index.view_project',
-                                                    )
-                                                }}
-                                            </Link>
-                                        </BoutonTooltip>
-                                    </td>
-                                </tr>
-                                <tr v-if="travauxRemis.length === 0">
-                                    <td
-                                        colspan="5"
-                                        class="py-6 text-center text-muted-foreground"
-                                    >
-                                        {{
-                                            $t(
-                                                'enseignant.index.no_submissions',
-                                            )
-                                        }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+                                    {{ th.nom }}
+                                </span>
+                            </div>
+                        </div>
+                        <Button size="sm" variant="outline" as-child>
+                            <Link :href="showTemoin.url(temoin.id)">
+                                {{ t('enseignant.index.dashboard.review') }}
+                            </Link>
+                        </Button>
+                    </li>
+                </CarteListe>
 
-            <!-- ─── Prochaines visioconférences ───────────────────────────── -->
-            <Card v-if="prochainesVisios.length > 0">
-                <CardHeader class="flex flex-row items-center justify-between">
-                    <button
-                        type="button"
-                        class="flex cursor-pointer items-center gap-2 text-left select-none"
-                        @click="ouvert.visios = !ouvert.visios"
+                <CarteListe
+                    :titre="t('enseignant.index.dashboard.upcoming_visios')"
+                    :vide="prochainesVisios.length === 0"
+                    :message-vide="t('enseignant.index.dashboard.no_visios')"
+                >
+                    <li
+                        v-for="visio in prochainesVisios.slice(0, TAILLE_LISTE)"
+                        :key="visio.id"
+                        class="flex items-center gap-3 py-2.5"
                     >
-                        <Video class="h-5 w-5" />
-                        <CardTitle>Prochaines visioconférences</CardTitle>
-                        <ChevronDown
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            :class="{ '-rotate-180': ouvert.visios }"
-                        />
-                    </button>
-                </CardHeader>
-                <CardContent v-show="ouvert.visios">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-left">
-                                    <th class="pr-4 pb-3 font-medium">Titre</th>
-                                    <th class="pr-4 pb-3 font-medium">Cours</th>
-                                    <th class="pr-4 pb-3 font-medium">
-                                        Groupe
-                                    </th>
-                                    <th class="pr-4 pb-3 font-medium">Date</th>
-                                    <th class="pb-3 font-medium"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="visio in prochainesVisios"
-                                    :key="visio.id"
-                                    class="border-b last:border-0"
-                                >
-                                    <td class="py-3 pr-4 font-medium">
-                                        {{ visio.titre }}
-                                    </td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        <span class="font-mono text-xs"
-                                            >{{ visio.cours.code }}-{{
-                                                visio.cours.groupe
-                                            }}</span
-                                        >
-                                        <span class="ml-1">{{
-                                            visio.cours.nom_cours
-                                        }}</span>
-                                    </td>
-                                    <td class="py-3 pr-4 text-muted-foreground">
-                                        {{
-                                            visio.groupe_numero
-                                                ? `Groupe ${visio.groupe_numero}`
-                                                : 'Tous les groupes'
-                                        }}
-                                    </td>
-                                    <td class="py-3 pr-4 tabular-nums">
-                                        <span class="flex items-center gap-1">
-                                            <Calendar
-                                                class="h-3.5 w-3.5 text-muted-foreground"
-                                            />
-                                            {{
-                                                formatDateVisio(
-                                                    visio.scheduled_at,
-                                                )
-                                            }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3">
-                                        <Button
-                                            v-if="visio.started_at"
-                                            size="sm"
-                                            @click="
-                                                rejoindreVisio(visio.jitsi_room)
-                                            "
-                                        >
-                                            <Video class="mr-1.5 h-4 w-4" />
-                                            Rejoindre
-                                        </Button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+                        <div
+                            class="w-11 shrink-0 overflow-hidden rounded-md border text-center"
+                        >
+                            <small
+                                class="block bg-primary py-0.5 text-[10px] font-semibold text-primary-foreground uppercase"
+                            >
+                                {{ jourVisio(visio.scheduled_at).jour }}
+                            </small>
+                            <b class="block py-0.5">
+                                {{ jourVisio(visio.scheduled_at).numero }}
+                            </b>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold">
+                                {{ visio.titre }}
+                            </p>
+                            <p class="truncate text-xs text-muted-foreground">
+                                {{ heureVisio(visio.scheduled_at) }} ·
+                                {{ visio.cours.code }}-{{ visio.cours.groupe }}
+                                ·
+                                {{
+                                    visio.groupe_numero
+                                        ? t('classes.groupes.group_number', {
+                                              n: visio.groupe_numero,
+                                          })
+                                        : t(
+                                              'enseignant.index.dashboard.all_groups',
+                                          )
+                                }}
+                            </p>
+                        </div>
+                        <Button
+                            v-if="visio.started_at"
+                            size="sm"
+                            @click="rejoindreVisio(visio.jitsi_room)"
+                        >
+                            <Video class="h-4 w-4" />
+                            {{ t('enseignant.index.dashboard.join') }}
+                        </Button>
+                    </li>
+                </CarteListe>
+            </div>
+
+            <!-- ─── Gestion ─────────────────────────────────────────────── -->
+            <SectionCours :cours="cours" />
+            <SectionThematiques :thematiques="thematiques" />
+            <SectionTemoins
+                :temoins-en-attente="temoinsEnAttente"
+                :temoins-approuves="temoinsApprouves"
+                :thematiques="thematiques"
+            />
         </div>
     </AppLayout>
 </template>
