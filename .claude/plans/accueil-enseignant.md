@@ -51,7 +51,7 @@ Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule
 | 9 | Page Aînés (groupe Communauté dans la barre latérale ; ListeTemoinsEnseignant partagé avec l'accueil) | Fait |
 | 10 | Page Visioconférences (onglets à venir / passées ; gestion reste dans le cours) | Fait |
 | 11 | Page Échanges (conversations groupe-aîné, GroupeEchange ; ClasseEchange non utilisé) | Fait, à valider |
-| 12 | Page Échéancier | |
+| 12 | Page Échéancier (lecture seule, étapes par semaine + avancement des étudiants ; gestion reste dans le cours) | Fait, à valider |
 | 13 | Page Banque de questions | |
 | 14 | Pages Gabarits et Médias | |
 | 15 | Retirer l'arborescence des cours de la barre latérale, alléger l'accueil (sections déplacées vers leurs pages) | |

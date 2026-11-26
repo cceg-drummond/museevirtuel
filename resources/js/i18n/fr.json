@@ -432,6 +432,16 @@
             "no_message": "Aucun message pour l'instant.",
             "open": "Ouvrir la conversation",
             "empty": "Aucun groupe n'est encore jumelé à un aîné."
+        },
+        "echeancier": {
+            "title": "Échéancier",
+            "subtitle": "Les étapes de l'échéancier de tous vos cours.",
+            "week": "Semaine {n}",
+            "done": "Terminée",
+            "students_done": "{n} / {total} étudiants",
+            "manage": "Gérer dans le cours",
+            "no_step": "Aucune étape dans l'échéancier de ce cours.",
+            "empty": "Vous n'avez encore aucun cours."
         }
     },
     "administration": {
@@ -522,7 +532,8 @@
         "elders": "Aînés",
         "group_community": "Communauté",
         "visios": "Visioconférences",
-        "exchanges": "Échanges"
+        "exchanges": "Échanges",
+        "schedule": "Échéancier"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1283,6 +1294,7 @@
         "projects": "Projets",
         "elders": "Aînés",
         "visios": "Visioconférences",
-        "exchanges": "Échanges"
+        "exchanges": "Échanges",
+        "schedule": "Échéancier"
     }
 }

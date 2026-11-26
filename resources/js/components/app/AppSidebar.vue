@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
+    CalendarDays,
     CircleHelp,
     FolderKanban,
     Home,
@@ -36,6 +37,7 @@ import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as echangesIndex } from '@/routes/enseignant/echanges';
+import { index as echeancierIndex } from '@/routes/enseignant/echeancier';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
@@ -159,6 +161,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
             title: t('sidebar.dashboard'),
             href: enseignantIndex.url(),
             icon: LayoutDashboard,
+        },
+        {
+            title: t('sidebar.schedule'),
+            href: echeancierIndex.url(),
+            icon: CalendarDays,
         },
     ];
 

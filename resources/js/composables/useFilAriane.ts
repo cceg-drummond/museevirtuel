@@ -7,6 +7,7 @@ import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as echangesIndex } from '@/routes/enseignant/echanges';
+import { index as echeancierIndex } from '@/routes/enseignant/echeancier';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
@@ -104,6 +105,13 @@ export function useFilAriane() {
     }
 
     /**
+     * Retourne la page « Échéancier » de l'enseignant.
+     */
+    function echeancier(): BreadcrumbItem {
+        return { title: t('breadcrumbs.schedule'), href: echeancierIndex.url() };
+    }
+
+    /**
      * Retourne la collection « Thématiques » de l'enseignant.
      */
     function thematiques(): BreadcrumbItem {
@@ -195,7 +203,7 @@ export function useFilAriane() {
 
     return {
         accueil, administration, cours, classes, groupes,
-        projets, temoins, visios, echanges, thematiques, unCours,
+        projets, temoins, visios, echanges, echeancier, thematiques, unCours,
         cheminCours, uneClasse, cheminClasse,
         cheminDepuisUrl, typesProjets,
         courant,

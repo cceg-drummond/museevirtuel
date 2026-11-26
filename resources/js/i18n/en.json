@@ -433,6 +433,16 @@
             "no_message": "No messages yet.",
             "open": "Open the conversation",
             "empty": "No group is paired with an elder yet."
+        },
+        "echeancier": {
+            "title": "Schedule",
+            "subtitle": "The schedule steps of all your courses.",
+            "week": "Week {n}",
+            "done": "Done",
+            "students_done": "{n} / {total} students",
+            "manage": "Manage in the course",
+            "no_step": "This course's schedule has no step yet.",
+            "empty": "You don't have any course yet."
         }
     },
     "administration": {
@@ -523,7 +533,8 @@
         "elders": "Elders",
         "group_community": "Community",
         "visios": "Video calls",
-        "exchanges": "Exchanges"
+        "exchanges": "Exchanges",
+        "schedule": "Schedule"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1284,6 +1295,7 @@
         "projects": "Projects",
         "elders": "Elders",
         "visios": "Video calls",
-        "exchanges": "Exchanges"
+        "exchanges": "Exchanges",
+        "schedule": "Schedule"
     }
 }
