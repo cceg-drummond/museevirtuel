@@ -117,6 +117,31 @@ export type ConversationEnseignant = {
     } | null;
 };
 
+export type GabaritCoursResume = {
+    id: number;
+    nom: string;
+    objectifs_count: number;
+    references_count: number;
+    echeancier_etapes_count: number;
+    types_projets_count: number;
+};
+
+export type GabaritCoursDetail = {
+    id: number;
+    nom: string;
+    objectifs: { id: number; contenu: string }[];
+    references: { id: number; nom: string; url: string | null }[];
+    etapes: { id: number; semaine: number; etape: string }[];
+    types_projets: {
+        id: number;
+        nom: string;
+        description: string | null;
+        ponderation: number | null;
+        is_sommatif: boolean;
+        sections: { id: number; label: string }[];
+    }[];
+};
+
 export type BanqueQuestions = {
     id: number;
     label: string;

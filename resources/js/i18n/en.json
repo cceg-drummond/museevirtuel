@@ -454,6 +454,27 @@
             "manage": "Manage in the project type",
             "no_question": "This bank has no question yet.",
             "empty": "None of your project types has a “question choice” section."
+        },
+        "gabarits": {
+            "title": "Templates",
+            "subtitle": "The templates offered when creating a course: objectives, references, schedule and project types.",
+            "objectives": "Objectives",
+            "references": "References",
+            "schedule": "Schedule",
+            "project_types": "Project types",
+            "objectives_count": "{n} objective(s)",
+            "references_count": "{n} reference(s)",
+            "steps_count": "{n} step(s)",
+            "project_types_count": "{n} project type(s)",
+            "week": "Week {n}",
+            "summative": "Summative",
+            "formative": "Formative",
+            "weight": "{n} %",
+            "sections": "Sections",
+            "open": "View template",
+            "none": "Nothing yet.",
+            "empty": "No course template.",
+            "how_to_use": "To use a template, check “Create with the template” when creating a course."
         }
     },
     "administration": {
@@ -547,7 +568,8 @@
         "visios": "Video calls",
         "exchanges": "Exchanges",
         "schedule": "Schedule",
-        "questions": "Question bank"
+        "questions": "Question bank",
+        "templates": "Templates"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1310,6 +1332,7 @@
         "visios": "Video calls",
         "exchanges": "Exchanges",
         "schedule": "Schedule",
-        "questions": "Question bank"
+        "questions": "Question bank",
+        "templates": "Templates"
     }
 }

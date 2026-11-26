@@ -453,6 +453,27 @@
             "manage": "Gérer dans le type de projet",
             "no_question": "Aucune question dans cette banque.",
             "empty": "Aucun de vos types de projet n'a de section « choix de questions »."
+        },
+        "gabarits": {
+            "title": "Gabarits",
+            "subtitle": "Les gabarits proposés à la création d'un cours : objectifs, références, échéancier et types de projet.",
+            "objectives": "Objectifs",
+            "references": "Références",
+            "schedule": "Échéancier",
+            "project_types": "Types de projet",
+            "objectives_count": "{n} objectif(s)",
+            "references_count": "{n} référence(s)",
+            "steps_count": "{n} étape(s)",
+            "project_types_count": "{n} type(s) de projet",
+            "week": "Semaine {n}",
+            "summative": "Sommatif",
+            "formative": "Formatif",
+            "weight": "{n} %",
+            "sections": "Sections",
+            "open": "Consulter le gabarit",
+            "none": "Aucun élément.",
+            "empty": "Aucun gabarit de cours.",
+            "how_to_use": "Pour utiliser un gabarit, cochez « Créer avec le gabarit » à la création d'un cours."
         }
     },
     "administration": {
@@ -546,7 +567,8 @@
         "visios": "Visioconférences",
         "exchanges": "Échanges",
         "schedule": "Échéancier",
-        "questions": "Banque de questions"
+        "questions": "Banque de questions",
+        "templates": "Gabarits"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1309,6 +1331,7 @@
         "visios": "Visioconférences",
         "exchanges": "Échanges",
         "schedule": "Échéancier",
-        "questions": "Banque de questions"
+        "questions": "Banque de questions",
+        "templates": "Gabarits"
     }
 }

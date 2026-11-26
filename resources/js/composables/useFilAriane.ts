@@ -8,6 +8,7 @@ import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as echangesIndex } from '@/routes/enseignant/echanges';
 import { index as echeancierIndex } from '@/routes/enseignant/echeancier';
+import { index as gabaritsIndex } from '@/routes/enseignant/gabarits';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as questionsIndex } from '@/routes/enseignant/questions';
@@ -120,6 +121,13 @@ export function useFilAriane() {
     }
 
     /**
+     * Retourne la collection « Gabarits » de cours.
+     */
+    function gabarits(): BreadcrumbItem {
+        return { title: t('breadcrumbs.templates'), href: gabaritsIndex.url() };
+    }
+
+    /**
      * Retourne la collection « Thématiques » de l'enseignant.
      */
     function thematiques(): BreadcrumbItem {
@@ -211,7 +219,7 @@ export function useFilAriane() {
 
     return {
         accueil, administration, cours, classes, groupes,
-        projets, temoins, visios, echanges, echeancier, questions, thematiques, unCours,
+        projets, temoins, visios, echanges, echeancier, questions, gabarits, thematiques, unCours,
         cheminCours, uneClasse, cheminClasse,
         cheminDepuisUrl, typesProjets,
         courant,

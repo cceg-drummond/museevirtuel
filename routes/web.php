@@ -18,6 +18,7 @@ use App\Http\Controllers\Cours\TransfererCoursController;
 use App\Http\Controllers\Enseignant\EchangesEnseignantController;
 use App\Http\Controllers\Enseignant\EcheancierEnseignantController;
 use App\Http\Controllers\Enseignant\EnseignantController;
+use App\Http\Controllers\Enseignant\GabaritsEnseignantController;
 use App\Http\Controllers\Enseignant\GroupesEnseignantController;
 use App\Http\Controllers\Enseignant\ProjetsEnseignantController;
 use App\Http\Controllers\Enseignant\QuestionsEnseignantController;
@@ -286,6 +287,12 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
         ->name('groupes.destroy');
 
     // Fiche détail + approbation / déclin des témoins liés aux thématiques de l'enseignant
+    Route::get('/enseignant/gabarits', [GabaritsEnseignantController::class, 'index'])
+        ->name('enseignant.gabarits.index');
+
+    Route::get('/enseignant/gabarits/{gabarit}', [GabaritsEnseignantController::class, 'show'])
+        ->name('enseignant.gabarits.show');
+
     Route::get('/enseignant/questions', [QuestionsEnseignantController::class, 'index'])
         ->name('enseignant.questions.index');
 
