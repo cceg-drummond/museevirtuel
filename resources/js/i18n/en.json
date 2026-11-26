@@ -426,7 +426,15 @@
         "section": "Section",
         "project_types": "Project types",
         "projects": "Projects",
-        "discussion_temoin": "PA chat"
+        "discussion_temoin": "Elders chat",
+        "brand": "Virtual museum",
+        "brand_tagline": "Your story, our story",
+        "dashboard": "Dashboard",
+        "group_general": "General",
+        "group_teaching": "Teaching",
+        "group_diffusion": "Publishing",
+        "museum": "Virtual museum",
+        "help": "Help"
     },
     "settings": {
         "heading_title": "Settings",

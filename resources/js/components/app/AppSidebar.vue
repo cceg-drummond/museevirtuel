@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, FolderKanban, Home, LayoutGrid } from 'lucide-vue-next';
+import {
+    BookOpen,
+    CircleHelp,
+    FolderKanban,
+    Home,
+    Landmark,
+    LayoutDashboard,
+    LayoutGrid,
+    Settings,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppLogo from '@/components/app/AppLogo.vue';
@@ -16,6 +25,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { index as enseignantIndex } from '@/routes/enseignant';
+import { index as guide } from '@/routes/guide';
+import { accueil as museeAccueil } from '@/routes/musee/public';
+import { edit as editProfile } from '@/routes/profile';
 import type { CoursSidebar, GroupeSidebar, NavData, NavItem } from '@/types';
 
 const { t } = useI18n();
@@ -119,51 +132,77 @@ function buildEtudiantItems(): NavItem[] {
     }));
 }
 
-const mainNavItems = computed((): NavItem[] => {
-    const role = user.value?.role;
+type GroupeNav = { label?: string; items: NavItem[] };
 
-    if (role === 'admin') {
-        return [
-            {
-                title: t('sidebar.administration'),
-                href: '/administration',
-                icon: LayoutGrid,
-            },
-            {
-                title: t('sidebar.home'),
-                href: '/enseignant',
-                icon: Home,
-            },
-            ...buildEnseignantItems(),
-        ];
+/**
+ * Construit les groupes de la barre latérale enseignant (maquette A, issue #35).
+ * Les groupes Communauté et Ressources s'ajouteront avec leurs pages.
+ */
+function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
+    const general: NavItem[] = [
+        {
+            title: t('sidebar.dashboard'),
+            href: enseignantIndex.url(),
+            icon: LayoutDashboard,
+        },
+    ];
+
+    if (estAdmin) {
+        general.unshift({
+            title: t('sidebar.administration'),
+            href: '/administration',
+            icon: LayoutGrid,
+        });
     }
 
-    if (role === 'enseignant') {
-        return [
-            {
-                title: t('sidebar.home'),
-                href: '/enseignant',
-                icon: Home,
-            },
-            ...buildEnseignantItems(),
-        ];
+    return [
+        { label: t('sidebar.group_general'), items: general },
+        {
+            label: t('sidebar.group_teaching'),
+            items: buildEnseignantItems(),
+        },
+        {
+            label: t('sidebar.group_diffusion'),
+            items: [
+                {
+                    title: t('sidebar.museum'),
+                    href: museeAccueil.url(),
+                    icon: Landmark,
+                },
+            ],
+        },
+    ];
+}
+
+const groupesNav = computed((): GroupeNav[] => {
+    const role = user.value?.role;
+
+    if (role === 'admin' || role === 'enseignant') {
+        return buildGroupesEnseignant(role === 'admin');
     }
 
     if (role === 'etudiant') {
         return [
             {
-                title: t('sidebar.home'),
-                href: '/cours',
-                icon: Home,
+                items: [
+                    {
+                        title: t('sidebar.home'),
+                        href: '/cours',
+                        icon: Home,
+                    },
+                    ...buildEtudiantItems(),
+                ],
             },
-            ...buildEtudiantItems(),
         ];
     }
 
     return [];
 });
 
-const footerNavItems: NavItem[] = [];
+const footerNavItems = computed((): NavItem[] => [
+    { title: t('nav.settings'), href: editProfile.url(), icon: Settings },
+    { title: t('sidebar.help'), href: guide.url(), icon: CircleHelp },
+]);
 </script>
 
 <template>
@@ -181,7 +220,12 @@ const footerNavItems: NavItem[] = [];
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain
+                v-for="(groupe, index) in groupesNav"
+                :key="groupe.label ?? index"
+                :items="groupe.items"
+                :label="groupe.label"
+            />
         </SidebarContent>
 
         <SidebarFooter>

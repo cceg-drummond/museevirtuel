@@ -9,12 +9,14 @@ import type { NavItem } from '@/types';
 
 defineProps<{
     items: NavItem[];
+    // Libellé du groupe ; « Plateforme » par défaut (barre latérale étudiante)
+    label?: string;
 }>();
 </script>
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>{{ $t('nav.platform') }}</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ label ?? $t('nav.platform') }}</SidebarGroupLabel>
         <SidebarMenu>
             <NavCollapsible
                 v-for="item in items"

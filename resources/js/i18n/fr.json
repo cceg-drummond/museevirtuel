@@ -425,7 +425,15 @@
         "section": "Section",
         "project_types": "Types de projet",
         "projects": "Projets",
-        "discussion_temoin": "Échanges PA"
+        "discussion_temoin": "Échanges Personnes ainées",
+        "brand": "Musée virtuel",
+        "brand_tagline": "Votre histoire, notre histoire",
+        "dashboard": "Tableau de bord",
+        "group_general": "Général",
+        "group_teaching": "Enseignement",
+        "group_diffusion": "Diffusion",
+        "museum": "Musée virtuel",
+        "help": "Aide"
     },
     "settings": {
         "heading_title": "Paramètres",
