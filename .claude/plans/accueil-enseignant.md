@@ -39,12 +39,12 @@ Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule
 | 1 | Tableau de bord (contenu) + fil d'Ariane « Accueil › Tableau de bord » | Fait, à valider |
 | 2 | En-tête : avatar, nom, rôle, bouton Déconnexion | |
 | 3 | Structure de la barre latérale : marque, groupes, pied Paramètres / Aide (entrées ajoutées au fil des pages ; l'arborescence des cours reste jusqu'à l'étape 15) | |
-| 4 | Page Cours | |
+| 4 | Page Cours | Fait |
 | 4b | Fil d'Ariane : composable `useFilAriane` + pages enseignant (accueil, Cours, cours nouveau/modifier, thématique nouvelle/modifier, témoin) | Fait, à valider |
 | 4c | Fil d'Ariane : Cours/Show, Classes/Show + aperçus de notes, TypeProjet/* (Classes/Index, Echanges, Groupes : jamais rendues, ignorées) | Fait, à valider |
 | 4d | Fil d'Ariane : Groupes/*, Projets/*, Groupe/Videos/Show — chemin lu depuis l'URL + navData, arrêté à la classe | Fait, à valider |
 | 4e | Fil d'Ariane : Administration/*, PersonneAgee/Index, pages étudiant (Cours/Index, Cours/Verrouille) | Fait, à valider |
-| 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | |
+| 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | Fait, à valider |
 | 6 | Page Classes | |
 | 7 | Page Groupes | |
 | 8 | Page Projets | |

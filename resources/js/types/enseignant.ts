@@ -23,6 +23,7 @@ export type ThematiqueEnseignant = {
     nom: string;
     description: string | null;
     periode_historique: string | null;
+    enseignant: { id: number; prenom: string; nom: string } | null;
 };
 
 export type TravailRemis = {

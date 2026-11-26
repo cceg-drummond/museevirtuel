@@ -362,6 +362,11 @@
             "header_state": "État",
             "state_open": "Ouvert",
             "state_locked": "Verrouillé"
+        },
+        "thematiques": {
+            "title": "Thématiques",
+            "subtitle": "Les thématiques proposées aux témoins et aux groupes de votre établissement.",
+            "header_author": "Créée par"
         }
     },
     "administration": {
@@ -444,7 +449,8 @@
         "group_diffusion": "Diffusion",
         "museum": "Musée virtuel",
         "help": "Aide",
-        "courses": "Cours"
+        "courses": "Cours",
+        "thematics": "Thématiques"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1194,11 +1200,11 @@
         "courses": "Cours",
         "new_masculine": "Nouveau",
         "edit": "Modifier",
-        "new_thematic": "Nouvelle thématique",
-        "edit_thematic": "Modifier « {nom} »",
         "section": "Section {n}",
         "project_types": "Types de projet",
         "edit_named": "Modifier « {nom} »",
-        "administration": "Administration"
+        "administration": "Administration",
+        "thematics": "Thématiques",
+        "new_feminine": "Nouvelle"
     }
 }

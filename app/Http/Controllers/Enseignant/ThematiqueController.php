@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Enseignant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Thematique\SaveThematiqueRequest;
 use App\Models\Thematique;
+use App\Services\ListeThematiquesEnseignant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -12,6 +13,16 @@ use Inertia\Response;
 
 class ThematiqueController extends Controller
 {
+    /**
+     * Affiche la liste des thématiques visibles par l'enseignant connecté.
+     */
+    public function index(ListeThematiquesEnseignant $listeThematiquesEnseignant): Response
+    {
+        return Inertia::render('Enseignant/Thematiques/Index', [
+            'thematiques' => $listeThematiquesEnseignant->pour(auth()->user()),
+        ]);
+    }
+
     /**
      * Affiche le formulaire de création d'une thématique.
      */

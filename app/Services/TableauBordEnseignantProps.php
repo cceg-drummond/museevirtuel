@@ -21,9 +21,12 @@ use Illuminate\Support\Facades\DB;
 class TableauBordEnseignantProps
 {
     /**
-     * Injecte le service qui liste les cours de l'enseignant.
+     * Injecte les services qui listent les cours et les thématiques de l'enseignant.
      */
-    public function __construct(private readonly ListeCoursEnseignant $listeCoursEnseignant) {}
+    public function __construct(
+        private readonly ListeCoursEnseignant $listeCoursEnseignant,
+        private readonly ListeThematiquesEnseignant $listeThematiquesEnseignant,
+    ) {}
 
     /**
      * Retourne les props de la page Enseignant/Index pour l'enseignant donné.
@@ -36,7 +39,7 @@ class TableauBordEnseignantProps
 
         return [
             'cours' => $cours,
-            'thematiques' => $this->thematiques($user),
+            'thematiques' => $this->listeThematiquesEnseignant->pour($user),
             'travauxRemis' => $this->travauxRemis($user),
             'temoinsEnAttente' => $this->temoinsEnAttente($user),
             'temoinsApprouves' => $this->temoinsApprouves($user),
@@ -98,17 +101,6 @@ class TableauBordEnseignantProps
             'libelle' => $statut->label(),
             'total' => $totaux->get($statut->value, 0),
         ], StatutProjetRecherche::cases());
-    }
-
-    /**
-     * Retourne les thématiques visibles par l'enseignant.
-     */
-    private function thematiques(User $user): Collection
-    {
-        return Thematique::visiblesPar($user)
-            ->with('enseignant:id,prenom,nom')
-            ->orderBy('nom')
-            ->get();
     }
 
     /**

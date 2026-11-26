@@ -25,13 +25,14 @@ const props = defineProps<{
 const { t } = useI18n();
 const filAriane = useFilAriane();
 
-// Pas encore de page Thématiques : Accueil › Nouvelle thématique / Accueil › Modifier « nom »
+// Accueil › Thématiques › Nouvelle / Accueil › Thématiques › Modifier « nom »
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     filAriane.accueil(),
+    filAriane.thematiques(),
     filAriane.courant(
         props.mode === 'edit' && props.thematique
-            ? t('breadcrumbs.edit_thematic', { nom: props.thematique.nom })
-            : t('breadcrumbs.new_thematic'),
+            ? t('breadcrumbs.edit_named', { nom: props.thematique.nom })
+            : t('breadcrumbs.new_feminine'),
     ),
 ]);
 

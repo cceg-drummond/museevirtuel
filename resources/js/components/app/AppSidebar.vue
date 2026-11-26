@@ -7,6 +7,7 @@ import {
     Home,
     Landmark,
     LayoutDashboard,
+    Layers,
     LayoutGrid,
     Library,
     Settings,
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui/sidebar';
 import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as coursIndex } from '@/routes/enseignant/cours';
+import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as guide } from '@/routes/guide';
 import { accueil as museeAccueil } from '@/routes/musee/public';
 import { edit as editProfile } from '@/routes/profile';
@@ -166,6 +168,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.courses'),
                     href: coursIndex.url(),
                     icon: Library,
+                },
+                {
+                    title: t('sidebar.thematics'),
+                    href: thematiquesIndex.url(),
+                    icon: Layers,
                 },
                 ...buildEnseignantItems(),
             ],

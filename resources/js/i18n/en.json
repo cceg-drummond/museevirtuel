@@ -363,6 +363,11 @@
             "header_state": "Status",
             "state_open": "Open",
             "state_locked": "Locked"
+        },
+        "thematiques": {
+            "title": "Thematic areas",
+            "subtitle": "Thematic areas offered to witnesses and groups in your institution.",
+            "header_author": "Created by"
         }
     },
     "administration": {
@@ -445,7 +450,8 @@
         "group_diffusion": "Publishing",
         "museum": "Virtual museum",
         "help": "Help",
-        "courses": "Courses"
+        "courses": "Courses",
+        "thematics": "Thematic areas"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1195,11 +1201,11 @@
         "courses": "Courses",
         "new_masculine": "New",
         "edit": "Edit",
-        "new_thematic": "New thematic area",
-        "edit_thematic": "Edit “{nom}”",
         "section": "Section {n}",
         "project_types": "Project types",
         "edit_named": "Edit “{nom}”",
-        "administration": "Administration"
+        "administration": "Administration",
+        "thematics": "Thematic areas",
+        "new_feminine": "New"
     }
 }

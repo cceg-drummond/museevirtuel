@@ -10,11 +10,27 @@ import { create, edit } from '@/routes/enseignant/thematiques';
 import { destroy } from '@/routes/thematiques';
 import type { ThematiqueEnseignant } from '@/types/enseignant';
 
-defineProps<{ thematiques: ThematiqueEnseignant[] }>();
+const props = withDefaults(
+    defineProps<{
+        thematiques: ThematiqueEnseignant[];
+        // Faux sur la page Thématiques, où le tableau est le contenu principal
+        repliable?: boolean;
+    }>(),
+    { repliable: true },
+);
 
 const { t } = useI18n();
 
 const ouvert = ref(true);
+
+/**
+ * Replie ou déplie le tableau, seulement s'il est repliable.
+ */
+function basculer(): void {
+    if (props.repliable) {
+        ouvert.value = !ouvert.value;
+    }
+}
 
 const deleteThematiqueForm = useForm({});
 
@@ -39,8 +55,9 @@ function deleteThematique(thematique: ThematiqueEnseignant): void {
         <CardHeader class="flex flex-row items-center justify-between">
             <button
                 type="button"
-                class="flex flex-1 cursor-pointer items-center gap-2 text-left select-none"
-                @click="ouvert = !ouvert"
+                class="flex flex-1 items-center gap-2 text-left select-none"
+                :class="{ 'cursor-pointer': repliable }"
+                @click="basculer"
             >
                 <BookOpen class="h-5 w-5" />
                 <CardTitle>{{ $t('enseignant.index.my_thematic') }}</CardTitle>
@@ -48,6 +65,7 @@ function deleteThematique(thematique: ThematiqueEnseignant): void {
                     ({{ thematiques.length }})
                 </span>
                 <ChevronDown
+                    v-if="repliable"
                     class="h-4 w-4 text-muted-foreground transition-transform"
                     :class="{ '-rotate-180': ouvert }"
                 />
@@ -85,6 +103,9 @@ function deleteThematique(thematique: ThematiqueEnseignant): void {
                                     )
                                 }}
                             </th>
+                            <th class="pr-4 pb-3 font-medium">
+                                {{ t('enseignant.thematiques.header_author') }}
+                            </th>
                             <th class="pb-3 font-medium">
                                 {{
                                     $t('enseignant.index.table_header_actions')
@@ -108,6 +129,15 @@ function deleteThematique(thematique: ThematiqueEnseignant): void {
                                 class="max-w-xs truncate py-3 pr-4 text-muted-foreground"
                             >
                                 {{ thematique.description ?? '—' }}
+                            </td>
+                            <td
+                                class="py-3 pr-4 whitespace-nowrap text-muted-foreground"
+                            >
+                                {{
+                                    thematique.enseignant
+                                        ? `${thematique.enseignant.prenom} ${thematique.enseignant.nom}`
+                                        : '—'
+                                }}
                             </td>
                             <td class="py-3">
                                 <div class="flex gap-2">
@@ -134,7 +164,7 @@ function deleteThematique(thematique: ThematiqueEnseignant): void {
                         </tr>
                         <tr v-if="thematiques.length === 0">
                             <td
-                                colspan="4"
+                                colspan="5"
                                 class="py-6 text-center text-muted-foreground"
                             >
                                 {{ $t('enseignant.index.no_thematic') }}

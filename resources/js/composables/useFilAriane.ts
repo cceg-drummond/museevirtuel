@@ -5,6 +5,7 @@ import { show as classeShow } from '@/routes/classes';
 import { show as coursShow } from '@/routes/cours';
 import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as coursIndex } from '@/routes/enseignant/cours';
+import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as typesProjetsIndex } from '@/routes/types-projets';
 import type { BreadcrumbItem, NavData } from '@/types';
 
@@ -52,6 +53,16 @@ export function useFilAriane() {
      */
     function cours(): BreadcrumbItem {
         return { title: t('breadcrumbs.courses'), href: coursIndex.url() };
+    }
+
+    /**
+     * Retourne la collection « Thématiques » de l'enseignant.
+     */
+    function thematiques(): BreadcrumbItem {
+        return {
+            title: t('breadcrumbs.thematics'),
+            href: thematiquesIndex.url(),
+        };
     }
 
     /**
@@ -138,6 +149,7 @@ export function useFilAriane() {
         accueil,
         administration,
         cours,
+        thematiques,
         unCours,
         cheminCours,
         uneClasse,
