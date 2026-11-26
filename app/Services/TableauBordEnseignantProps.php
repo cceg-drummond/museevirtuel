@@ -8,7 +8,6 @@ use App\Models\Classe;
 use App\Models\Groupe;
 use App\Models\MuseePublication;
 use App\Models\ProjetRecherche;
-use App\Models\Thematique;
 use App\Models\User;
 use App\Models\VisioConference;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,11 +20,12 @@ use Illuminate\Support\Facades\DB;
 class TableauBordEnseignantProps
 {
     /**
-     * Injecte les services qui listent les cours et les thématiques de l'enseignant.
+     * Injecte les services qui listent les cours, les thématiques et les témoins de l'enseignant.
      */
     public function __construct(
         private readonly ListeCoursEnseignant $listeCoursEnseignant,
         private readonly ListeThematiquesEnseignant $listeThematiquesEnseignant,
+        private readonly ListeTemoinsEnseignant $listeTemoinsEnseignant,
     ) {}
 
     /**
@@ -41,8 +41,8 @@ class TableauBordEnseignantProps
             'cours' => $cours,
             'thematiques' => $this->listeThematiquesEnseignant->pour($user),
             'travauxRemis' => $this->travauxRemis($user),
-            'temoinsEnAttente' => $this->temoinsEnAttente($user),
-            'temoinsApprouves' => $this->temoinsApprouves($user),
+            'temoinsEnAttente' => $this->listeTemoinsEnseignant->obtenirEnAttente($user),
+            'temoinsApprouves' => $this->listeTemoinsEnseignant->obtenirApprouves($user),
             'prochainesVisios' => $this->prochainesVisios($user),
             'indicateurs' => $this->indicateurs($user, $cours),
             'statutProjets' => $this->statutProjets($user),
@@ -71,8 +71,8 @@ class TableauBordEnseignantProps
                 ->count('user_id'),
             'groupes' => (clone $groupes)->count(),
             'groupesAvecTemoin' => $groupes->whereNotNull('personne_agee_id')->count(),
-            'temoinsApprouves' => $this->queryTemoinsApprouves($user)->count(),
-            'temoinsEnAttente' => $this->queryTemoinsEnAttente($user)->count(),
+            'temoinsApprouves' => $this->listeTemoinsEnseignant->queryApprouves($user)->count(),
+            'temoinsEnAttente' => $this->listeTemoinsEnseignant->queryEnAttente($user)->count(),
             'visiosAVenir' => $this->queryVisiosAVenir($user)->count(),
             'visiosCetteSemaine' => $this->queryVisiosAVenir($user)
                 ->where('scheduled_at', '<=', now()->endOfWeek())
@@ -131,28 +131,6 @@ class TableauBordEnseignantProps
     }
 
     /**
-     * Retourne les témoins en attente liés à au moins une thématique visible par l'enseignant.
-     */
-    private function temoinsEnAttente(User $user): Collection
-    {
-        return $this->queryTemoinsEnAttente($user)
-            ->with('thematiquesChoisies:id,nom')
-            ->orderBy('created_at')
-            ->get(['id', 'prenom', 'nom', 'email', 'description', 'created_at']);
-    }
-
-    /**
-     * Retourne les témoins actifs approuvés par cet enseignant spécifiquement.
-     */
-    private function temoinsApprouves(User $user): Collection
-    {
-        return $this->queryTemoinsApprouves($user)
-            ->with('thematiquesChoisies:id,nom')
-            ->orderBy('created_at')
-            ->get(['id', 'prenom', 'nom', 'email', 'description', 'created_at']);
-    }
-
-    /**
      * Retourne les 10 prochaines visioconférences planifiées dans les cours de l'enseignant.
      *
      * @return array<int, mixed>
@@ -174,28 +152,6 @@ class TableauBordEnseignantProps
     {
         return ProjetRecherche::whereHas('groupe.classe.cours',
             fn ($q) => $q->where('enseignant_id', $user->id));
-    }
-
-    /**
-     * Retourne la requête des témoins en attente liés à au moins une thématique.
-     */
-    private function queryTemoinsEnAttente(User $user): Builder
-    {
-        $thematiqueIds = Thematique::visiblesPar($user)->pluck('id');
-
-        return User::where('role', 'personne_agee')
-            ->whereHas('thematiquesChoisies', fn ($q) => $q->whereIn('thematiques.id', $thematiqueIds))
-            ->enAttente();
-    }
-
-    /**
-     * Retourne la requête des témoins actifs approuvés par l'enseignant.
-     */
-    private function queryTemoinsApprouves(User $user): Builder
-    {
-        return User::where('role', 'personne_agee')
-            ->where('approuve_par_id', $user->id)
-            ->actif();
     }
 
     /**

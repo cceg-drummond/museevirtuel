@@ -406,6 +406,10 @@
                 "en_retard": "En retard",
                 "remis_en_retard": "Remis en retard"
             }
+        },
+        "temoins": {
+            "title": "Aînés",
+            "subtitle": "Les témoins inscrits sur vos thématiques, en attente d'approbation ou approuvés par vous."
         }
     },
     "administration": {
@@ -492,7 +496,9 @@
         "thematics": "Thématiques",
         "classes": "Classes",
         "groups": "Groupes de projets",
-        "projects_all": "Projets"
+        "projects_all": "Projets",
+        "elders": "Aînés",
+        "group_community": "Communauté"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1250,6 +1256,7 @@
         "new_feminine": "Nouvelle",
         "classes": "Classes",
         "groups": "Groupes de projets",
-        "projects": "Projets"
+        "projects": "Projets",
+        "elders": "Aînés"
     }
 }

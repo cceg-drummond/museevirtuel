@@ -33,6 +33,7 @@ const filAriane = useFilAriane();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     filAriane.accueil(),
+    filAriane.temoins(),
     filAriane.courant(`${props.temoin.prenom} ${props.temoin.nom}`),
 ]);
 

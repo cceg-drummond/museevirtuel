@@ -407,6 +407,10 @@
                 "en_retard": "Late",
                 "remis_en_retard": "Submitted late"
             }
+        },
+        "temoins": {
+            "title": "Elders",
+            "subtitle": "Witnesses registered on your thematic areas, awaiting approval or approved by you."
         }
     },
     "administration": {
@@ -493,7 +497,9 @@
         "thematics": "Thematic areas",
         "classes": "Classes",
         "groups": "Groups of projects",
-        "projects_all": "Projects"
+        "projects_all": "Projects",
+        "elders": "Elders",
+        "group_community": "Community"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1251,6 +1257,7 @@
         "new_feminine": "New",
         "classes": "Classes",
         "groups": "Groups of projects",
-        "projects": "Projects"
+        "projects": "Projects",
+        "elders": "Elders"
     }
 }

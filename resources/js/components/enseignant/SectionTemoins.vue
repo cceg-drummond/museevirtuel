@@ -5,16 +5,29 @@ import { computed, ref } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { show as showTemoin } from '@/routes/enseignant/temoins';
-import type { Temoin, ThematiqueEnseignant } from '@/types/enseignant';
+import type { Temoin } from '@/types/enseignant';
 
-const props = defineProps<{
-    temoinsEnAttente: Temoin[];
-    temoinsApprouves: Temoin[];
-    thematiques: ThematiqueEnseignant[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        temoinsEnAttente: Temoin[];
+        temoinsApprouves: Temoin[];
+        thematiques: { id: number; nom: string }[];
+        repliable?: boolean;
+    }>(),
+    { repliable: true },
+);
 
-// Replié par défaut : les témoins en attente sont déjà mis en avant dans le tableau de bord
-const ouvert = ref(false);
+// Replié par défaut sur l'accueil : les témoins en attente y sont déjà mis en avant
+const ouvert = ref(!props.repliable);
+
+/**
+ * Replie ou déplie le tableau, seulement s'il est repliable.
+ */
+function basculer(): void {
+    if (props.repliable) {
+        ouvert.value = !ouvert.value;
+    }
+}
 const afficherApprouves = ref(false);
 const rechercheTexte = ref('');
 const filtreThematiqueId = ref<number | null>(null);
@@ -54,8 +67,9 @@ function voirTemoin(temoin: Temoin): void {
         <CardHeader class="flex flex-row items-center justify-between">
             <button
                 type="button"
-                class="flex flex-1 cursor-pointer items-center gap-2 text-left select-none"
-                @click="ouvert = !ouvert"
+                class="flex flex-1 items-center gap-2 text-left select-none"
+                :class="{ 'cursor-pointer': repliable }"
+                @click="basculer"
             >
                 <Users class="h-5 w-5" />
                 <CardTitle>{{
@@ -65,6 +79,7 @@ function voirTemoin(temoin: Temoin): void {
                     ({{ temoinsFiltres.length }})
                 </span>
                 <ChevronDown
+                    v-if="repliable"
                     class="h-4 w-4 text-muted-foreground transition-transform"
                     :class="{ '-rotate-180': ouvert }"
                 />

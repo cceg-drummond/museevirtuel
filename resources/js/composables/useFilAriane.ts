@@ -8,6 +8,7 @@ import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
+import { index as temoinsIndex } from '@/routes/enseignant/temoins';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as typesProjetsIndex } from '@/routes/types-projets';
 import type { BreadcrumbItem, NavData } from '@/types';
@@ -77,6 +78,13 @@ export function useFilAriane() {
      */
     function projets(): BreadcrumbItem {
         return { title: t('breadcrumbs.projects'), href: projetsIndex.url() };
+    }
+
+    /**
+     * Retourne la collection « Aînés » (témoins) de l'enseignant.
+     */
+    function temoins(): BreadcrumbItem {
+        return { title: t('breadcrumbs.elders'), href: temoinsIndex.url() };
     }
 
     /**
@@ -176,6 +184,7 @@ export function useFilAriane() {
         classes,
         groupes,
         projets,
+        temoins,
         thematiques,
         unCours,
         cheminCours,

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Temoin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Thematique;
 use App\Models\User;
+use App\Services\ListeTemoinsEnseignant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -15,6 +17,21 @@ use Inertia\Response;
  */
 class TemoinApprobationController extends Controller
 {
+    /**
+     * Affiche la page Aînés : les témoins en attente sur les thématiques de l'enseignant
+     * et ceux qu'il a approuvés.
+     */
+    public function index(ListeTemoinsEnseignant $listeTemoinsEnseignant): Response
+    {
+        $user = auth()->user();
+
+        return Inertia::render('Enseignant/Temoins/Index', [
+            'temoinsEnAttente' => $listeTemoinsEnseignant->obtenirEnAttente($user),
+            'temoinsApprouves' => $listeTemoinsEnseignant->obtenirApprouves($user),
+            'thematiques' => Thematique::visiblesPar($user)->orderBy('nom')->get(['id', 'nom']),
+        ]);
+    }
+
     /**
      * Affiche la fiche détaillée d'un témoin lié aux thématiques de l'enseignant connecté.
      *

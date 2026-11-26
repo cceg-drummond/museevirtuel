@@ -47,8 +47,8 @@ Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule
 | 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | Fait |
 | 6 | Page Classes (toutes les classes de l'enseignant, triées par cours) | Fait |
 | 7 | Page Groupes (contrôleur à action unique : GroupeController::index existe déjà) | Fait |
-| 8 | Page Projets (statut recalculé, filtre par statut, numéros via Groupe::numerosParClasses) | Fait, à valider |
-| 9 | Page Aînés | |
+| 8 | Page Projets (statut recalculé, filtre par statut, numéros via Groupe::numerosParClasses) | Fait |
+| 9 | Page Aînés (groupe Communauté dans la barre latérale ; ListeTemoinsEnseignant partagé avec l'accueil) | Fait, à valider |
 | 10 | Page Visioconférences | |
 | 11 | Page Échanges | |
 | 12 | Page Échéancier | |

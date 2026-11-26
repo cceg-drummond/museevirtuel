@@ -11,6 +11,7 @@ import {
     LayoutGrid,
     Library,
     School,
+    UserCheck,
     Users,
     Settings,
 } from 'lucide-vue-next';
@@ -34,6 +35,7 @@ import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
+import { index as temoinsIndex } from '@/routes/enseignant/temoins';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as guide } from '@/routes/guide';
 import { accueil as museeAccueil } from '@/routes/musee/public';
@@ -195,6 +197,16 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     icon: Layers,
                 },
                 ...buildEnseignantItems(),
+            ],
+        },
+        {
+            label: t('sidebar.group_community'),
+            items: [
+                {
+                    title: t('sidebar.elders'),
+                    href: temoinsIndex.url(),
+                    icon: UserCheck,
+                },
             ],
         },
         {

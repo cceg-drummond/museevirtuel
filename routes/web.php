@@ -283,6 +283,9 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
         ->name('groupes.destroy');
 
     // Fiche détail + approbation / déclin des témoins liés aux thématiques de l'enseignant
+    Route::get('/enseignant/temoins', [TemoinApprobationController::class, 'index'])
+        ->name('enseignant.temoins.index');
+
     Route::get('/enseignant/temoins/{user}', [TemoinApprobationController::class, 'show'])
         ->name('enseignant.temoins.show');
 
