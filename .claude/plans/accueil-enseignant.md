@@ -15,6 +15,18 @@ Maquette : https://claude.ai/artifact/JDKWabzz6RhNQuJVwipEJu#a
   ni de notifications).
 - Travail en **mini-tâches** : une à la fois, l'utilisateur vérifie et commite avant la suivante.
 
+## Fil d'Ariane — règle de nommage
+
+Accueil › Collection › Élément › Action, construit par `resources/js/composables/useFilAriane.ts`.
+
+- **Accueil** : tableau de bord du rôle (`/enseignant` pour enseignant et admin, `/cours` pour étudiant).
+- **Collection** : nom de la page de liste (« Cours », « Thématiques »…).
+- **Élément** : identifiant court — cours `code-groupe` (ex. 330-A-01), classe `nom` ou « Section N »,
+  groupe « Groupe N », projet nom du type de projet, témoin « Prénom Nom ».
+- **Action** : « Nouveau » / « Nouvelle … », « Modifier ».
+- Tant qu'une collection n'a pas de page, on la saute (ex. Accueil › Nouvelle thématique).
+- `Musee/*` exclu (hors périmètre).
+
 ## Mini-tâches
 
 | # | Mini-tâche | État |
@@ -23,7 +35,11 @@ Maquette : https://claude.ai/artifact/JDKWabzz6RhNQuJVwipEJu#a
 | 2 | En-tête : avatar, nom, rôle, bouton Déconnexion | |
 | 3 | Structure de la barre latérale : marque, groupes, pied Paramètres / Aide (entrées ajoutées au fil des pages ; l'arborescence des cours reste jusqu'à l'étape 15) | |
 | 4 | Page Cours | |
-| 5 | Page Thématiques | |
+| 4b | Fil d'Ariane : composable `useFilAriane` + pages enseignant (accueil, Cours, cours nouveau/modifier, thématique nouvelle/modifier, témoin) | Fait, à valider |
+| 4c | Fil d'Ariane : Cours/Show, Classes/*, TypeProjet/* | |
+| 4d | Fil d'Ariane : Groupes/*, Projets/*, Groupe/Videos/Show | |
+| 4e | Fil d'Ariane : Administration/*, PersonneAgee/Index, pages étudiant (Cours/Index, Cours/Verrouille) | |
+| 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | |
 | 6 | Page Classes | |
 | 7 | Page Groupes | |
 | 8 | Page Projets | |

@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Heading from '@/components/shared/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { approuver, decliner, desapprouver } from '@/routes/enseignant/temoins';
+import type { BreadcrumbItem } from '@/types';
 
 type Temoin = {
     id: number;
@@ -26,6 +29,12 @@ type Temoin = {
 
 const props = defineProps<{ temoin: Temoin }>();
 const { t } = useI18n();
+const filAriane = useFilAriane();
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    filAriane.accueil(),
+    filAriane.courant(`${props.temoin.prenom} ${props.temoin.nom}`),
+]);
 
 const approuverForm = useForm({});
 const declinerForm = useForm({});
@@ -84,7 +93,7 @@ const statusVariant: Record<
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('enseignant.temoin_show.page_title')" />
 
         <div class="flex flex-col gap-6 p-6">

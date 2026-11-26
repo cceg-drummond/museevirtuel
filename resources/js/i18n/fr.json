@@ -1188,5 +1188,13 @@
         "source_url": "Lien URL",
         "source_upload": "Télécharger un fichier",
         "delete_confirm": "Supprimer ce média ?"
+    },
+    "breadcrumbs": {
+        "home": "Accueil",
+        "courses": "Cours",
+        "new_masculine": "Nouveau",
+        "edit": "Modifier",
+        "new_thematic": "Nouvelle thématique",
+        "edit_thematic": "Modifier « {nom} »"
     }
 }

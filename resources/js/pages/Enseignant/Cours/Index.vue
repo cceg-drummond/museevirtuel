@@ -3,19 +3,19 @@ import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SectionCours from '@/components/enseignant/SectionCours.vue';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { index as enseignantIndex } from '@/routes/enseignant';
-import { index as coursIndex } from '@/routes/enseignant/cours';
 import type { BreadcrumbItem } from '@/types';
 import type { CoursEnseignant } from '@/types/enseignant';
 
 defineProps<{ cours: CoursEnseignant[] }>();
 
 const { t } = useI18n();
+const filAriane = useFilAriane();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: t('sidebar.home'), href: enseignantIndex.url() },
-    { title: t('enseignant.cours.title'), href: coursIndex.url() },
+    filAriane.accueil(),
+    filAriane.cours(),
 ]);
 </script>
 

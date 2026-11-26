@@ -1189,5 +1189,13 @@
         "source_url": "URL link",
         "source_upload": "Upload a file",
         "delete_confirm": "Delete this media?"
+    },
+    "breadcrumbs": {
+        "home": "Home",
+        "courses": "Courses",
+        "new_masculine": "New",
+        "edit": "Edit",
+        "new_thematic": "New thematic area",
+        "edit_thematic": "Edit “{nom}”"
     }
 }

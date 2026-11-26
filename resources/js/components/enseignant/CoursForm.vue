@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import InputError from '@/components/shared/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Cours = {
     id: number;
@@ -32,6 +35,23 @@ type Cours = {
 
 const props = defineProps<{ cours?: Cours; mode: 'create' | 'edit' }>();
 const { t } = useI18n();
+const filAriane = useFilAriane();
+
+// Création : Accueil › Cours › Nouveau ; modification : Accueil › Cours › 330-A-01 › Modifier
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    props.mode === 'edit' && props.cours
+        ? [
+              filAriane.accueil(),
+              filAriane.cours(),
+              filAriane.unCours(props.cours),
+              filAriane.courant(t('breadcrumbs.edit')),
+          ]
+        : [
+              filAriane.accueil(),
+              filAriane.cours(),
+              filAriane.courant(t('breadcrumbs.new_masculine')),
+          ],
+);
 
 const form = useForm({
     nom_cours: props.cours?.nom_cours ?? '',
@@ -114,7 +134,7 @@ function submit(): void {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
             <div class="flex items-center gap-3">
                 <Button variant="ghost" size="icon" as-child>

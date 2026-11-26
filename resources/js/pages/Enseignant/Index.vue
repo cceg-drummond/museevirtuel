@@ -22,8 +22,8 @@ import CarteIndicateur from '@/components/enseignant/tableau-bord/CarteIndicateu
 import CarteListe from '@/components/enseignant/tableau-bord/CarteListe.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { index as enseignantIndex } from '@/routes/enseignant';
 import { create as createCours } from '@/routes/enseignant/cours';
 import { show as showTemoin } from '@/routes/enseignant/temoins';
 import { index as projetsGroupe } from '@/routes/projets';
@@ -55,12 +55,10 @@ const page = usePage();
 // Nombre d'éléments affichés dans les listes courtes du tableau de bord
 const TAILLE_LISTE = 4;
 
+const filAriane = useFilAriane();
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: t('sidebar.home'), href: enseignantIndex.url() },
-    {
-        title: t('enseignant.index.dashboard.breadcrumb'),
-        href: enseignantIndex.url(),
-    },
+    filAriane.accueil(),
+    filAriane.courant(t('enseignant.index.dashboard.breadcrumb')),
 ]);
 
 const totalProjets = computed(() =>

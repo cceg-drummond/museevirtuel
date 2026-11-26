@@ -1,12 +1,16 @@
 ﻿<script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import InputError from '@/components/shared/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Thematique = {
     id: number;
@@ -18,6 +22,19 @@ const props = defineProps<{
     thematique?: Thematique;
     mode: 'create' | 'edit';
 }>();
+const { t } = useI18n();
+const filAriane = useFilAriane();
+
+// Pas encore de page Thématiques : Accueil › Nouvelle thématique / Accueil › Modifier « nom »
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    filAriane.accueil(),
+    filAriane.courant(
+        props.mode === 'edit' && props.thematique
+            ? t('breadcrumbs.edit_thematic', { nom: props.thematique.nom })
+            : t('breadcrumbs.new_thematic'),
+    ),
+]);
+
 const form = useForm({
     nom: props.thematique?.nom ?? '',
     description: props.thematique?.description ?? '',
@@ -39,7 +56,7 @@ function submit(): void {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
             <div class="flex items-center gap-3">
                 <Button variant="ghost" size="icon" as-child
