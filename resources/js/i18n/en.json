@@ -445,6 +445,15 @@
             "empty": "You don't have any course yet.",
             "open": "View schedule",
             "steps": "{n} / {total} steps done"
+        },
+        "questions": {
+            "title": "Question bank",
+            "subtitle": "The question banks of the “question choice” sections of your project types. They are edited from the project type.",
+            "count": "{n} question(s)",
+            "open": "View questions",
+            "manage": "Manage in the project type",
+            "no_question": "This bank has no question yet.",
+            "empty": "None of your project types has a “question choice” section."
         }
     },
     "administration": {
@@ -533,10 +542,12 @@
         "groups": "Groups of projects",
         "projects_all": "Projects",
         "elders": "Elders",
+        "group_resources": "Resources",
         "group_community": "Community",
         "visios": "Video calls",
         "exchanges": "Exchanges",
-        "schedule": "Schedule"
+        "schedule": "Schedule",
+        "questions": "Question bank"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1298,6 +1309,7 @@
         "elders": "Elders",
         "visios": "Video calls",
         "exchanges": "Exchanges",
-        "schedule": "Schedule"
+        "schedule": "Schedule",
+        "questions": "Question bank"
     }
 }

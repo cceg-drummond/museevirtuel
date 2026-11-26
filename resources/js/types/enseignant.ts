@@ -117,6 +117,13 @@ export type ConversationEnseignant = {
     } | null;
 };
 
+export type BanqueQuestions = {
+    id: number;
+    label: string;
+    type_projet: { id: number; nom: string };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
+};
+
 export type CoursEcheancier = {
     id: number;
     nom_cours: string;

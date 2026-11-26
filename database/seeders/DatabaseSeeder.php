@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CoursComplementaireDemoSeeder::class);
         $this->call(EnseignantsTestSeeder::class);
         $this->call(EcheancierEtapesSeeder::class);
+        $this->call(BanquesQuestionsDemoSeeder::class);
         $this->call(EtablissementSeeder::class);
         $this->call(ThematiqueDemoSeeder::class);
         $this->call(TemoinSeeder::class);

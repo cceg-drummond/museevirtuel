@@ -4,6 +4,7 @@ import {
     BookOpen,
     CalendarDays,
     CircleHelp,
+    FileQuestion,
     FolderKanban,
     Home,
     Landmark,
@@ -40,6 +41,7 @@ import { index as echangesIndex } from '@/routes/enseignant/echanges';
 import { index as echeancierIndex } from '@/routes/enseignant/echeancier';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
+import { index as questionsIndex } from '@/routes/enseignant/questions';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as visiosIndex } from '@/routes/enseignant/visios';
@@ -153,7 +155,7 @@ type GroupeNav = { label?: string; items: NavItem[] };
 
 /**
  * Construit les groupes de la barre latérale enseignant (maquette A, issue #35).
- * Les groupes Communauté et Ressources s'ajouteront avec leurs pages.
+ * Le groupe Ressources se complète au fil de ses pages (Gabarits, Médias).
  */
 function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
     const general: NavItem[] = [
@@ -227,6 +229,16 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.exchanges'),
                     href: echangesIndex.url(),
                     icon: MessagesSquare,
+                },
+            ],
+        },
+        {
+            label: t('sidebar.group_resources'),
+            items: [
+                {
+                    title: t('sidebar.questions'),
+                    href: questionsIndex.url(),
+                    icon: FileQuestion,
                 },
             ],
         },

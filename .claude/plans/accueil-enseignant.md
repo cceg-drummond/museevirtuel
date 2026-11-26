@@ -52,7 +52,7 @@ Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule
 | 10 | Page Visioconférences (onglets à venir / passées ; gestion reste dans le cours) | Fait |
 | 11 | Page Échanges (conversations groupe-aîné, GroupeEchange ; ClasseEchange non utilisé) | Fait, à valider |
 | 12 | Page Échéancier : une carte par cours → « Consulter l'échéancier » (étapes par semaine + avancement des étudiants, lecture seule ; gestion reste dans le cours) | Fait, à valider |
-| 13 | Page Banque de questions | |
+| 13 | Page Banque de questions : une carte par section « choix de questions » → « Consulter les questions » (lecture seule ; gestion reste dans le type de projet). Groupe Ressources ajouté à la barre latérale | Fait, à valider |
 | 14 | Pages Gabarits et Médias | |
 | 15 | Retirer l'arborescence des cours de la barre latérale, alléger l'accueil (sections déplacées vers leurs pages) | |
 - Pas de tendances (« ▲ 2,1 pts », « +3 ce mois-ci ») : aucun historique disponible.

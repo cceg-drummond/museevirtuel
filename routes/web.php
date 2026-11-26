@@ -20,6 +20,7 @@ use App\Http\Controllers\Enseignant\EcheancierEnseignantController;
 use App\Http\Controllers\Enseignant\EnseignantController;
 use App\Http\Controllers\Enseignant\GroupesEnseignantController;
 use App\Http\Controllers\Enseignant\ProjetsEnseignantController;
+use App\Http\Controllers\Enseignant\QuestionsEnseignantController;
 use App\Http\Controllers\Enseignant\ThematiqueController;
 use App\Http\Controllers\Etudiant\EtudiantController;
 use App\Http\Controllers\Etudiant\EtudiantReferenceController;
@@ -285,6 +286,12 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
         ->name('groupes.destroy');
 
     // Fiche détail + approbation / déclin des témoins liés aux thématiques de l'enseignant
+    Route::get('/enseignant/questions', [QuestionsEnseignantController::class, 'index'])
+        ->name('enseignant.questions.index');
+
+    Route::get('/enseignant/questions/{section}', [QuestionsEnseignantController::class, 'show'])
+        ->name('enseignant.questions.show');
+
     Route::get('/enseignant/echeancier', [EcheancierEnseignantController::class, 'index'])
         ->name('enseignant.echeancier.index');
 

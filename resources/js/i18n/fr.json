@@ -444,6 +444,15 @@
             "empty": "Vous n'avez encore aucun cours.",
             "open": "Consulter l'échéancier",
             "steps": "{n} / {total} étapes terminées"
+        },
+        "questions": {
+            "title": "Banque de questions",
+            "subtitle": "Les banques de questions des sections « choix de questions » de vos types de projet. Elles se modifient depuis le type de projet.",
+            "count": "{n} question(s)",
+            "open": "Consulter les questions",
+            "manage": "Gérer dans le type de projet",
+            "no_question": "Aucune question dans cette banque.",
+            "empty": "Aucun de vos types de projet n'a de section « choix de questions »."
         }
     },
     "administration": {
@@ -532,10 +541,12 @@
         "groups": "Groupes de projets",
         "projects_all": "Projets",
         "elders": "Aînés",
+        "group_resources": "Ressources",
         "group_community": "Communauté",
         "visios": "Visioconférences",
         "exchanges": "Échanges",
-        "schedule": "Échéancier"
+        "schedule": "Échéancier",
+        "questions": "Banque de questions"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1297,6 +1308,7 @@
         "elders": "Aînés",
         "visios": "Visioconférences",
         "exchanges": "Échanges",
-        "schedule": "Échéancier"
+        "schedule": "Échéancier",
+        "questions": "Banque de questions"
     }
 }
