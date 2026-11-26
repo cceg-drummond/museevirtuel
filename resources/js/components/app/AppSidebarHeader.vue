@@ -2,6 +2,7 @@
 import { Monitor, Moon, Sun } from 'lucide-vue-next';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/app/Breadcrumbs.vue';
+import EnteteUtilisateur from '@/components/app/EnteteUtilisateur.vue';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
@@ -88,5 +89,7 @@ const appearanceLabel = computed(() => {
                 <TooltipContent>{{ appearanceLabel }}</TooltipContent>
             </Tooltip>
         </TooltipProvider>
+
+        <EnteteUtilisateur />
     </header>
 </template>

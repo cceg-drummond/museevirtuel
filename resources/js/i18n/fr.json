@@ -69,7 +69,13 @@
         "platform": "Plateforme",
         "dashboard": "Tableau de bord",
         "settings": "Paramètres",
-        "logout": "Se déconnecter"
+        "logout": "Se déconnecter",
+        "roles": {
+            "admin": "Administrateur",
+            "enseignant": "Enseignant(e)",
+            "etudiant": "Étudiant(e)",
+            "personne_agee": "Témoin"
+        }
     },
     "dashboard": {
         "page_title": "Tableau de bord"

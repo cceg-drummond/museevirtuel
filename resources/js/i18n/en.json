@@ -68,7 +68,13 @@
         "platform": "Platform",
         "dashboard": "Dashboard",
         "settings": "Settings",
-        "logout": "Log out"
+        "logout": "Log out",
+        "roles": {
+            "admin": "Administrator",
+            "enseignant": "Teacher",
+            "etudiant": "Student",
+            "personne_agee": "Witness"
+        }
     },
     "dashboard": {
         "page_title": "Dashboard"
