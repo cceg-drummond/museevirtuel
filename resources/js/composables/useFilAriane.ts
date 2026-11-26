@@ -7,6 +7,7 @@ import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
+import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as typesProjetsIndex } from '@/routes/types-projets';
 import type { BreadcrumbItem, NavData } from '@/types';
@@ -69,6 +70,13 @@ export function useFilAriane() {
      */
     function groupes(): BreadcrumbItem {
         return { title: t('breadcrumbs.groups'), href: groupesIndex.url() };
+    }
+
+    /**
+     * Retourne la collection « Projets » de l'enseignant.
+     */
+    function projets(): BreadcrumbItem {
+        return { title: t('breadcrumbs.projects'), href: projetsIndex.url() };
     }
 
     /**
@@ -167,6 +175,7 @@ export function useFilAriane() {
         cours,
         classes,
         groupes,
+        projets,
         thematiques,
         unCours,
         cheminCours,

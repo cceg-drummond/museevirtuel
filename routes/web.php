@@ -17,6 +17,7 @@ use App\Http\Controllers\Cours\TableauBordEtudiantController;
 use App\Http\Controllers\Cours\TransfererCoursController;
 use App\Http\Controllers\Enseignant\EnseignantController;
 use App\Http\Controllers\Enseignant\GroupesEnseignantController;
+use App\Http\Controllers\Enseignant\ProjetsEnseignantController;
 use App\Http\Controllers\Enseignant\ThematiqueController;
 use App\Http\Controllers\Etudiant\EtudiantController;
 use App\Http\Controllers\Etudiant\EtudiantReferenceController;
@@ -198,6 +199,9 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
 
     Route::get('/enseignant/groupes', GroupesEnseignantController::class)
         ->name('enseignant.groupes.index');
+
+    Route::get('/enseignant/projets', ProjetsEnseignantController::class)
+        ->name('enseignant.projets.index');
 
     Route::get('/enseignant/thematiques/create', [ThematiqueController::class, 'create'])
         ->name('enseignant.thematiques.create');

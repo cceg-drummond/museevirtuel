@@ -25,13 +25,7 @@ readonly class ListeGroupesEnseignant
             ->orderBy('id')
             ->get();
 
-        // Même numérotation que Groupe::getNumeroAttribute (rang par id dans la classe), sans une requête par groupe
-        $numeros = [];
-        $groupes->groupBy('classe_id')->each(function (Collection $groupesClasse) use (&$numeros): void {
-            $groupesClasse->values()->each(function (Groupe $groupe, int $rang) use (&$numeros): void {
-                $numeros[$groupe->id] = $rang + 1;
-            });
-        });
+        $numeros = Groupe::numerosParClasses($groupes->pluck('classe_id'));
 
         return $groupes
             ->sortBy([

@@ -33,6 +33,7 @@ import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
+import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as guide } from '@/routes/guide';
 import { accueil as museeAccueil } from '@/routes/musee/public';
@@ -182,6 +183,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.groups'),
                     href: groupesIndex.url(),
                     icon: Users,
+                },
+                {
+                    title: t('sidebar.projects_all'),
+                    href: projetsIndex.url(),
+                    icon: FolderKanban,
                 },
                 {
                     title: t('sidebar.thematics'),

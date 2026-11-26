@@ -388,6 +388,25 @@
             "no_elder": "To pair",
             "open": "Open the group",
             "empty": "No groups yet."
+        },
+        "projets": {
+            "title": "Projects",
+            "subtitle": "All the research projects of your groups, most recently updated first.",
+            "header_title": "Title",
+            "header_type": "Project type",
+            "header_status": "Status",
+            "header_deadline": "Deadline",
+            "header_submitted": "Submitted on",
+            "untitled": "Untitled",
+            "open": "Open the project",
+            "filter_all": "All",
+            "empty": "No projects for this filter.",
+            "status": {
+                "en_cours": "In progress",
+                "remis": "Submitted",
+                "en_retard": "Late",
+                "remis_en_retard": "Submitted late"
+            }
         }
     },
     "administration": {
@@ -473,7 +492,8 @@
         "courses": "Courses",
         "thematics": "Thematic areas",
         "classes": "Classes",
-        "groups": "Groups of projects"
+        "groups": "Groups of projects",
+        "projects_all": "Projects"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1230,6 +1250,7 @@
         "thematics": "Thematic areas",
         "new_feminine": "New",
         "classes": "Classes",
-        "groups": "Groups of projects"
+        "groups": "Groups of projects",
+        "projects": "Projects"
     }
 }

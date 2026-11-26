@@ -44,6 +44,31 @@ class Groupe extends Model
     }
 
     /**
+     * Calcule en une seule requête le numéro de chaque groupe des classes données,
+     * avec la même règle que getNumeroAttribute (rang par id dans la classe).
+     *
+     * Évite une requête par groupe dans les listes.
+     *
+     * @param  iterable<int, int>  $classeIds
+     * @return array<int, int> numéro indexé par id de groupe
+     */
+    public static function numerosParClasses(iterable $classeIds): array
+    {
+        $numeros = [];
+        $rangs = [];
+
+        static::whereIn('classe_id', collect($classeIds)->unique()->values())
+            ->orderBy('id')
+            ->get(['id', 'classe_id'])
+            ->each(function (self $groupe) use (&$numeros, &$rangs): void {
+                $rangs[$groupe->classe_id] = ($rangs[$groupe->classe_id] ?? 0) + 1;
+                $numeros[$groupe->id] = $rangs[$groupe->classe_id];
+            });
+
+        return $numeros;
+    }
+
+    /**
      * Retourne la classe (section) à laquelle appartient ce groupe.
      */
     public function classe(): BelongsTo

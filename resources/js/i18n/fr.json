@@ -387,6 +387,25 @@
             "no_elder": "À jumeler",
             "open": "Ouvrir le groupe",
             "empty": "Aucun groupe pour l'instant."
+        },
+        "projets": {
+            "title": "Projets",
+            "subtitle": "Tous les projets de recherche de vos groupes, du plus récemment modifié au plus ancien.",
+            "header_title": "Titre",
+            "header_type": "Type de projet",
+            "header_status": "Statut",
+            "header_deadline": "Date limite",
+            "header_submitted": "Remis le",
+            "untitled": "Sans titre",
+            "open": "Ouvrir le projet",
+            "filter_all": "Tous",
+            "empty": "Aucun projet pour ce filtre.",
+            "status": {
+                "en_cours": "En cours",
+                "remis": "Remis",
+                "en_retard": "En retard",
+                "remis_en_retard": "Remis en retard"
+            }
         }
     },
     "administration": {
@@ -472,7 +491,8 @@
         "courses": "Cours",
         "thematics": "Thématiques",
         "classes": "Classes",
-        "groups": "Groupes de projets"
+        "groups": "Groupes de projets",
+        "projects_all": "Projets"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1229,6 +1249,7 @@
         "thematics": "Thématiques",
         "new_feminine": "Nouvelle",
         "classes": "Classes",
-        "groups": "Groupes de projets"
+        "groups": "Groupes de projets",
+        "projects": "Projets"
     }
 }

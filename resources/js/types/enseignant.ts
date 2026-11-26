@@ -47,6 +47,18 @@ export type GroupeEnseignant = {
     cours: { id: number; nom_cours: string; code: string; groupe: string };
 };
 
+export type ProjetEnseignant = {
+    id: number;
+    titre_projet: string | null;
+    statut: StatutProjet['valeur'];
+    remis_le: string | null;
+    date_remise: string | null;
+    type_projet: { id: number; nom: string };
+    groupe: { id: number; numero: number };
+    classe: { id: number; numero: number; nom: string | null };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
+};
+
 export type ThematiqueEnseignant = {
     id: number;
     nom: string;
