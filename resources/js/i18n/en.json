@@ -377,6 +377,17 @@
             "header_schedule": "Schedule",
             "open": "Open the class",
             "empty": "No classes yet."
+        },
+        "groupes": {
+            "title": "Groups of projects",
+            "subtitle": "All the student groups of your courses, with their paired elder.",
+            "header_group": "Group",
+            "header_members": "Members",
+            "header_projects": "Projects",
+            "header_elder": "Paired elder",
+            "no_elder": "To pair",
+            "open": "Open the group",
+            "empty": "No groups yet."
         }
     },
     "administration": {
@@ -461,7 +472,8 @@
         "help": "Help",
         "courses": "Courses",
         "thematics": "Thematic areas",
-        "classes": "Classes"
+        "classes": "Classes",
+        "groups": "Groups of projects"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1217,6 +1229,7 @@
         "administration": "Administration",
         "thematics": "Thematic areas",
         "new_feminine": "New",
-        "classes": "Classes"
+        "classes": "Classes",
+        "groups": "Groups of projects"
     }
 }

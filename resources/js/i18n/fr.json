@@ -376,6 +376,17 @@
             "header_schedule": "Horaire",
             "open": "Ouvrir la classe",
             "empty": "Aucune classe pour l'instant."
+        },
+        "groupes": {
+            "title": "Groupes de projets",
+            "subtitle": "Tous les groupes d'étudiants de vos cours, avec leur aîné jumelé.",
+            "header_group": "Groupe",
+            "header_members": "Membres",
+            "header_projects": "Projets",
+            "header_elder": "Aîné jumelé",
+            "no_elder": "À jumeler",
+            "open": "Ouvrir le groupe",
+            "empty": "Aucun groupe pour l'instant."
         }
     },
     "administration": {
@@ -460,7 +471,8 @@
         "help": "Aide",
         "courses": "Cours",
         "thematics": "Thématiques",
-        "classes": "Classes"
+        "classes": "Classes",
+        "groups": "Groupes de projets"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1216,6 +1228,7 @@
         "administration": "Administration",
         "thematics": "Thématiques",
         "new_feminine": "Nouvelle",
-        "classes": "Classes"
+        "classes": "Classes",
+        "groups": "Groupes de projets"
     }
 }

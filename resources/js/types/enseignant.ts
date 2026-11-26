@@ -37,6 +37,16 @@ export type ClasseEnseignant = {
     };
 };
 
+export type GroupeEnseignant = {
+    id: number;
+    numero: number;
+    membres_count: number;
+    projets_count: number;
+    temoin: { id: number; prenom: string; nom: string } | null;
+    classe: { id: number; numero: number; nom: string | null };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
+};
+
 export type ThematiqueEnseignant = {
     id: number;
     nom: string;

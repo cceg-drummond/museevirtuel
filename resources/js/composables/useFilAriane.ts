@@ -6,6 +6,7 @@ import { show as coursShow } from '@/routes/cours';
 import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
+import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as typesProjetsIndex } from '@/routes/types-projets';
 import type { BreadcrumbItem, NavData } from '@/types';
@@ -61,6 +62,13 @@ export function useFilAriane() {
      */
     function classes(): BreadcrumbItem {
         return { title: t('breadcrumbs.classes'), href: classesIndex.url() };
+    }
+
+    /**
+     * Retourne la collection « Groupes » de l'enseignant.
+     */
+    function groupes(): BreadcrumbItem {
+        return { title: t('breadcrumbs.groups'), href: groupesIndex.url() };
     }
 
     /**
@@ -158,6 +166,7 @@ export function useFilAriane() {
         administration,
         cours,
         classes,
+        groupes,
         thematiques,
         unCours,
         cheminCours,
