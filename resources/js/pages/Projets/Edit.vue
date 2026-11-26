@@ -70,12 +70,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
+import { useFilAriane } from '@/composables/useFilAriane';
 import { vGrise } from '@/directives/grise';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { numerotation } from '@/lib/planSections';
 import type { NiveauSection } from '@/lib/planSections';
 import { edit as editProjet } from '@/routes/projets';
 import { edit as editTypeProjet } from '@/routes/types-projets';
+import type { BreadcrumbItem } from '@/types';
 import type { Auth } from '@/types/auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -2601,10 +2603,16 @@ async function supprimerCommentaireRenvoi(
         );
     }
 }
+
+// Le fil d'Ariane s'arrête à la classe (voir useFilAriane)
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head
             :title="
                 t('projets.edit.page_head', {

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, BookOpen, GraduationCap } from 'lucide-vue-next';
+import { computed } from 'vue';
 import Heading from '@/components/shared/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Enseignant = {
     id: number;
@@ -33,11 +36,18 @@ type Etablissement = {
     thematiques: Thematique[];
 };
 
-defineProps<{ etablissement: Etablissement }>();
+const props = defineProps<{ etablissement: Etablissement }>();
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    filAriane.accueil(),
+    filAriane.administration(),
+    filAriane.courant(props.etablissement.nom),
+]);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="etablissement.nom" />
 
         <div class="flex flex-col gap-6 p-6">

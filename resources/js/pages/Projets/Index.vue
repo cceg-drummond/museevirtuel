@@ -2,10 +2,12 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, FolderOpen } from 'lucide-vue-next';
 import { computed } from 'vue';
-import Heading from '@/components/shared/Heading.vue';
 import ProjetCard from '@/components/projets/ProjetCard.vue';
+import Heading from '@/components/shared/Heading.vue';
 import { Button } from '@/components/ui/button';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type TypeProjetResume = {
     id: number;
@@ -69,10 +71,15 @@ const projetsVisibles = computed(() =>
         ? props.projets.filter((card) => card.typeProjet.accessible)
         : props.projets,
 );
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head title="Projets" />
 
         <div class="flex flex-col gap-6 p-6">

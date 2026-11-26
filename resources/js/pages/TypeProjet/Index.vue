@@ -12,9 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import typesProjetsRoutes from '@/routes/types-projets';
 import museeTemplateRoutes from '@/routes/types-projets/musee-template';
+import type { BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 
@@ -49,6 +51,7 @@ type Cours = {
     id: number;
     nom_cours: string;
     code: string;
+    groupe: string;
 };
 
 type Props = {
@@ -58,6 +61,12 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    ...filAriane.cheminCours(props.cours),
+    filAriane.typesProjets(props.cours),
+]);
 
 // ─── Suppression TypeProjet ───────────────────────────────────────────────────
 const deleteForm = useForm({});
@@ -77,7 +86,7 @@ function supprimer(tp: TypeProjet) {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('types_projet.index.page_title')" />
 
         <div class="mx-auto flex max-w-3xl flex-col gap-6 p-6">

@@ -99,7 +99,7 @@ test('les notes accumulées pondèrent chaque type de projet sommatif par étudi
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Classes/ApercuNotesAccumulees')
-            ->where('cours', ['id' => $cours->id, 'nom_cours' => 'Histoire'])
+            ->where('cours', ['id' => $cours->id, 'nom_cours' => 'Histoire', 'code' => $cours->code, 'groupe' => $cours->groupe])
             ->where('classe.id', $classe->id)
             ->where('typesProjets', [
                 ['id' => $tpA->id, 'nom' => 'A projet', 'ponderation' => 60],

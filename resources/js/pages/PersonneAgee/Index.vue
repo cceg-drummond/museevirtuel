@@ -4,7 +4,9 @@ import { MessageSquare, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type User = {
     id: number;
@@ -39,10 +41,13 @@ const page = usePage();
 const user = computed(
     () => page.props.auth?.user as { prenom: string; nom: string } | undefined,
 );
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [filAriane.accueil()]);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('personne_agee.page_title')" />
 
         <div class="flex flex-col gap-6 p-6">

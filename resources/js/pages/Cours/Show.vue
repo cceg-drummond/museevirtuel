@@ -55,9 +55,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { NiveauSection } from '@/lib/planSections';
 import typesProjetsRoutes from '@/routes/types-projets';
+import type { BreadcrumbItem } from '@/types';
 
 type Classe = {
     id: number;
@@ -155,6 +157,11 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminCours(props.cours),
+);
 const { t } = useI18n();
 
 // ─── Sections repliables ──────────────────────────────────────────────────────
@@ -518,7 +525,7 @@ function submitTransfert() {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="`${cours.code} — ${cours.nom_cours}`" />
 
         <div class="flex flex-col gap-6 p-6">

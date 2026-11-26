@@ -17,7 +17,12 @@ Maquette : https://claude.ai/artifact/JDKWabzz6RhNQuJVwipEJu#a
 
 ## Fil d'Ariane — règle de nommage
 
-Accueil › Collection › Élément › Action, construit par `resources/js/composables/useFilAriane.ts`.
+Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule ligne** (décision du 25 nov.) :
+
+- Le fil s'arrête **à la classe** : rien après (groupes, projets, notes, vidéos… finissent sur la classe).
+- Dans un cours, on saute la collection « Cours » : Accueil › 330-A-01 › Section 1.
+  « Cours » n'apparaît que sur la liste et sur « Nouveau ».
+- Le composant ne passe jamais à la ligne ; les libellés longs sont tronqués avec « … » (titre complet au survol).
 
 - **Accueil** : tableau de bord du rôle (`/enseignant` pour enseignant et admin, `/cours` pour étudiant).
 - **Collection** : nom de la page de liste (« Cours », « Thématiques »…).
@@ -36,9 +41,9 @@ Accueil › Collection › Élément › Action, construit par `resources/js/com
 | 3 | Structure de la barre latérale : marque, groupes, pied Paramètres / Aide (entrées ajoutées au fil des pages ; l'arborescence des cours reste jusqu'à l'étape 15) | |
 | 4 | Page Cours | |
 | 4b | Fil d'Ariane : composable `useFilAriane` + pages enseignant (accueil, Cours, cours nouveau/modifier, thématique nouvelle/modifier, témoin) | Fait, à valider |
-| 4c | Fil d'Ariane : Cours/Show, Classes/*, TypeProjet/* | |
-| 4d | Fil d'Ariane : Groupes/*, Projets/*, Groupe/Videos/Show | |
-| 4e | Fil d'Ariane : Administration/*, PersonneAgee/Index, pages étudiant (Cours/Index, Cours/Verrouille) | |
+| 4c | Fil d'Ariane : Cours/Show, Classes/Show + aperçus de notes, TypeProjet/* (Classes/Index, Echanges, Groupes : jamais rendues, ignorées) | Fait, à valider |
+| 4d | Fil d'Ariane : Groupes/*, Projets/*, Groupe/Videos/Show — chemin lu depuis l'URL + navData, arrêté à la classe | Fait, à valider |
+| 4e | Fil d'Ariane : Administration/*, PersonneAgee/Index, pages étudiant (Cours/Index, Cours/Verrouille) | Fait, à valider |
 | 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | |
 | 6 | Page Classes | |
 | 7 | Page Groupes | |

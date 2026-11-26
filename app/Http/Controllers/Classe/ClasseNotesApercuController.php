@@ -63,7 +63,7 @@ class ClasseNotesApercuController extends Controller
         }
 
         return Inertia::render('Classes/ApercuNotes', [
-            'cours' => $cours->only('id', 'nom_cours'),
+            'cours' => $cours->only('id', 'nom_cours', 'code', 'groupe'),
             'classe' => ['id' => $classe->id, 'numero' => $classe->numero, 'nom' => $classe->nom],
             'typeProjet' => ['id' => $typeProjet->id, 'nom' => $typeProjet->nom],
             'lignes' => $lignes->values(),

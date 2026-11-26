@@ -1195,6 +1195,10 @@
         "new_masculine": "Nouveau",
         "edit": "Modifier",
         "new_thematic": "Nouvelle thématique",
-        "edit_thematic": "Modifier « {nom} »"
+        "edit_thematic": "Modifier « {nom} »",
+        "section": "Section {n}",
+        "project_types": "Types de projet",
+        "edit_named": "Modifier « {nom} »",
+        "administration": "Administration"
     }
 }

@@ -5,7 +5,9 @@ import { computed, ref } from 'vue';
 import Heading from '@/components/shared/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Ligne = {
     da: string;
@@ -15,13 +17,19 @@ type Ligne = {
 };
 
 type Props = {
-    cours: { id: number; nom_cours: string };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
     classe: { id: number; numero: string; nom: string | null };
     typeProjet: { id: number; nom: string };
     lignes: Ligne[];
 };
 
 const props = defineProps<Props>();
+
+const filAriane = useFilAriane();
+// Le fil d'Ariane s'arrête à la classe, même sur les pages qui en dépendent
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminClasse(props.cours, props.classe),
+);
 
 const copie = ref(false);
 
@@ -61,13 +69,13 @@ function formaterNote(note: number | string | null): string {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="`Aperçu notes — ${typeProjet.nom}`" />
 
-        <div class="flex gap-3 mt-2 space-y-2 px-2">
+        <div class="mt-2 flex gap-3 space-y-2 px-2">
             <Button variant="ghost" size="icon" as-child>
                 <Link :href="retourUrl">
-                    <ArrowLeft class="h-4 w-4"/>
+                    <ArrowLeft class="h-4 w-4" />
                 </Link>
             </Button>
             <Heading
@@ -75,8 +83,7 @@ function formaterNote(note: number | string | null): string {
                 :description="`${titreClasse} · ${cours.nom_cours} · ${lignes.length} étudiant(s)`"
             />
         </div>
-        <div class="mx-50 max-w-7xl space-y-4 mb-2">
-
+        <div class="mx-50 mb-2 max-w-7xl space-y-4">
             <!-- Tableau des notes -->
             <Card>
                 <CardContent class="overflow-x-auto p-0">

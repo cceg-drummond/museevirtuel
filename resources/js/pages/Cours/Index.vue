@@ -11,12 +11,14 @@ import {
     Users,
     Video,
 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import EtudiantReferences from '@/components/cours/EtudiantReferences.vue';
 import { Badge } from '@/components/ui/badge';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Cours = {
     id: number;
@@ -107,10 +109,13 @@ function rejoindre(jitsiRoom: string) {
 function projetUrl(projet: Projet): string {
     return `/cours/${projet.cours_id}/classes/${projet.classe_id}/groupes/${projet.groupe_id}/projets/${projet.type_projet.id}/edit`;
 }
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [filAriane.accueil()]);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('cours.index.page_title')" />
 
         <div class="flex flex-col gap-4 p-6">

@@ -48,7 +48,7 @@ readonly class NotesAccumuleesClasse
         }
 
         return [
-            'cours' => $cours->only('id', 'nom_cours'),
+            'cours' => $cours->only('id', 'nom_cours', 'code', 'groupe'),
             'classe' => ['id' => $classe->id, 'numero' => $classe->numero, 'nom' => $classe->nom],
             'typesProjets' => $typesProjets->map(fn (TypeProjet $tp) => [
                 'id' => $tp->id,

@@ -5,7 +5,9 @@ import { computed, ref } from 'vue';
 import Heading from '@/components/shared/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type TypeProjetInfo = {
     id: number;
@@ -22,7 +24,7 @@ type Ligne = {
 };
 
 type Props = {
-    cours: { id: number; nom_cours: string };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
     classe: { id: number; numero: string; nom: string | null };
     typesProjets: TypeProjetInfo[];
     lignes: Ligne[];
@@ -30,6 +32,12 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const filAriane = useFilAriane();
+// Le fil d'Ariane s'arrête à la classe, même sur les pages qui en dépendent
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminClasse(props.cours, props.classe),
+);
 
 const copie = ref(false);
 
@@ -77,7 +85,7 @@ function formaterNote(note: number | null): string {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="`Notes accumulées — ${titreClasse}`" />
 
         <div class="mx-auto max-w-5xl space-y-6 px-4 py-8">

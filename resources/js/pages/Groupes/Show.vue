@@ -52,7 +52,9 @@ import {
 import VideoCard from '@/components/medias/VideoCard.vue';
 import VideoUploadForm from '@/components/medias/VideoUploadForm.vue';
 import VisioSession from '@/components/classes/VisioSession.vue';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 import type { Auth } from '@/types/auth';
 
 type User = {
@@ -684,10 +686,16 @@ function formatSize(bytes: number): string {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
+
+// Le fil d'Ariane s'arrête à la classe (voir useFilAriane)
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head
             :title="$t('classes.groupes.group_number', { n: groupe.numero })"
         />

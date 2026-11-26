@@ -6,9 +6,11 @@ import ApercuSection from '@/components/projets/ApercuSection.vue';
 import Heading from '@/components/shared/Heading.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { numerotation } from '@/lib/planSections';
 import type { NiveauSection } from '@/lib/planSections';
+import type { BreadcrumbItem } from '@/types';
 
 type Membre = {
     id: number;
@@ -74,10 +76,14 @@ const numeros = computed(() => numerotation(props.sections));
 /** Construit l'URL de base pour les routes du projet de ce groupe. */
 const baseUrl = `/cours/${props.classe.cours_id}/classes/${props.groupe.classe_id}/groupes/${props.groupe.id}/projets/${props.typeProjet.id}`;
 
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head
             :title="`${$t('apercu.preview_label')} — ${projet?.titre_projet ?? $t('projets.index.heading_title')}`"
         />

@@ -37,13 +37,11 @@ const props = defineProps<{ cours?: Cours; mode: 'create' | 'edit' }>();
 const { t } = useI18n();
 const filAriane = useFilAriane();
 
-// Création : Accueil › Cours › Nouveau ; modification : Accueil › Cours › 330-A-01 › Modifier
+// Création : Accueil › Cours › Nouveau ; modification : Accueil › 330-A-01 › Modifier
 const breadcrumbs = computed<BreadcrumbItem[]>(() =>
     props.mode === 'edit' && props.cours
         ? [
-              filAriane.accueil(),
-              filAriane.cours(),
-              filAriane.unCours(props.cours),
+              ...filAriane.cheminCours(props.cours),
               filAriane.courant(t('breadcrumbs.edit')),
           ]
         : [

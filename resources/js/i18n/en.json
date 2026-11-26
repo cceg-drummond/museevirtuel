@@ -1196,6 +1196,10 @@
         "new_masculine": "New",
         "edit": "Edit",
         "new_thematic": "New thematic area",
-        "edit_thematic": "Edit “{nom}”"
+        "edit_thematic": "Edit “{nom}”",
+        "section": "Section {n}",
+        "project_types": "Project types",
+        "edit_named": "Edit “{nom}”",
+        "administration": "Administration"
     }
 }

@@ -8,7 +8,7 @@ import {
     Trash2,
     Users,
 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import FormDialog from '@/components/shared/FormDialog.vue';
 import Heading from '@/components/shared/Heading.vue';
@@ -25,8 +25,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { approuver } from '@/routes/administration/temoins';
+import type { BreadcrumbItem } from '@/types';
 
 type Enseignant = {
     id: number;
@@ -225,10 +227,16 @@ function deleteEtablissement(etablissement: Etablissement) {
         `/administration/etablissements/${etablissement.id}`,
     );
 }
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    filAriane.accueil(),
+    filAriane.administration(),
+]);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('administration.index.page_title')" />
 
         <div class="flex flex-col gap-6 p-6">

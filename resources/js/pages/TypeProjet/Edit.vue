@@ -35,6 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirmDelete } from '@/composables/useConfirmDelete';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
     ajouterEnfant,
@@ -48,6 +49,7 @@ import {
 import type { NiveauSection } from '@/lib/planSections';
 import typesProjets from '@/routes/types-projets';
 import critereRoutes from '@/routes/types-projets/criteres';
+import type { BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 
@@ -95,6 +97,7 @@ type Cours = {
     id: number;
     nom_cours: string;
     code: string;
+    groupe: string;
 };
 
 type Props = {
@@ -129,6 +132,15 @@ const sectionTypes = computed<
 ]);
 
 const props = defineProps<Props>();
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    ...filAriane.cheminCours(props.cours),
+    filAriane.typesProjets(props.cours),
+    filAriane.courant(
+        filAriane.t('breadcrumbs.edit_named', { nom: props.typeProjet.nom }),
+    ),
+]);
 
 /** Compteur local pour générer des clés stables sans dépendre du proxy Inertia. */
 let _uidCounter = 0;
@@ -386,7 +398,7 @@ const totalPointsGlobal = computed(() => {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head
             :title="`${$t('types_projet.edit.heading_title')} — ${props.typeProjet.nom}`"
         />

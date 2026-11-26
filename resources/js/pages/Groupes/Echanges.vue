@@ -6,7 +6,9 @@ import Heading from '@/components/shared/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 import type { Auth } from '@/types/auth';
 
 type User = {
@@ -95,10 +97,15 @@ function submit() {
         },
     );
 }
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('echanges.page_title', { n: groupe.numero })" />
 
         <div class="flex flex-col gap-6 p-6">

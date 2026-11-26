@@ -18,16 +18,26 @@ defineProps<Props>();
 </script>
 
 <template>
-    <Breadcrumb>
-        <BreadcrumbList>
+    <!-- Toujours sur une seule ligne : les libellés trop longs sont tronqués avec « … » -->
+    <Breadcrumb class="min-w-0">
+        <BreadcrumbList class="flex-nowrap">
             <template v-for="(item, index) in breadcrumbs" :key="index">
-                <BreadcrumbItem>
+                <BreadcrumbItem class="min-w-0">
                     <template v-if="index === breadcrumbs.length - 1">
-                        <BreadcrumbPage>{{ item.title }}</BreadcrumbPage>
+                        <BreadcrumbPage
+                            class="block max-w-48 truncate"
+                            :title="item.title"
+                            >{{ item.title }}</BreadcrumbPage
+                        >
                     </template>
                     <template v-else>
                         <BreadcrumbLink as-child>
-                            <Link :href="item.href">{{ item.title }}</Link>
+                            <Link
+                                :href="item.href"
+                                class="block max-w-40 truncate"
+                                :title="item.title"
+                                >{{ item.title }}</Link
+                            >
                         </BreadcrumbLink>
                     </template>
                 </BreadcrumbItem>

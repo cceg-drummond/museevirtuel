@@ -12,7 +12,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Cours = {
     id: number;
@@ -131,10 +133,15 @@ function retirerThematique(id: number): void {
 function submit(): void {
     form.post(`/cours/${props.cours.id}/classes/${props.classe.id}/groupes`);
 }
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head
             :title="`${$t('classes.groupes.heading')} — ${cours.nom_cours}`"
         />

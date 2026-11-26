@@ -9,9 +9,11 @@ import SectionsList from '@/components/type-projet/CreerProjetComponents/Section
 import SubmissionSettingsCard from '@/components/type-projet/CreerProjetComponents/SubmissionSettingsCard.vue';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { NiveauSection } from '@/lib/planSections';
 import typesProjets from '@/routes/types-projets';
+import type { BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 
@@ -19,6 +21,7 @@ type Cours = {
     id: number;
     nom_cours: string;
     code: string;
+    groupe: string;
 };
 
 type Props = {
@@ -26,6 +29,13 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    ...filAriane.cheminCours(props.cours),
+    filAriane.typesProjets(props.cours),
+    filAriane.courant(filAriane.t('breadcrumbs.new_masculine')),
+]);
 
 type SectionType = 'texte' | 'paragraphes' | 'individuel' | 'entrevue';
 
@@ -118,7 +128,7 @@ function creer() {
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('types_projet.create.page_title')" />
 
         <div class="mx-auto mt-2 flex max-w-2xl flex-col gap-3">
@@ -131,7 +141,9 @@ function creer() {
                     <ArrowLeft class="h-3.5 w-3.5" />
                     {{ $t('types_projet.create.back') }}
                 </Link>
-                <h1 class="text-xl font-bold">{{$t('types_projet.create.heading_title')}}</h1>
+                <h1 class="text-xl font-bold">
+                    {{ $t('types_projet.create.heading_title') }}
+                </h1>
             </div>
 
             <Alert
@@ -161,7 +173,7 @@ function creer() {
             />
 
             <!-- Bouton créer -->
-            <div class="mb-2 flex justify-end mt-4">
+            <div class="mt-4 mb-2 flex justify-end">
                 <Button :disabled="form.processing" @click="creer">
                     {{
                         form.processing

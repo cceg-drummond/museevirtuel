@@ -29,8 +29,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDuree } from '@/lib/formatters';
+import type { BreadcrumbItem } from '@/types';
 
 type Auteur = {
     id: number;
@@ -939,10 +941,16 @@ onUnmounted(() => {
     arreterPolling();
     stopPreview();
 });
+
+// Le fil d'Ariane s'arrête à la classe (voir useFilAriane)
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="video.titre" />
 
         <div class="flex flex-col gap-6 p-6">

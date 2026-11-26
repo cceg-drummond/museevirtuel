@@ -5,7 +5,9 @@ import { computed } from 'vue';
 import * as EnseignantController from '@/actions/App/Http/Controllers/Enseignant/EnseignantController';
 import * as EtudiantController from '@/actions/App/Http/Controllers/Etudiant/EtudiantController';
 import { Button } from '@/components/ui/button';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Props = {
     cours: {
@@ -28,10 +30,15 @@ const homeUrl = computed(() =>
         ? EtudiantController.index.url()
         : EnseignantController.index.url(),
 );
+
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="$t('cours.verrouille.titre')" />
 
         <div

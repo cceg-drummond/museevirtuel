@@ -5,7 +5,9 @@ import { computed, ref } from 'vue';
 import Heading from '@/components/shared/Heading.vue';
 import BoutonTooltip from '@/components/ui/BoutonTooltip.vue';
 import { Button } from '@/components/ui/button';
+import { useFilAriane } from '@/composables/useFilAriane';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
 
 type Ligne = {
     da: string;
@@ -53,10 +55,16 @@ function formaterNote(note: number | string | null): string {
 
     return valeur.toFixed(2);
 }
+
+// Le fil d'Ariane s'arrête à la classe (voir useFilAriane)
+const filAriane = useFilAriane();
+const breadcrumbs = computed<BreadcrumbItem[]>(() =>
+    filAriane.cheminDepuisUrl(),
+);
 </script>
 
 <template>
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <Head :title="`Aperçu notes — Groupe ${groupe.numero}`" />
 
         <div class="mx-auto max-w-xl space-y-6 px-4 py-8">
