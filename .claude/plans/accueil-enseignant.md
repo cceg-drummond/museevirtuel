@@ -48,8 +48,8 @@ Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule
 | 6 | Page Classes (toutes les classes de l'enseignant, triées par cours) | Fait |
 | 7 | Page Groupes (contrôleur à action unique : GroupeController::index existe déjà) | Fait |
 | 8 | Page Projets (statut recalculé, filtre par statut, numéros via Groupe::numerosParClasses) | Fait |
-| 9 | Page Aînés (groupe Communauté dans la barre latérale ; ListeTemoinsEnseignant partagé avec l'accueil) | Fait, à valider |
-| 10 | Page Visioconférences | |
+| 9 | Page Aînés (groupe Communauté dans la barre latérale ; ListeTemoinsEnseignant partagé avec l'accueil) | Fait |
+| 10 | Page Visioconférences (onglets à venir / passées ; gestion reste dans le cours) | Fait, à valider |
 | 11 | Page Échanges | |
 | 12 | Page Échéancier | |
 | 13 | Page Banque de questions | |

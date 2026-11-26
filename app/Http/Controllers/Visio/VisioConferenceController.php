@@ -8,16 +8,29 @@ use App\Http\Requests\Visio\UpdateVisioConferenceRequest;
 use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\VisioConference;
+use App\Services\ListeVisiosEnseignant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Visioconférences d'un cours : création, modification et suppression.
+ * Visioconférences : liste de l'enseignant, et création, modification et suppression dans un cours.
  */
 class VisioConferenceController extends Controller
 {
+    /**
+     * Affiche la page Visioconférences de l'enseignant connecté.
+     */
+    public function index(ListeVisiosEnseignant $listeVisiosEnseignant): Response
+    {
+        return Inertia::render('Enseignant/Visios/Index', [
+            'visios' => $listeVisiosEnseignant->obtenirVisios(auth()->user()),
+        ]);
+    }
+
     /**
      * Crée une nouvelle visioconférence pour le cours.
      *

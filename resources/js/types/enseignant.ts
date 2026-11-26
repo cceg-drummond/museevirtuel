@@ -97,6 +97,13 @@ export type ProchaineVisio = {
     animateur: { prenom: string; nom: string };
 };
 
+export type VisioEnseignant = ProchaineVisio & {
+    groupe_id: number | null;
+    ended_at: string | null;
+    has_recording: boolean;
+    recording_stream_url: string | null;
+};
+
 export type IndicateursEnseignant = {
     cours: number;
     coursVerrouilles: number;

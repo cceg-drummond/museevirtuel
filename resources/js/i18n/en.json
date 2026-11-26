@@ -411,6 +411,20 @@
         "temoins": {
             "title": "Elders",
             "subtitle": "Witnesses registered on your thematic areas, awaiting approval or approved by you."
+        },
+        "visios": {
+            "title": "Video calls",
+            "subtitle": "The video calls of all your courses. Schedule and start them from the course page.",
+            "tab_a_venir": "Upcoming",
+            "tab_passees": "Past",
+            "header_date": "Date",
+            "header_host": "Hosted by",
+            "state_en_cours": "Live",
+            "state_a_venir": "Upcoming",
+            "state_passee": "Past",
+            "recording": "Watch the recording",
+            "manage": "Manage in the course",
+            "empty": "No video calls."
         }
     },
     "administration": {
@@ -499,7 +513,8 @@
         "groups": "Groups of projects",
         "projects_all": "Projects",
         "elders": "Elders",
-        "group_community": "Community"
+        "group_community": "Community",
+        "visios": "Video calls"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1258,6 +1273,7 @@
         "classes": "Classes",
         "groups": "Groups of projects",
         "projects": "Projects",
-        "elders": "Elders"
+        "elders": "Elders",
+        "visios": "Video calls"
     }
 }

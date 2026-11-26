@@ -10,6 +10,7 @@ import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
+import { index as visiosIndex } from '@/routes/enseignant/visios';
 import { index as typesProjetsIndex } from '@/routes/types-projets';
 import type { BreadcrumbItem, NavData } from '@/types';
 
@@ -85,6 +86,13 @@ export function useFilAriane() {
      */
     function temoins(): BreadcrumbItem {
         return { title: t('breadcrumbs.elders'), href: temoinsIndex.url() };
+    }
+
+    /**
+     * Retourne la collection « Visioconférences » de l'enseignant.
+     */
+    function visios(): BreadcrumbItem {
+        return { title: t('breadcrumbs.visios'), href: visiosIndex.url() };
     }
 
     /**
@@ -178,20 +186,10 @@ export function useFilAriane() {
     }
 
     return {
-        accueil,
-        administration,
-        cours,
-        classes,
-        groupes,
-        projets,
-        temoins,
-        thematiques,
-        unCours,
-        cheminCours,
-        uneClasse,
-        cheminClasse,
-        cheminDepuisUrl,
-        typesProjets,
+        accueil, administration, cours, classes, groupes,
+        projets, temoins, visios, thematiques, unCours,
+        cheminCours, uneClasse, cheminClasse,
+        cheminDepuisUrl, typesProjets,
         courant,
         t,
     };

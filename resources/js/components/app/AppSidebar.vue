@@ -13,6 +13,7 @@ import {
     School,
     UserCheck,
     Users,
+    Video,
     Settings,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -37,6 +38,7 @@ import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
+import { index as visiosIndex } from '@/routes/enseignant/visios';
 import { index as guide } from '@/routes/guide';
 import { accueil as museeAccueil } from '@/routes/musee/public';
 import { edit as editProfile } from '@/routes/profile';
@@ -206,6 +208,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.elders'),
                     href: temoinsIndex.url(),
                     icon: UserCheck,
+                },
+                {
+                    title: t('sidebar.visios'),
+                    href: visiosIndex.url(),
+                    icon: Video,
                 },
             ],
         },

@@ -410,6 +410,20 @@
         "temoins": {
             "title": "Aînés",
             "subtitle": "Les témoins inscrits sur vos thématiques, en attente d'approbation ou approuvés par vous."
+        },
+        "visios": {
+            "title": "Visioconférences",
+            "subtitle": "Les visioconférences de tous vos cours. Elles se planifient et se démarrent depuis la page du cours.",
+            "tab_a_venir": "À venir",
+            "tab_passees": "Passées",
+            "header_date": "Date",
+            "header_host": "Animée par",
+            "state_en_cours": "En cours",
+            "state_a_venir": "À venir",
+            "state_passee": "Passée",
+            "recording": "Voir l'enregistrement",
+            "manage": "Gérer dans le cours",
+            "empty": "Aucune visioconférence."
         }
     },
     "administration": {
@@ -498,7 +512,8 @@
         "groups": "Groupes de projets",
         "projects_all": "Projets",
         "elders": "Aînés",
-        "group_community": "Communauté"
+        "group_community": "Communauté",
+        "visios": "Visioconférences"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1257,6 +1272,7 @@
         "classes": "Classes",
         "groups": "Groupes de projets",
         "projects": "Projets",
-        "elders": "Aînés"
+        "elders": "Aînés",
+        "visios": "Visioconférences"
     }
 }
