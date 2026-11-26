@@ -352,6 +352,16 @@
             "consent_accepted": "Engagements acceptés le",
             "consent_not_signed": "Engagements non signés",
             "signature": "Signature"
+        },
+        "cours": {
+            "title": "Mes cours",
+            "subtitle": "Gérez vos cours, leurs classes et leur accès pour les étudiants.",
+            "header_classes": "Classes",
+            "header_groups": "Groupes",
+            "header_project_types": "Types de projet",
+            "header_state": "État",
+            "state_open": "Ouvert",
+            "state_locked": "Verrouillé"
         }
     },
     "administration": {
@@ -433,7 +443,8 @@
         "group_teaching": "Enseignement",
         "group_diffusion": "Diffusion",
         "museum": "Musée virtuel",
-        "help": "Aide"
+        "help": "Aide",
+        "courses": "Cours"
     },
     "settings": {
         "heading_title": "Paramètres",

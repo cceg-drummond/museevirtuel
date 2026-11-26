@@ -180,6 +180,9 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
     Route::get('/enseignant', [EnseignantController::class, 'index'])
         ->name('enseignant.index');
 
+    Route::get('/enseignant/cours', [CoursController::class, 'index'])
+        ->name('enseignant.cours.index');
+
     Route::get('/enseignant/cours/create', [CoursController::class, 'create'])
         ->name('enseignant.cours.create');
 

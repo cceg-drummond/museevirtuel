@@ -9,6 +9,7 @@ use App\Http\Requests\Cours\UpdateCoursRequest;
 use App\Models\Cours;
 use App\Services\AppliquerGabaritService;
 use App\Services\CoursProps;
+use App\Services\ListeCoursEnseignant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -16,6 +17,16 @@ use Inertia\Response;
 
 class CoursController extends Controller
 {
+    /**
+     * Affiche la liste des cours de l'enseignant connecté.
+     */
+    public function index(ListeCoursEnseignant $listeCoursEnseignant): Response
+    {
+        return Inertia::render('Enseignant/Cours/Index', [
+            'cours' => $listeCoursEnseignant->pour(auth()->user()),
+        ]);
+    }
+
     /**
      * Affiche le formulaire de création d'un cours.
      */

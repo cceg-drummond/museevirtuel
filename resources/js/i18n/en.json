@@ -353,6 +353,16 @@
             "consent_accepted": "Commitments accepted on",
             "consent_not_signed": "Commitments not signed",
             "signature": "Signature"
+        },
+        "cours": {
+            "title": "My courses",
+            "subtitle": "Manage your courses, their classes and student access.",
+            "header_classes": "Classes",
+            "header_groups": "Groups",
+            "header_project_types": "Project types",
+            "header_state": "Status",
+            "state_open": "Open",
+            "state_locked": "Locked"
         }
     },
     "administration": {
@@ -434,7 +444,8 @@
         "group_teaching": "Teaching",
         "group_diffusion": "Publishing",
         "museum": "Virtual museum",
-        "help": "Help"
+        "help": "Help",
+        "courses": "Courses"
     },
     "settings": {
         "heading_title": "Settings",

@@ -19,11 +19,26 @@ import { toggle as toggleVerrouillageRoute } from '@/routes/cours/verrouillage';
 import { create, edit } from '@/routes/enseignant/cours';
 import type { CoursEnseignant } from '@/types/enseignant';
 
-defineProps<{ cours: CoursEnseignant[] }>();
+const props = withDefaults(
+    defineProps<{
+        cours: CoursEnseignant[];
+        repliable?: boolean;
+    }>(),
+    { repliable: true },
+);
 
 const { t } = useI18n();
 
 const ouvert = ref(true);
+
+/**
+ * Replie ou déplie le tableau, seulement s'il est repliable.
+ */
+function basculer(): void {
+    if (props.repliable) {
+        ouvert.value = !ouvert.value;
+    }
+}
 
 const SESSIONS: Record<CoursEnseignant['session'], string> = {
     hiver: 'Hiver',
@@ -62,14 +77,16 @@ function toggleVerrouillage(unCours: CoursEnseignant): void {
         <CardHeader class="flex flex-row items-center justify-between">
             <button
                 type="button"
-                class="flex flex-1 cursor-pointer items-center gap-2 text-left select-none"
-                @click="ouvert = !ouvert"
+                class="flex flex-1 items-center gap-2 text-left select-none"
+                :class="{ 'cursor-pointer': repliable }"
+                @click="basculer"
             >
                 <CardTitle>{{ $t('enseignant.index.my_courses') }}</CardTitle>
                 <span class="text-sm font-normal text-muted-foreground">
                     ({{ cours.length }})
                 </span>
                 <ChevronDown
+                    v-if="repliable"
                     class="h-4 w-4 text-muted-foreground transition-transform"
                     :class="{ '-rotate-180': ouvert }"
                 />
@@ -105,6 +122,18 @@ function toggleVerrouillage(unCours: CoursEnseignant): void {
                                     $t('enseignant.index.table_header_students')
                                 }}
                             </th>
+                            <th class="pr-4 pb-3 text-center font-medium">
+                                {{ t('enseignant.cours.header_classes') }}
+                            </th>
+                            <th class="pr-4 pb-3 text-center font-medium">
+                                {{ t('enseignant.cours.header_groups') }}
+                            </th>
+                            <th class="pr-4 pb-3 text-center font-medium">
+                                {{ t('enseignant.cours.header_project_types') }}
+                            </th>
+                            <th class="pr-4 pb-3 font-medium">
+                                {{ t('enseignant.cours.header_state') }}
+                            </th>
                             <th class="pb-3 font-medium">
                                 {{
                                     $t('enseignant.index.table_header_actions')
@@ -133,6 +162,31 @@ function toggleVerrouillage(unCours: CoursEnseignant): void {
                             <td class="py-3 pr-4">{{ unCours.nom_cours }}</td>
                             <td class="py-3 pr-4 text-center">
                                 {{ unCours.etudiants_count }}
+                            </td>
+                            <td class="py-3 pr-4 text-center">
+                                {{ unCours.classes_count }}
+                            </td>
+                            <td class="py-3 pr-4 text-center">
+                                {{ unCours.groupes_count }}
+                            </td>
+                            <td class="py-3 pr-4 text-center">
+                                {{ unCours.types_projets_count }}
+                            </td>
+                            <td class="py-3 pr-4">
+                                <span
+                                    class="rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+                                    :class="
+                                        unCours.is_verrouille
+                                            ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                                            : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+                                    "
+                                >
+                                    {{
+                                        unCours.is_verrouille
+                                            ? t('enseignant.cours.state_locked')
+                                            : t('enseignant.cours.state_open')
+                                    }}
+                                </span>
                             </td>
                             <td class="py-3">
                                 <div class="flex gap-2">
@@ -189,7 +243,7 @@ function toggleVerrouillage(unCours: CoursEnseignant): void {
                         </tr>
                         <tr v-if="cours.length === 0">
                             <td
-                                colspan="6"
+                                colspan="10"
                                 class="py-6 text-center text-muted-foreground"
                             >
                                 {{ $t('enseignant.index.no_courses') }}

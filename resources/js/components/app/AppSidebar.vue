@@ -8,6 +8,7 @@ import {
     Landmark,
     LayoutDashboard,
     LayoutGrid,
+    Library,
     Settings,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -26,6 +27,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { index as enseignantIndex } from '@/routes/enseignant';
+import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as guide } from '@/routes/guide';
 import { accueil as museeAccueil } from '@/routes/musee/public';
 import { edit as editProfile } from '@/routes/profile';
@@ -159,7 +161,14 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
         { label: t('sidebar.group_general'), items: general },
         {
             label: t('sidebar.group_teaching'),
-            items: buildEnseignantItems(),
+            items: [
+                {
+                    title: t('sidebar.courses'),
+                    href: coursIndex.url(),
+                    icon: Library,
+                },
+                ...buildEnseignantItems(),
+            ],
         },
         {
             label: t('sidebar.group_diffusion'),

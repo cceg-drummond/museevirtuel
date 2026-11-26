@@ -10,6 +10,9 @@ export type CoursEnseignant = {
     session: 'hiver' | 'ete' | 'automne';
     is_verrouille: boolean;
     etudiants_count: number;
+    classes_count: number;
+    groupes_count: number;
+    types_projets_count: number;
     type_cours: 'dep' | 'cours_complementaire' | 'cours_complet' | null;
     taille_equipe_min: number | null;
     taille_equipe_max: number | null;

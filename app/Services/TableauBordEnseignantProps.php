@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\StatutProjetRecherche;
 use App\Http\Resources\VisioConferenceResource;
 use App\Models\Classe;
-use App\Models\Cours;
 use App\Models\Groupe;
 use App\Models\MuseePublication;
 use App\Models\ProjetRecherche;
@@ -22,13 +21,18 @@ use Illuminate\Support\Facades\DB;
 class TableauBordEnseignantProps
 {
     /**
+     * Injecte le service qui liste les cours de l'enseignant.
+     */
+    public function __construct(private readonly ListeCoursEnseignant $listeCoursEnseignant) {}
+
+    /**
      * Retourne les props de la page Enseignant/Index pour l'enseignant donné.
      *
      * @return array<string, mixed>
      */
     public function pourEnseignant(User $user): array
     {
-        $cours = $this->cours($user);
+        $cours = $this->listeCoursEnseignant->pour($user);
 
         return [
             'cours' => $cours,
@@ -94,29 +98,6 @@ class TableauBordEnseignantProps
             'libelle' => $statut->label(),
             'total' => $totaux->get($statut->value, 0),
         ], StatutProjetRecherche::cases());
-    }
-
-    /**
-     * Retourne les cours de l'enseignant avec leur nombre de classes et d'étudiants distincts.
-     */
-    private function cours(User $user): Collection
-    {
-        $cours = $user->cours()
-            ->withCount('classes')
-            ->with('classes.etudiants:id')
-            ->orderBy('nom_cours')
-            ->get();
-
-        $cours->each(function (Cours $cours): void {
-            $etudiantsIds = $cours->classes
-                ->flatMap(fn ($classe) => $classe->etudiants->pluck('id'))
-                ->unique();
-
-            $cours->setAttribute('etudiants_count', $etudiantsIds->count());
-            $cours->unsetRelation('classes');
-        });
-
-        return $cours;
     }
 
     /**
