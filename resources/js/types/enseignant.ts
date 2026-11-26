@@ -117,6 +117,15 @@ export type ConversationEnseignant = {
     } | null;
 };
 
+export type CoursEcheancier = {
+    id: number;
+    nom_cours: string;
+    code: string;
+    groupe: string;
+    etapes_count: number;
+    etapes_terminees_count: number;
+};
+
 export type EcheancierEnseignant = {
     cours: { id: number; nom_cours: string; code: string; groupe: string };
     etudiants_count: number;

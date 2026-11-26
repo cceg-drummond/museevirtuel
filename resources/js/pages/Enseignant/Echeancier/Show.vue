@@ -11,7 +11,7 @@ import { show as coursShow } from '@/routes/cours';
 import type { BreadcrumbItem } from '@/types';
 import type { EcheancierEnseignant } from '@/types/enseignant';
 
-defineProps<{ echeanciers: EcheancierEnseignant[] }>();
+const props = defineProps<{ echeancier: EcheancierEnseignant }>();
 
 type Etape = EcheancierEnseignant['etapes'][number];
 
@@ -21,6 +21,9 @@ const filAriane = useFilAriane();
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     filAriane.accueil(),
     filAriane.echeancier(),
+    filAriane.courant(
+        `${props.echeancier.cours.code}-${props.echeancier.cours.groupe}`,
+    ),
 ]);
 
 /**
@@ -61,14 +64,7 @@ function pourcentage(etape: Etape, total: number): number {
                 </p>
             </div>
 
-            <p
-                v-if="echeanciers.length === 0"
-                class="py-6 text-center text-sm text-muted-foreground"
-            >
-                {{ t('enseignant.echeancier.empty') }}
-            </p>
-
-            <Card v-for="echeancier in echeanciers" :key="echeancier.cours.id">
+            <Card>
                 <CardHeader class="flex flex-row flex-wrap items-center gap-2">
                     <CalendarDays class="h-5 w-5" />
                     <CardTitle class="min-w-0 flex-1 truncate">

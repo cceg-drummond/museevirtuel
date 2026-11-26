@@ -285,8 +285,11 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
         ->name('groupes.destroy');
 
     // Fiche détail + approbation / déclin des témoins liés aux thématiques de l'enseignant
-    Route::get('/enseignant/echeancier', EcheancierEnseignantController::class)
+    Route::get('/enseignant/echeancier', [EcheancierEnseignantController::class, 'index'])
         ->name('enseignant.echeancier.index');
+
+    Route::get('/enseignant/echeancier/{cours}', [EcheancierEnseignantController::class, 'show'])
+        ->name('enseignant.echeancier.show');
 
     Route::get('/enseignant/echanges', EchangesEnseignantController::class)
         ->name('enseignant.echanges.index');

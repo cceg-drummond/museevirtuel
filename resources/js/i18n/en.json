@@ -442,7 +442,9 @@
             "students_done": "{n} / {total} students",
             "manage": "Manage in the course",
             "no_step": "This course's schedule has no step yet.",
-            "empty": "You don't have any course yet."
+            "empty": "You don't have any course yet.",
+            "open": "View schedule",
+            "steps": "{n} / {total} steps done"
         }
     },
     "administration": {

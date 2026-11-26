@@ -441,7 +441,9 @@
             "students_done": "{n} / {total} étudiants",
             "manage": "Gérer dans le cours",
             "no_step": "Aucune étape dans l'échéancier de ce cours.",
-            "empty": "Vous n'avez encore aucun cours."
+            "empty": "Vous n'avez encore aucun cours.",
+            "open": "Consulter l'échéancier",
+            "steps": "{n} / {total} étapes terminées"
         }
     },
     "administration": {
