@@ -424,6 +424,14 @@
             "recording": "Voir l'enregistrement",
             "manage": "Gérer dans le cours",
             "empty": "Aucune visioconférence."
+        },
+        "echanges": {
+            "title": "Échanges",
+            "subtitle": "Les conversations entre vos groupes et leur aîné, la plus récemment active d'abord.",
+            "messages": "{n} message(s)",
+            "no_message": "Aucun message pour l'instant.",
+            "open": "Ouvrir la conversation",
+            "empty": "Aucun groupe n'est encore jumelé à un aîné."
         }
     },
     "administration": {
@@ -513,7 +521,8 @@
         "projects_all": "Projets",
         "elders": "Aînés",
         "group_community": "Communauté",
-        "visios": "Visioconférences"
+        "visios": "Visioconférences",
+        "exchanges": "Échanges"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1273,6 +1282,7 @@
         "groups": "Groupes de projets",
         "projects": "Projets",
         "elders": "Aînés",
-        "visios": "Visioconférences"
+        "visios": "Visioconférences",
+        "exchanges": "Échanges"
     }
 }

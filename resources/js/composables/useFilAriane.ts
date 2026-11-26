@@ -6,6 +6,7 @@ import { show as coursShow } from '@/routes/cours';
 import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
+import { index as echangesIndex } from '@/routes/enseignant/echanges';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
@@ -93,6 +94,13 @@ export function useFilAriane() {
      */
     function visios(): BreadcrumbItem {
         return { title: t('breadcrumbs.visios'), href: visiosIndex.url() };
+    }
+
+    /**
+     * Retourne la collection « Échanges » de l'enseignant.
+     */
+    function echanges(): BreadcrumbItem {
+        return { title: t('breadcrumbs.exchanges'), href: echangesIndex.url() };
     }
 
     /**
@@ -187,7 +195,7 @@ export function useFilAriane() {
 
     return {
         accueil, administration, cours, classes, groupes,
-        projets, temoins, visios, thematiques, unCours,
+        projets, temoins, visios, echanges, thematiques, unCours,
         cheminCours, uneClasse, cheminClasse,
         cheminDepuisUrl, typesProjets,
         courant,

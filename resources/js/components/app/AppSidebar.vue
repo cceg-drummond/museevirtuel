@@ -10,6 +10,7 @@ import {
     Layers,
     LayoutGrid,
     Library,
+    MessagesSquare,
     School,
     UserCheck,
     Users,
@@ -34,6 +35,7 @@ import {
 import { index as enseignantIndex } from '@/routes/enseignant';
 import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
+import { index as echangesIndex } from '@/routes/enseignant/echanges';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
@@ -213,6 +215,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.visios'),
                     href: visiosIndex.url(),
                     icon: Video,
+                },
+                {
+                    title: t('sidebar.exchanges'),
+                    href: echangesIndex.url(),
+                    icon: MessagesSquare,
                 },
             ],
         },

@@ -104,6 +104,19 @@ export type VisioEnseignant = ProchaineVisio & {
     recording_stream_url: string | null;
 };
 
+export type ConversationEnseignant = {
+    groupe: { id: number; numero: number };
+    classe: { id: number; numero: number; nom: string | null };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
+    temoin: { id: number; prenom: string; nom: string } | null;
+    messages_count: number;
+    dernier_message: {
+        extrait: string;
+        auteur: { prenom: string; nom: string } | null;
+        envoye_le: string;
+    } | null;
+};
+
 export type IndicateursEnseignant = {
     cours: number;
     coursVerrouilles: number;

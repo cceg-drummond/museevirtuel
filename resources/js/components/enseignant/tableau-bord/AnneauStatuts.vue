@@ -20,23 +20,29 @@ const CIRCONFERENCE = 2 * Math.PI * RAYON;
 const total = computed(() => props.statuts.reduce((s, st) => s + st.total, 0));
 
 // Chaque arc commence là où le précédent s'arrête ; 2 px d'écart les séparent visuellement
+type Arc = {
+    valeur: StatutProjet['valeur'];
+    couleur: string;
+    dasharray: string;
+    dashoffset: number;
+};
+
 const arcs = computed(() => {
+    const resultat: Arc[] = [];
     let decalage = 0;
 
-    return props.statuts
-        .filter((st) => st.total > 0)
-        .map((st) => {
-            const longueur = (st.total / total.value) * CIRCONFERENCE;
-            const arc = {
-                valeur: st.valeur,
-                couleur: COULEURS[st.valeur],
-                dasharray: `${Math.max(longueur - 2, 0)} ${CIRCONFERENCE - longueur + 2}`,
-                dashoffset: -decalage,
-            };
-            decalage += longueur;
-
-            return arc;
+    for (const st of props.statuts.filter((s) => s.total > 0)) {
+        const longueur = (st.total / total.value) * CIRCONFERENCE;
+        resultat.push({
+            valeur: st.valeur,
+            couleur: COULEURS[st.valeur],
+            dasharray: `${Math.max(longueur - 2, 0)} ${CIRCONFERENCE - longueur + 2}`,
+            dashoffset: -decalage,
         });
+        decalage += longueur;
+    }
+
+    return resultat;
 });
 </script>
 

@@ -425,6 +425,14 @@
             "recording": "Watch the recording",
             "manage": "Manage in the course",
             "empty": "No video calls."
+        },
+        "echanges": {
+            "title": "Exchanges",
+            "subtitle": "Conversations between your groups and their elder, most recently active first.",
+            "messages": "{n} message(s)",
+            "no_message": "No messages yet.",
+            "open": "Open the conversation",
+            "empty": "No group is paired with an elder yet."
         }
     },
     "administration": {
@@ -514,7 +522,8 @@
         "projects_all": "Projects",
         "elders": "Elders",
         "group_community": "Community",
-        "visios": "Video calls"
+        "visios": "Video calls",
+        "exchanges": "Exchanges"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1274,6 +1283,7 @@
         "groups": "Groups of projects",
         "projects": "Projects",
         "elders": "Elders",
-        "visios": "Video calls"
+        "visios": "Video calls",
+        "exchanges": "Exchanges"
     }
 }
