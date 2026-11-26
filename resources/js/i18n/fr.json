@@ -367,6 +367,15 @@
             "title": "Thématiques",
             "subtitle": "Les thématiques proposées aux témoins et aux groupes de votre établissement.",
             "header_author": "Créée par"
+        },
+        "classes": {
+            "title": "Classes",
+            "subtitle": "Toutes les classes de vos cours.",
+            "header_course": "Cours",
+            "header_class": "Classe",
+            "header_schedule": "Horaire",
+            "open": "Ouvrir la classe",
+            "empty": "Aucune classe pour l'instant."
         }
     },
     "administration": {
@@ -450,7 +459,8 @@
         "museum": "Musée virtuel",
         "help": "Aide",
         "courses": "Cours",
-        "thematics": "Thématiques"
+        "thematics": "Thématiques",
+        "classes": "Classes"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1205,6 +1215,7 @@
         "edit_named": "Modifier « {nom} »",
         "administration": "Administration",
         "thematics": "Thématiques",
-        "new_feminine": "Nouvelle"
+        "new_feminine": "Nouvelle",
+        "classes": "Classes"
     }
 }

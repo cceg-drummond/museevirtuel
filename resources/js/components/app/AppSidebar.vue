@@ -10,6 +10,7 @@ import {
     Layers,
     LayoutGrid,
     Library,
+    School,
     Settings,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -28,6 +29,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { index as enseignantIndex } from '@/routes/enseignant';
+import { index as classesIndex } from '@/routes/enseignant/classes';
 import { index as coursIndex } from '@/routes/enseignant/cours';
 import { index as thematiquesIndex } from '@/routes/enseignant/thematiques';
 import { index as guide } from '@/routes/guide';
@@ -168,6 +170,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.courses'),
                     href: coursIndex.url(),
                     icon: Library,
+                },
+                {
+                    title: t('sidebar.classes'),
+                    href: classesIndex.url(),
+                    icon: School,
                 },
                 {
                     title: t('sidebar.thematics'),

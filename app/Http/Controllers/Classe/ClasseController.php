@@ -7,6 +7,7 @@ use App\Http\Requests\Classe\SaveClasseRequest;
 use App\Models\Classe;
 use App\Models\Cours;
 use App\Services\ClasseProps;
+use App\Services\ListeClassesEnseignant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -15,6 +16,16 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ClasseController extends Controller
 {
+    /**
+     * Affiche la liste des classes de tous les cours de l'enseignant connecté.
+     */
+    public function index(ListeClassesEnseignant $listeClassesEnseignant): Response
+    {
+        return Inertia::render('Enseignant/Classes/Index', [
+            'classes' => $listeClassesEnseignant->pour(auth()->user()),
+        ]);
+    }
+
     /**
      * Affiche le détail d'une classe (section) avec ses groupes.
      *

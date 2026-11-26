@@ -18,6 +18,25 @@ export type CoursEnseignant = {
     taille_equipe_max: number | null;
 };
 
+export type ClasseEnseignant = {
+    id: number;
+    numero: number;
+    nom: string | null;
+    jour_semaine: string | null;
+    plage_horaire: string | null;
+    etudiants_count: number;
+    groupes_count: number;
+    cours: {
+        id: number;
+        nom_cours: string;
+        code: string;
+        groupe: string;
+        session: 'hiver' | 'ete' | 'automne';
+        annee: number;
+        is_verrouille: boolean;
+    };
+};
+
 export type ThematiqueEnseignant = {
     id: number;
     nom: string;

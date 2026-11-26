@@ -368,6 +368,15 @@
             "title": "Thematic areas",
             "subtitle": "Thematic areas offered to witnesses and groups in your institution.",
             "header_author": "Created by"
+        },
+        "classes": {
+            "title": "Classes",
+            "subtitle": "All the classes of your courses.",
+            "header_course": "Course",
+            "header_class": "Class",
+            "header_schedule": "Schedule",
+            "open": "Open the class",
+            "empty": "No classes yet."
         }
     },
     "administration": {
@@ -451,7 +460,8 @@
         "museum": "Virtual museum",
         "help": "Help",
         "courses": "Courses",
-        "thematics": "Thematic areas"
+        "thematics": "Thematic areas",
+        "classes": "Classes"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1206,6 +1216,7 @@
         "edit_named": "Edit “{nom}”",
         "administration": "Administration",
         "thematics": "Thematic areas",
-        "new_feminine": "New"
+        "new_feminine": "New",
+        "classes": "Classes"
     }
 }

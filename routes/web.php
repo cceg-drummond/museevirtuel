@@ -192,6 +192,9 @@ Route::middleware(['auth', 'role:enseignant,admin'])->group(function () {
     Route::get('/enseignant/thematiques', [ThematiqueController::class, 'index'])
         ->name('enseignant.thematiques.index');
 
+    Route::get('/enseignant/classes', [ClasseController::class, 'index'])
+        ->name('enseignant.classes.index');
+
     Route::get('/enseignant/thematiques/create', [ThematiqueController::class, 'create'])
         ->name('enseignant.thematiques.create');
 

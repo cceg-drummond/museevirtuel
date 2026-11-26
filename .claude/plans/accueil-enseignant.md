@@ -44,8 +44,8 @@ Construit par `resources/js/composables/useFilAriane.ts`. **Court, sur une seule
 | 4c | Fil d'Ariane : Cours/Show, Classes/Show + aperçus de notes, TypeProjet/* (Classes/Index, Echanges, Groupes : jamais rendues, ignorées) | Fait, à valider |
 | 4d | Fil d'Ariane : Groupes/*, Projets/*, Groupe/Videos/Show — chemin lu depuis l'URL + navData, arrêté à la classe | Fait, à valider |
 | 4e | Fil d'Ariane : Administration/*, PersonneAgee/Index, pages étudiant (Cours/Index, Cours/Verrouille) | Fait, à valider |
-| 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | Fait, à valider |
-| 6 | Page Classes | |
+| 5 | Page Thématiques (+ fil d'Ariane Accueil › Thématiques › …) | Fait |
+| 6 | Page Classes (toutes les classes de l'enseignant, triées par cours) | Fait, à valider |
 | 7 | Page Groupes | |
 | 8 | Page Projets | |
 | 9 | Page Aînés | |
