@@ -8,6 +8,7 @@ use App\Models\Classe;
 use App\Models\Groupe;
 use App\Models\MuseePublication;
 use App\Models\ProjetRecherche;
+use App\Models\Thematique;
 use App\Models\User;
 use App\Models\VisioConference;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,11 +21,10 @@ use Illuminate\Support\Facades\DB;
 class TableauBordEnseignantProps
 {
     /**
-     * Injecte les services qui listent les cours, les thématiques et les témoins de l'enseignant.
+     * Injecte les services qui listent les cours et les témoins de l'enseignant.
      */
     public function __construct(
         private readonly ListeCoursEnseignant $listeCoursEnseignant,
-        private readonly ListeThematiquesEnseignant $listeThematiquesEnseignant,
         private readonly ListeTemoinsEnseignant $listeTemoinsEnseignant,
     ) {}
 
@@ -38,11 +38,8 @@ class TableauBordEnseignantProps
         $cours = $this->listeCoursEnseignant->pour($user);
 
         return [
-            'cours' => $cours,
-            'thematiques' => $this->listeThematiquesEnseignant->pour($user),
             'travauxRemis' => $this->travauxRemis($user),
             'temoinsEnAttente' => $this->listeTemoinsEnseignant->obtenirEnAttente($user),
-            'temoinsApprouves' => $this->listeTemoinsEnseignant->obtenirApprouves($user),
             'prochainesVisios' => $this->prochainesVisios($user),
             'indicateurs' => $this->indicateurs($user, $cours),
             'statutProjets' => $this->statutProjets($user),
@@ -81,6 +78,7 @@ class TableauBordEnseignantProps
             'publicationsAApprouver' => $publications
                 ->where('statut', MuseePublication::STATUT_SOUMIS)
                 ->count(),
+            'thematiques' => Thematique::visiblesPar($user)->count(),
         ];
     }
 

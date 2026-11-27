@@ -13,9 +13,6 @@ import {
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import SectionCours from '@/components/enseignant/SectionCours.vue';
-import SectionTemoins from '@/components/enseignant/SectionTemoins.vue';
-import SectionThematiques from '@/components/enseignant/SectionThematiques.vue';
 import AnneauStatuts from '@/components/enseignant/tableau-bord/AnneauStatuts.vue';
 import BandeauIllustration from '@/components/enseignant/tableau-bord/BandeauIllustration.vue';
 import CarteIndicateur from '@/components/enseignant/tableau-bord/CarteIndicateur.vue';
@@ -29,21 +26,16 @@ import { show as showTemoin } from '@/routes/enseignant/temoins';
 import { index as projetsGroupe } from '@/routes/projets';
 import type { BreadcrumbItem } from '@/types';
 import type {
-    CoursEnseignant,
     IndicateursEnseignant,
     ProchaineVisio,
     StatutProjet,
     Temoin,
-    ThematiqueEnseignant,
     TravailRemis,
 } from '@/types/enseignant';
 
 const props = defineProps<{
-    cours: CoursEnseignant[];
-    thematiques: ThematiqueEnseignant[];
     travauxRemis: TravailRemis[];
     temoinsEnAttente: Temoin[];
-    temoinsApprouves: Temoin[];
     prochainesVisios: ProchaineVisio[];
     indicateurs: IndicateursEnseignant;
     statutProjets: StatutProjet[];
@@ -211,7 +203,7 @@ function rejoindreVisio(jitsiRoom: string): void {
                 <CarteIndicateur
                     :icone="Layers"
                     :libelle="t('enseignant.index.dashboard.kpi_thematics')"
-                    :valeur="thematiques.length"
+                    :valeur="indicateurs.thematiques"
                     :detail="
                         t('enseignant.index.dashboard.kpi_thematics_detail')
                     "
@@ -375,15 +367,6 @@ function rejoindreVisio(jitsiRoom: string): void {
                     </li>
                 </CarteListe>
             </div>
-
-            <!-- ─── Gestion ─────────────────────────────────────────────── -->
-            <SectionCours :cours="cours" />
-            <SectionThematiques :thematiques="thematiques" />
-            <SectionTemoins
-                :temoins-en-attente="temoinsEnAttente"
-                :temoins-approuves="temoinsApprouves"
-                :thematiques="thematiques"
-            />
         </div>
     </AppLayout>
 </template>

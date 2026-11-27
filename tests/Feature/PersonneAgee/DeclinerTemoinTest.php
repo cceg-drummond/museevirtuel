@@ -112,9 +112,9 @@ test('un invité est redirigé vers /login s\'il tente de décliner', function (
         ->assertRedirect(route('login'));
 });
 
-// ─── Index enseignant : prop temoinsApprouves ─────────────────────────────────
+// ─── Page Aînés : prop temoinsApprouves ──────────────────────────────────────
 
-test('l\'index enseignant expose uniquement les témoins approuvés par cet enseignant', function () {
+test('la page Aînés expose uniquement les témoins approuvés par cet enseignant', function () {
     $enseignant = User::factory()->create(['role' => 'enseignant']);
     $autreEnseignant = User::factory()->create(['role' => 'enseignant']);
     $thematique = Thematique::create(['nom' => 'Histoire', 'enseignant_id' => $enseignant->id]);
@@ -144,7 +144,7 @@ test('l\'index enseignant expose uniquement les témoins approuvés par cet ense
     $paEnAttente->thematiquesChoisies()->attach($thematique->id);
 
     $this->actingAs($enseignant)
-        ->get(route('enseignant.index'))
+        ->get(route('enseignant.temoins.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('temoinsApprouves', 1)

@@ -24,13 +24,10 @@ import {
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppLogo from '@/components/app/AppLogo.vue';
-import NavFooter from '@/components/app/NavFooter.vue';
 import NavMain from '@/components/app/NavMain.vue';
-import NavUser from '@/components/app/NavUser.vue';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -58,59 +55,6 @@ const { t } = useI18n();
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const navData = computed(() => page.props.navData as NavData | null);
-
-const sessionLabels: Record<string, string> = {
-    hiver: 'Hiver',
-    ete: 'Été',
-    automne: 'Automne',
-};
-
-/**
- * Construit les items de navigation hiérarchiques pour un enseignant
- * à partir des données navData partagées par le middleware.
- */
-function buildEnseignantItems(): NavItem[] {
-    const cours = navData.value?.cours ?? [];
-
-    return cours.map((c: CoursSidebar) => ({
-        title: `${c.code} ${sessionLabels[c.session] ?? c.session} ${c.annee}`,
-        href: `/cours/${c.id}`,
-        icon: BookOpen,
-        children: [
-            {
-                title: t('sidebar.project_types'),
-                href: `/cours/${c.id}/types-projets`,
-                icon: FolderKanban,
-            },
-            ...c.classes.map((cl) => ({
-                title: cl.nom || `${t('sidebar.section')} ${cl.numero}`,
-                href: `/cours/${c.id}/classes/${cl.id}`,
-                children: cl.groupes.map((g: GroupeSidebar) => ({
-                    title: `${t('sidebar.group')} ${g.numero}`,
-                    href: `/cours/${c.id}/classes/${cl.id}/groupes/${g.id}`,
-                    children: [
-                        {
-                            title: t('sidebar.projects'),
-                            href: `/cours/${c.id}/classes/${cl.id}/groupes/${g.id}/projets`,
-                            children: g.projets.map((p) => ({
-                                title: p.titre,
-                                href: `/cours/${c.id}/classes/${cl.id}/groupes/${g.id}/projets/${p.type_projet_id}/edit`,
-                            })),
-                        },
-                        ...(g.hasTemoin
-                            ? [
-                                  {
-                                      title: t('sidebar.discussion_temoin'),
-                                      href: `/cours/${c.id}/classes/${cl.id}/groupes/${g.id}/echanges`,
-                                  },
-                              ]
-                            : []),
-                    ],
-                })),
-            })),
-        ],
-    }));
-}
 
 /**
  * Construit les items de navigation hiérarchiques pour un étudiant
@@ -212,7 +156,6 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     href: thematiquesIndex.url(),
                     icon: Layers,
                 },
-                ...buildEnseignantItems(),
             ],
         },
         {
@@ -265,6 +208,21 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                 },
             ],
         },
+        {
+            label: t('nav.settings'),
+            items: [
+                {
+                    title: t('nav.settings'),
+                    href: editProfile.url(),
+                    icon: Settings,
+                },
+                {
+                    title: t('sidebar.help'),
+                    href: guide.url(),
+                    icon: CircleHelp,
+                },
+            ],
+        },
     ];
 }
 
@@ -293,10 +251,6 @@ const groupesNav = computed((): GroupeNav[] => {
     return [];
 });
 
-const footerNavItems = computed((): NavItem[] => [
-    { title: t('nav.settings'), href: editProfile.url(), icon: Settings },
-    { title: t('sidebar.help'), href: guide.url(), icon: CircleHelp },
-]);
 </script>
 
 <template>
@@ -321,11 +275,6 @@ const footerNavItems = computed((): NavItem[] => [
                 :label="groupe.label"
             />
         </SidebarContent>
-
-        <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
-            <NavUser />
-        </SidebarFooter>
     </Sidebar>
     <slot />
 </template>

@@ -201,6 +201,7 @@ export type IndicateursEnseignant = {
     visiosCetteSemaine: number;
     publicationsMusee: number;
     publicationsAApprouver: number;
+    thematiques: number;
 };
 
 export type StatutProjet = {

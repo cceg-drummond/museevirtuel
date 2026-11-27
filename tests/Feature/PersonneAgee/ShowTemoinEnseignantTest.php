@@ -255,7 +255,7 @@ test('un enseignant approuvant un PA le retire de la liste des témoins en atten
 
     // Enseignant A voit 1 approuvé
     $this->actingAs($enseignantA)
-        ->get(route('enseignant.index'))
+        ->get(route('enseignant.temoins.index'))
         ->assertInertia(fn ($page) => $page
             ->has('temoinsApprouves', 1)
             ->has('temoinsEnAttente', 0)
@@ -263,7 +263,7 @@ test('un enseignant approuvant un PA le retire de la liste des témoins en atten
 
     // Enseignant B ne voit plus le PA du tout (ni en attente ni approuvé)
     $this->actingAs($enseignantB)
-        ->get(route('enseignant.index'))
+        ->get(route('enseignant.temoins.index'))
         ->assertInertia(fn ($page) => $page
             ->has('temoinsApprouves', 0)
             ->has('temoinsEnAttente', 0)

@@ -35,7 +35,7 @@ function creerTableauBordEnseignant(): array
     return compact('enseignant', 'cours', 'classe', 'groupe', 'etudiants');
 }
 
-test("le tableau de bord de l'enseignant expose cours, travaux remis et visios", function () {
+test("le tableau de bord de l'enseignant expose travaux remis et visios, sans les listes de gestion", function () {
     ['enseignant' => $enseignant, 'cours' => $cours, 'classe' => $classe, 'groupe' => $groupe, 'etudiants' => $etudiants] = creerTableauBordEnseignant();
 
     // Un étudiant inscrit dans deux classes du même cours ne compte qu'une fois
@@ -58,11 +58,9 @@ test("le tableau de bord de l'enseignant expose cours, travaux remis et visios",
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Enseignant/Index')
-            ->has('cours', 1)
-            ->where('cours.0.id', $cours->id)
-            ->where('cours.0.classes_count', 2)
-            ->where('cours.0.etudiants_count', 2)
-            ->missing('cours.0.classes')
+            ->missing('cours')
+            ->missing('thematiques')
+            ->missing('temoinsApprouves')
             ->has('travauxRemis', 1)
             ->where('travauxRemis.0.id', $projet->id)
             ->where('travauxRemis.0.titre_projet', 'Mon projet')
@@ -112,6 +110,7 @@ test("le tableau de bord compte les indicateurs de l'enseignant sans ceux des au
             'visiosCetteSemaine' => 1,
             'publicationsMusee' => 1,
             'publicationsAApprouver' => 1,
+            'thematiques' => 0,
         ]));
 });
 
@@ -154,7 +153,7 @@ test('le tableau de bord répartit les projets selon leur statut recalculé à p
         ]));
 });
 
-test("le tableau de bord sépare les témoins en attente et ceux approuvés par l'enseignant", function () {
+test("la page Aînés sépare les témoins en attente et ceux approuvés par l'enseignant", function () {
     ['enseignant' => $enseignant] = creerTableauBordEnseignant();
     $thematique = Thematique::factory()->create(['enseignant_id' => $enseignant->id, 'nom' => 'Ma thématique']);
     Thematique::factory()->create(['nom' => "Celle d'un autre"]);
@@ -169,13 +168,15 @@ test("le tableau de bord sépare les témoins en attente et ceux approuvés par 
     $approuve = User::factory()->create(['role' => 'personne_agee', 'statut' => 'actif', 'approuve_par_id' => $enseignant->id]);
     User::factory()->create(['role' => 'personne_agee', 'statut' => 'actif', 'approuve_par_id' => User::factory()->create(['role' => 'enseignant'])->id]);
 
+    // Le tableau de bord ne compte que les thématiques visibles par l'enseignant
     $this->actingAs($enseignant)
         ->get('/enseignant')
+        ->assertInertia(fn ($page) => $page->where('indicateurs.thematiques', 1));
+
+    $this->actingAs($enseignant)
+        ->get(route('enseignant.temoins.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('thematiques', 1)
-            ->where('thematiques.0.nom', 'Ma thématique')
-            ->where('thematiques.0.enseignant.id', $enseignant->id)
             ->has('temoinsEnAttente', 1)
             ->where('temoinsEnAttente.0.id', $enAttente->id)
             ->where('temoinsEnAttente.0.thematiques_choisies.0.nom', 'Ma thématique')
