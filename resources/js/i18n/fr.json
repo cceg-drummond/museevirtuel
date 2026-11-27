@@ -474,6 +474,22 @@
             "none": "Aucun élément.",
             "empty": "Aucun gabarit de cours.",
             "how_to_use": "Pour utiliser un gabarit, cochez « Créer avec le gabarit » à la création d'un cours."
+        },
+        "medias": {
+            "title": "Médias",
+            "subtitle": "Les photos, enregistrements audio et documents déposés par vos groupes. Ils se gèrent depuis la page du groupe.",
+            "photos": "Photos",
+            "audios": "Audio",
+            "documents": "Documents",
+            "photos_count": "{n} photo(s)",
+            "audios_count": "{n} audio",
+            "documents_count": "{n} document(s)",
+            "open": "Consulter les médias",
+            "manage": "Gérer dans le groupe",
+            "none": "Aucun média de ce type.",
+            "empty": "Aucun de vos groupes n'a encore déposé de média.",
+            "by": "Déposé par {nom} le {date}",
+            "transcribed": "Transcription disponible"
         }
     },
     "administration": {
@@ -568,7 +584,8 @@
         "exchanges": "Échanges",
         "schedule": "Échéancier",
         "questions": "Banque de questions",
-        "templates": "Gabarits"
+        "templates": "Gabarits",
+        "media": "Médias"
     },
     "settings": {
         "heading_title": "Paramètres",
@@ -1332,6 +1349,7 @@
         "exchanges": "Échanges",
         "schedule": "Échéancier",
         "questions": "Banque de questions",
-        "templates": "Gabarits"
+        "templates": "Gabarits",
+        "media": "Médias"
     }
 }

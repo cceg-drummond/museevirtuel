@@ -7,6 +7,7 @@ import {
     Copy,
     FileQuestion,
     FolderKanban,
+    ImageIcon,
     Home,
     Landmark,
     LayoutDashboard,
@@ -42,6 +43,7 @@ import { index as echangesIndex } from '@/routes/enseignant/echanges';
 import { index as echeancierIndex } from '@/routes/enseignant/echeancier';
 import { index as gabaritsIndex } from '@/routes/enseignant/gabarits';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
+import { index as mediasIndex } from '@/routes/enseignant/medias';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as questionsIndex } from '@/routes/enseignant/questions';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
@@ -157,7 +159,6 @@ type GroupeNav = { label?: string; items: NavItem[] };
 
 /**
  * Construit les groupes de la barre latérale enseignant (maquette A, issue #35).
- * Le groupe Ressources se complète au fil de ses pages (Médias).
  */
 function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
     const general: NavItem[] = [
@@ -246,6 +247,11 @@ function buildGroupesEnseignant(estAdmin: boolean): GroupeNav[] {
                     title: t('sidebar.templates'),
                     href: gabaritsIndex.url(),
                     icon: Copy,
+                },
+                {
+                    title: t('sidebar.media'),
+                    href: mediasIndex.url(),
+                    icon: ImageIcon,
                 },
             ],
         },

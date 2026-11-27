@@ -10,6 +10,7 @@ import { index as echangesIndex } from '@/routes/enseignant/echanges';
 import { index as echeancierIndex } from '@/routes/enseignant/echeancier';
 import { index as gabaritsIndex } from '@/routes/enseignant/gabarits';
 import { index as groupesIndex } from '@/routes/enseignant/groupes';
+import { index as mediasIndex } from '@/routes/enseignant/medias';
 import { index as projetsIndex } from '@/routes/enseignant/projets';
 import { index as questionsIndex } from '@/routes/enseignant/questions';
 import { index as temoinsIndex } from '@/routes/enseignant/temoins';
@@ -128,6 +129,13 @@ export function useFilAriane() {
     }
 
     /**
+     * Retourne la collection « Médias » des groupes de l'enseignant.
+     */
+    function medias(): BreadcrumbItem {
+        return { title: t('breadcrumbs.media'), href: mediasIndex.url() };
+    }
+
+    /**
      * Retourne la collection « Thématiques » de l'enseignant.
      */
     function thematiques(): BreadcrumbItem {
@@ -219,7 +227,7 @@ export function useFilAriane() {
 
     return {
         accueil, administration, cours, classes, groupes,
-        projets, temoins, visios, echanges, echeancier, questions, gabarits, thematiques, unCours,
+        projets, temoins, visios, echanges, echeancier, questions, gabarits, medias, thematiques, unCours,
         cheminCours, uneClasse, cheminClasse,
         cheminDepuisUrl, typesProjets,
         courant,

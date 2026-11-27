@@ -475,6 +475,22 @@
             "none": "Nothing yet.",
             "empty": "No course template.",
             "how_to_use": "To use a template, check “Create with the template” when creating a course."
+        },
+        "medias": {
+            "title": "Media",
+            "subtitle": "The photos, audio recordings and documents uploaded by your groups. They are managed from the group page.",
+            "photos": "Photos",
+            "audios": "Audio",
+            "documents": "Documents",
+            "photos_count": "{n} photo(s)",
+            "audios_count": "{n} audio",
+            "documents_count": "{n} document(s)",
+            "open": "View media",
+            "manage": "Manage in the group",
+            "none": "No media of this type.",
+            "empty": "None of your groups has uploaded media yet.",
+            "by": "Uploaded by {nom} on {date}",
+            "transcribed": "Transcript available"
         }
     },
     "administration": {
@@ -569,7 +585,8 @@
         "exchanges": "Exchanges",
         "schedule": "Schedule",
         "questions": "Question bank",
-        "templates": "Templates"
+        "templates": "Templates",
+        "media": "Media"
     },
     "settings": {
         "heading_title": "Settings",
@@ -1333,6 +1350,7 @@
         "exchanges": "Exchanges",
         "schedule": "Schedule",
         "questions": "Question bank",
-        "templates": "Templates"
+        "templates": "Templates",
+        "media": "Media"
     }
 }

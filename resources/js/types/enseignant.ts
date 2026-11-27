@@ -117,6 +117,23 @@ export type ConversationEnseignant = {
     } | null;
 };
 
+export type GroupeMedias = {
+    groupe: { id: number; numero: number };
+    classe: { id: number; numero: number; nom: string | null };
+    cours: { id: number; nom_cours: string; code: string; groupe: string };
+};
+
+export type MediaGroupe = {
+    id: number;
+    nom_original: string;
+    type: 'photo' | 'audio' | 'document';
+    taille: number;
+    url: string;
+    transcription_statut: string | null;
+    auteur: { prenom: string; nom: string } | null;
+    depose_le: string;
+};
+
 export type GabaritCoursResume = {
     id: number;
     nom: string;
